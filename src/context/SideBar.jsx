@@ -47,6 +47,7 @@ import Inventory2RoundedIcon from "@mui/icons-material/Inventory2Rounded";
 import SummarizeRoundedIcon from "@mui/icons-material/SummarizeRounded";
 import ArticleRoundedIcon from "@mui/icons-material/ArticleRounded";
 import MarkChatUnreadIcon from "@mui/icons-material/MarkChatUnread";
+import ReceiptLongRoundedIcon from "@mui/icons-material/ReceiptLongRounded";
 import { MoreHorizontalIcon, Sparkles } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -198,7 +199,7 @@ export default function Sidebar() {
 
   const checkPermission = React.useCallback(
     (permiso) => userRole === "Admin" || (permiso ? hasPermiso(permiso) : true),
-    [userRole, hasPermiso]
+    [userRole, hasPermiso],
   );
 
   // =========================
@@ -252,7 +253,7 @@ export default function Sidebar() {
         group: "General",
       },
     ],
-    [t, checkPermission]
+    [t, checkPermission],
   );
 
   const managementItems = React.useMemo(
@@ -294,7 +295,7 @@ export default function Sidebar() {
         group: "Gestión",
       },
     ],
-    [t, checkPermission]
+    [t, checkPermission],
   );
 
   const inventoryItems = React.useMemo(
@@ -318,7 +319,40 @@ export default function Sidebar() {
         group: "Inventario",
       },
     ],
-    [t, checkPermission]
+    [t, checkPermission],
+  );
+
+  const billingItems = React.useMemo(
+    () => [
+      {
+        path: "/admin/facturacion/contratos",
+        icon: <ArticleRoundedIcon />,
+        label: "Contratos",
+        perm: "ver_contratos",
+        canView: checkPermission("ver_contratos") || true,
+        kind: "general",
+        group: "Facturación",
+      },
+      {
+        path: "/admin/facturacion/periodos",
+        icon: <SummarizeRoundedIcon />,
+        label: "Carga Mensual",
+        perm: "crear_contratos",
+        canView: checkPermission("crear_contratos") || true,
+        kind: "general",
+        group: "Facturación",
+      },
+      {
+        path: "/admin/facturacion/reportes",
+        icon: <AssessmentIcon />,
+        label: "Proformas",
+        perm: "ver_reportes",
+        canView: checkPermission("ver_reportes") || true,
+        kind: "reporte",
+        group: "Facturación",
+      },
+    ],
+    [t, checkPermission],
   );
 
   const systemItems = React.useMemo(
@@ -342,7 +376,7 @@ export default function Sidebar() {
         group: "Sistema",
       },
     ],
-    [t, checkPermission]
+    [t, checkPermission],
   );
 
   const supportAndHelpItems = React.useMemo(
@@ -384,7 +418,7 @@ export default function Sidebar() {
         group: "Soporte y Ayuda",
       },
     ],
-    [t, checkPermission]
+    [t, checkPermission],
   );
 
   // Index plano para búsqueda local
@@ -404,6 +438,7 @@ export default function Sidebar() {
       ...pick(inventoryItems),
       ...pick(systemItems),
       ...pick(supportAndHelpItems),
+      ...pick(billingItems),
     ];
     // deps solo en cosas que realmente cambian permisos
   }, [userRole, hasPermiso]);
@@ -416,7 +451,7 @@ export default function Sidebar() {
           r.canView &&
           (r.title.toLowerCase().includes(t) ||
             r.subtitle.toLowerCase().includes(t) ||
-            r.url.toLowerCase().includes(t))
+            r.url.toLowerCase().includes(t)),
       );
       const ranked = items
         .map((r) => {
@@ -440,7 +475,7 @@ export default function Sidebar() {
         perm: r.perm,
       }));
     },
-    [routeIndex]
+    [routeIndex],
   );
 
   const searchAll = React.useCallback(async (text) => {
@@ -738,6 +773,44 @@ export default function Sidebar() {
                 canView={item.canView}
               />
             ))}
+
+            {/* GRUPO FACTURACIÓN */}
+            <ListItem nested>
+              <Toggler
+                renderToggle={({ open, setOpen }) => (
+                  <ListItemButton
+                    onClick={() => setOpen(!open)}
+                    aria-expanded={open}
+                    sx={{
+                      fontWeight: "md",
+                      "&:hover": { backgroundColor: "neutral.softBg" },
+                    }}>
+                    <ReceiptLongRoundedIcon />{" "}
+                    {/* O el ícono que hayas elegido para el grupo */}
+                    <ListItemContent>
+                      <Typography level="title-sm">Facturación</Typography>
+                    </ListItemContent>
+                    <KeyboardArrowDownIcon
+                      sx={{
+                        transform: open ? "rotate(180deg)" : "none",
+                        transition: "0.2s",
+                      }}
+                    />
+                  </ListItemButton>
+                )}>
+                {billingItems.map((item) => (
+                  <NavItem
+                    key={item.path}
+                    path={item.path}
+                    icon={item.icon}
+                    label={item.label}
+                    currentPath={currentPath}
+                    onNavigate={handleNavigate}
+                    canView={item.canView}
+                  />
+                ))}
+              </Toggler>
+            </ListItem>
 
             {(checkPermission("gestionar_companias") ||
               checkPermission("gestionar_paises") ||

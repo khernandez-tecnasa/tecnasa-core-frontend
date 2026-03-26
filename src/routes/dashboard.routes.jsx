@@ -29,6 +29,13 @@ import BodegasList from "@/pages/Inventario/BodegasList.jsx";
 import BodegaDetail from "@/pages/Inventario/BodegaDetail.jsx";
 import ActivosList from "@/pages/Inventario/ActivosList.jsx";
 
+// === Facturación ===
+import ContratosPage from "@/pages/Facturacion/ContratosPage.jsx";
+import PeriodosPage from "@/pages/Facturacion/PeriodosPage.jsx";
+import ReportesPage from "@/pages/Facturacion/ReportesPage.jsx";
+import ContratoDetallePage from "@/pages/Facturacion/ContratoDetallePage.jsx";
+import FacturacionHub from "@/pages/Facturacion/Dashboard/FacturacionHub.jsx";
+
 // === Help Center (usuario) ===
 import HelpHome from "@/pages/HelpPage/HelpHome.jsx";
 import HelpFaqsList from "@/pages/HelpPage/HelpFaqsList.jsx";
@@ -48,6 +55,8 @@ import StatusAdminPage from "@/pages/SoporteAdmin/StatusAdminPage.jsx";
 import HelpSearchResults from "@/pages/HelpPage/HelpSearchResults.jsx";
 import Notificaciones from "@/pages/Notificaciones/Notificaciones.jsx";
 import SettingsPage from "@/pages/Settings/SettingsPage";
+import FacturacionDashboard from "@/pages/Facturacion/FacturacionDashboard";
+import PipelineFacturacion from "@/pages/Facturacion/PipelineFacturacion";
 // Wrapper de permiso
 // import { useAuth } from "@/context/AuthContext";
 // function RequirePermission({ children, permiso = "help_manage" }) {
@@ -130,6 +139,14 @@ export default function DashboardRoutes() {
           <Route path="tutorials" element={<TutorialsAdminPage />} />
           <Route path="changelogs" element={<ChangelogsAdminPage />} />
           <Route path="services" element={<StatusAdminPage />} />
+        </Route>
+
+        {/* Facturación */}
+        <Route path="facturacion">
+          <Route path="contratos" element={<ContratosPage />} />
+          <Route path="contratos/:id" element={<ContratoDetallePage />} />
+          <Route path="periodos" element={<PipelineFacturacion />} />
+          <Route path="reportes" element={<ReportesPage />} />
         </Route>
       </Route>
     </Routes>
