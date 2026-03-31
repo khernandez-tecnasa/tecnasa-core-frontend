@@ -1,3 +1,13 @@
+## v2.4.0 - 2026-03-31
+
+* chore(release): v2.4.0 (b286cc5)
+* Merge branch 'main' of https://github.com/Tecnasa-Dev-HN/tecnasa-core-frontend (add8b17)
+* feat(auth): add passkeys login support (105436d)
+* Update README.md (b9e3a3d)
+* docs(changelog): v2.3.2 (59fa201)
+
+🔗 **Comparación:** https://github.com/Tecnasa-Dev-HN/tecnasa-core-frontend/compare/v2.3.2...v2.4.0
+
 ## v2.3.2 - 2025-12-17
 
 * chore(release): v2.3.2 (69fb474)
@@ -172,6 +182,7 @@
 - Full changelog: https://github.com/khernan14/AutoLog/compare/prod-2025-11-04...v1.0.0
 
 > Nota: si sigues **Conventional Commits** (`feat:`, `fix:`, `chore:`…), herramientas como `conventional-changelog` te generan estas secciones solitas.
+
 
 
 
