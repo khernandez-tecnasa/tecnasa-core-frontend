@@ -1,349 +1,397 @@
-// src/pages/Settings/sections/Acerca.jsx
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState } from "react";
+import useIsMobile from "@/hooks/useIsMobile";
+import { ChevronRight, RefreshCw } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import {
-  Box,
-  Typography,
-  Card,
-  Stack,
-  Divider,
-  Button,
-  Grid,
-  Chip,
-  Sheet,
-  Skeleton,
-  IconButton,
-  Tooltip,
-} from "@mui/joy";
+import { listServices } from "@/services/help.api.js";
 
-// Iconos
-import InfoRoundedIcon from "@mui/icons-material/InfoRounded";
-import RefreshRoundedIcon from "@mui/icons-material/RefreshRounded";
-import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
-import WarningRoundedIcon from "@mui/icons-material/WarningRounded";
-import ErrorRoundedIcon from "@mui/icons-material/ErrorRounded";
-import BoltRoundedIcon from "@mui/icons-material/BoltRounded";
-import GitHubIcon from "@mui/icons-material/GitHub";
-import BugReportRoundedIcon from "@mui/icons-material/BugReportRounded";
+/* ---------------- MAIN ---------------- */
 
-// Servicios (Usando los mismos que ya tenías)
-import {
-  getOverallStatus,
-  listServices,
-  statusToJoyColor,
-} from "../../../services/help.api.js";
-
-// --- Helpers de Estado ---
-function StatusDot({ color = "neutral" }) {
-  return (
-    <Box
-      sx={{
-        width: 8,
-        height: 8,
-        borderRadius: "50%",
-        bgcolor: `${color}.500`,
-        boxShadow: (theme) => `0 0 0 2px ${theme.vars.palette[color][100]}`,
-      }}
-    />
-  );
-}
-
-// Widget de Estado del Sistema (Integrado)
-// Widget de Estado del Sistema (Con Auto-Refresh y Validación Robusta)
-function SystemStatusWidget() {
+export default function Acerca() {
   const { t } = useTranslation();
-  const [loading, setLoading] = useState(true); // Carga inicial (esqueleto)
+  const isMobile = useIsMobile();
+
   const [services, setServices] = useState([]);
-  const [error, setError] = useState(null);
+  const [loadingStatus, setLoadingStatus] = useState(true);
 
-  // Función de carga
-  // isBackground = true evita que aparezca el Skeleton cada 30 segundos
-  const fetchData = async (isBackground = false) => {
-    if (!isBackground) setLoading(true);
-    try {
-      const data = await listServices();
-      setServices(Array.isArray(data) ? data : []);
-      setError(null);
-    } catch (e) {
-      // Solo mostramos error si no tenemos datos previos
-      if (!isBackground)
-        setError("No se pudo conectar con el monitor de estado.");
-    } finally {
-      if (!isBackground) setLoading(false);
-    }
-  };
-
-  // Efecto: Carga inicial + Intervalo
   useEffect(() => {
-    fetchData(); // 1. Carga inmediata
+    const load = async () => {
+      try {
+        const data = await listServices();
+        setServices(Array.isArray(data) ? data : []);
+      } catch (e) {
+        console.error("Error status:", e);
+      } finally {
+        setLoadingStatus(false);
+      }
+    };
 
+    load();
+  }, []);
+
+  useEffect(() => {
     const interval = setInterval(() => {
-      fetchData(true); // 2. Refresco silencioso cada 30s
-    }, 30000);
+      listServices().then(setServices);
+    }, 15000); // cada 15s
 
     return () => clearInterval(interval);
   }, []);
 
-  // Agrupamos servicios
-  const grouped = useMemo(() => {
-    return services.reduce((acc, curr) => {
-      const g = curr.group_name || "Otros";
-      if (!acc[g]) acc[g] = [];
-      acc[g].push(curr);
-      return acc;
-    }, {});
-  }, [services]);
+  const grouped = services.reduce((acc, curr) => {
+    const g = curr.group_name || "Sistema";
+    if (!acc[g]) acc[g] = [];
+    acc[g].push(curr);
+    return acc;
+  }, {});
 
-  // --- LÓGICA DE ESTADOS ROBUSTA (Regex) ---
-  const getStatusColor = (items) => {
-    // Convertimos a string y minúsculas para comparar seguro
-    const hasError = items.some((i) =>
-      /down|incident|falla|error|caido|degradado|outage/i.test(String(i.status))
-    );
-    const hasWarning = items.some((i) =>
-      /degraded|maintenance|mantenimiento|lento|warning/i.test(String(i.status))
-    );
-
-    if (hasError) return "danger";
-    if (hasWarning) return "warning";
-    return "success"; // Por defecto verde
-  };
-
-  const getStatusLabel = (items) => {
-    const hasError = items.some((i) =>
-      /down|incident|falla|error|caido|degradado|outage/i.test(String(i.status))
-    );
-    if (hasError) return "Incidente";
-
-    const hasWarning = items.some((i) =>
-      /degraded|maintenance|mantenimiento|lento|warning/i.test(String(i.status))
-    );
-    if (hasWarning) return "Mantenimiento";
-
-    return "Operativo";
-  };
-
-  if (loading)
-    return (
-      <Skeleton
-        variant="rectangular"
-        height={150}
-        sx={{ borderRadius: "lg" }}
-      />
-    );
-
-  if (error && services.length === 0) {
-    return (
-      <Sheet variant="soft" color="danger" sx={{ p: 2, borderRadius: "md" }}>
-        <Typography level="body-sm" startDecorator={<ErrorRoundedIcon />}>
-          {error}
-        </Typography>
-        <Button
-          size="sm"
-          variant="plain"
-          onClick={() => fetchData(false)}
-          sx={{ mt: 1 }}>
-          Reintentar
-        </Button>
-      </Sheet>
-    );
-  }
-
-  return (
-    <Card variant="outlined" sx={{ borderRadius: "lg" }}>
-      <Stack
-        direction="row"
-        justifyContent="space-between"
-        alignItems="center"
-        mb={2}>
-        <Typography
-          level="title-md"
-          startDecorator={<BoltRoundedIcon color="warning" />}>
-          {t("settings.about.status_title")}
-        </Typography>
-        <Tooltip title="Actualizar ahora">
-          <IconButton
-            size="sm"
-            variant="plain"
-            onClick={() => fetchData(false)}>
-            <RefreshRoundedIcon />
-          </IconButton>
-        </Tooltip>
-      </Stack>
-
-      <Grid container spacing={2}>
-        {Object.entries(grouped).map(([group, items]) => {
-          const color = getStatusColor(items);
-          const label = getStatusLabel(items);
-
-          return (
-            <Grid key={group} xs={12} sm={6}>
-              <Sheet
-                variant="soft"
-                color="neutral"
-                sx={{
-                  p: 1.5,
-                  borderRadius: "md",
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  border: color !== "success" ? "1px solid" : "none", // Borde si hay error
-                  borderColor: `${color}.300`,
-                }}>
-                <Typography level="body-sm" fontWeight="md">
-                  {group}
-                </Typography>
-                <Chip
-                  size="sm"
-                  variant="solid"
-                  color={color}
-                  startDecorator={<StatusDot color={color} />}>
-                  {label}
-                </Chip>
-              </Sheet>
-            </Grid>
-          );
-        })}
-        {services.length === 0 && (
-          <Typography level="body-xs" color="neutral">
-            Sin información de servicios.
-          </Typography>
-        )}
-      </Grid>
-    </Card>
+  return isMobile ? (
+    <MobileAbout t={t} grouped={grouped} loadingStatus={loadingStatus} />
+  ) : (
+    <DesktopAbout t={t} grouped={grouped} loadingStatus={loadingStatus} />
   );
 }
 
-// --- Componente Principal ---
-export default function Acerca() {
-  const { t } = useTranslation();
+/* ---------------- STATUS BADGE ---------------- */
 
-  // Datos técnicos del entorno cliente
-  const clientInfo = [
-    {
-      label: t("settings.about.version"),
-      value: `v${import.meta.env.PACKAGE_VERSION}`,
-    },
-    {
-      label: t("settings.about.commit"),
-      value: (
-        <Chip
-          size="sm"
-          variant="soft"
-          color="neutral"
-          sx={{ cursor: "default" }}>
-          #{import.meta.env.COMMIT_HASH}
-        </Chip>
-      ),
-    },
-    {
-      label: t("settings.about.build"),
-      value:
-        import.meta.env.MODE === "development" ? "Desarrollo" : "Producción",
-    },
-    {
-      label: t("settings.about.browser"),
-      value: navigator.userAgentData?.brands?.[0]?.brand || navigator.appName,
-    },
-    { label: t("settings.about.platform"), value: navigator.platform },
-    { label: t("settings.about.language"), value: navigator.language },
-  ];
+// function StatusBadge({ status }) {
+//   const getColor = () => {
+//     if (/down|error|fail/i.test(status)) return "bg-red-500";
+//     if (/warn|maintenance/i.test(status)) return "bg-yellow-500";
+//     return "bg-green-500";
+//   };
+
+//   return (
+//     <div className="flex items-center gap-2 text-xs">
+//       <span className={`w-2 h-2 rounded-full ${getColor()}`} />
+//       {status}
+//     </div>
+//   );
+// }
+
+/* ---------------- DESKTOP ---------------- */
+
+function DesktopAbout({ t, grouped, loadingStatus }) {
+  return (
+    <div className="max-w-5xl mx-auto space-y-6">
+      {/* HEADER */}
+      <div className="rounded-2xl border dark:bg-[var(--popover)] p-6 text-center text-[var(--foreground)]">
+        <div className="w-16 h-16 mx-auto rounded-xl bg-[hsl(var(--primary))] text-white flex items-center justify-center text-xl font-bold mb-3">
+          APP
+        </div>
+
+        <h2 className="text-lg font-semibold">
+          {import.meta.env.VITE_APP_TITLE}
+        </h2>
+
+        <p className="text-sm text-[var(--muted-foreground)]">
+          v{import.meta.env.PACKAGE_VERSION}
+        </p>
+      </div>
+
+      {/* STATUS */}
+      <div className="rounded-2xl border dark:bg-[var(--popover)] p-5 space-y-4">
+        {/* HEADER */}
+        <div className="flex justify-between items-center">
+          <div>
+            <p className="text-sm font-medium text-[var(--foreground)]">
+              Estado del sistema
+            </p>
+            <p className="text-xs text-[var(--muted-foreground)]">
+              Monitoreo en tiempo real
+            </p>
+          </div>
+
+          <button
+            onClick={() => window.location.reload()}
+            className="
+              p-2 rounded-lg
+              hover:bg-[var(--muted)]
+              transition
+              text-[var(--foreground)]
+            ">
+            <RefreshCw size={16} />
+          </button>
+        </div>
+
+        {/* GLOBAL STATUS */}
+        {!loadingStatus && <GlobalStatus services={grouped} />}
+
+        {/* LIST */}
+        {loadingStatus ? (
+          <StatusSkeleton />
+        ) : (
+          <div className="space-y-2">
+            {Object.entries(grouped).map(([group, items]) => {
+              const hasError = items.some((i) =>
+                /down|error|fail/i.test(i.status),
+              );
+
+              return (
+                <div
+                  key={group}
+                  className="
+                    flex justify-between items-center
+                    px-3 py-2 rounded-lg
+                    hover:bg-[var(--muted)]
+                    transition
+                  ">
+                  <span className="text-sm text-[var(--foreground)]">
+                    {group}
+                  </span>
+
+                  <StatusBadge
+                    status={hasError ? "Error" : "Operativo"}
+                    animated
+                  />
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* INFO */}
+      <div className="rounded-2xl border dark:bg-[var(--popover)] divide-y">
+        {[
+          ["Versión", `v${import.meta.env.PACKAGE_VERSION}`],
+          ["Build", import.meta.env.MODE],
+          ["Plataforma", navigator.platform],
+          ["Idioma", navigator.language],
+        ].map(([label, value]) => (
+          <div key={label} className="flex justify-between px-4 py-3 text-sm">
+            <span className="text-[var(--foreground)]">{label}</span>
+            <span className="font-mono text-[var(--muted-foreground)]">
+              {value}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      {/* ACTIONS */}
+      <div className="flex gap-3 justify-center">
+        <button className="px-4 py-2 rounded-lg dark:bg-[var(--muted)] text-sm text-[var(--foreground)]">
+          GitHub
+        </button>
+
+        <button className="px-4 py-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-500 text-sm text-[var(--foreground)]">
+          Reportar bug
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function GlobalStatus({ services }) {
+  const all = Object.values(services).flat();
+
+  const hasError = all.some((s) => /down|error|fail/i.test(s.status));
+
+  const hasWarn = all.some((s) => /warn|maintenance/i.test(s.status));
+
+  const state = hasError ? "Error" : hasWarn ? "Advertencia" : "Operativo";
+
+  const color = hasError
+    ? "text-red-500"
+    : hasWarn
+      ? "text-yellow-500"
+      : "text-green-500";
 
   return (
-    <Stack spacing={3} maxWidth={800}>
-      {/* Header de la App */}
-      <Card variant="outlined" sx={{ borderRadius: 16, boxShadow: "sm" }}>
-        <Box sx={{ textAlign: "center", py: 4 }}>
-          <Box
-            sx={{
-              width: 80,
-              height: 80,
-              mx: "auto",
-              bgcolor: "primary.500",
-              borderRadius: "xl",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "#fff",
-              boxShadow: "lg",
-              mb: 2,
-              fontSize: "2rem",
-              fontWeight: "bold",
-            }}>
-            {/* Logo o Iniciales */}
-            {(import.meta.env.PACKAGE_NAME || "App")
-              .substring(0, 2)
-              .toUpperCase()}
-          </Box>
-          <Typography level="h2">
-            {import.meta.env.VITE_APP_TITLE || "Mi Sistema SaaS"}
-          </Typography>
-          <Typography level="body-md" color="neutral">
-            {t("settings.about.version")} {import.meta.env.PACKAGE_VERSION}
-          </Typography>
-        </Box>
-      </Card>
+    <div
+      className="
+        flex items-center justify-between
+        p-3 rounded-xl
+        bg-[var(--muted)]
+      ">
+      <div>
+        <p className="text-sm font-medium text-[var(--foreground)]">
+          Estado general
+        </p>
+        <p className={`text-xs ${color}`}>{state}</p>
+      </div>
 
-      {/* Widget de Estado (Tu código adaptado) */}
-      <SystemStatusWidget />
+      <div
+        className={`
+          w-3 h-3 rounded-full
+          ${hasError ? "bg-red-500" : hasWarn ? "bg-yellow-500" : "bg-green-500"}
+          animate-pulse
+        `}
+      />
+    </div>
+  );
+}
 
-      {/* Información Técnica */}
-      <Card variant="outlined" sx={{ borderRadius: "lg" }}>
-        <Typography
-          level="title-md"
-          mb={2}
-          startDecorator={<InfoRoundedIcon />}>
-          {t("settings.about.tech_info")}
-        </Typography>
-        <Stack divider={<Divider />}>
-          {clientInfo.map((item, i) => (
-            <Stack
-              key={i}
-              direction="row"
-              justifyContent="space-between"
-              py={1}>
-              <Typography level="body-sm" color="neutral">
-                {item.label}
-              </Typography>
-              <Typography
-                level="body-sm"
-                fontWeight="md"
-                sx={{ fontFamily: "monospace" }}>
-                {item.value}
-              </Typography>
-            </Stack>
-          ))}
-        </Stack>
-      </Card>
+function StatusSkeleton() {
+  return (
+    <div className="space-y-2">
+      {[1, 2, 3].map((i) => (
+        <div
+          key={i}
+          className="
+            h-8 rounded-lg
+            dark:bg-[var(--popover)]
+            animate-pulse
+          "
+        />
+      ))}
+    </div>
+  );
+}
 
-      {/* Botones de Acción */}
-      <Stack direction="row" spacing={2} justifyContent="center" sx={{ pt: 2 }}>
-        <Button
-          variant="soft"
-          color="neutral"
-          startDecorator={<GitHubIcon />}
-          onClick={() =>
-            window.open("https://github.com/khernan14/AutoLog", "_blank")
-          }>
-          GitHub
-        </Button>
-        <Button
-          variant="soft"
-          color="danger"
-          startDecorator={<BugReportRoundedIcon />}
-          onClick={() => window.open("mailto:support@herndevs.com", "_blank")}>
-          {t("settings.about.report_bug")}
-        </Button>
-      </Stack>
+function StatusBadge({ status, animated = false }) {
+  const isError = /down|error|fail/i.test(status);
+  const isWarn = /warn|maintenance/i.test(status);
 
-      <Typography
-        level="body-xs"
-        textAlign="center"
-        color="neutral"
-        sx={{ pt: 4 }}>
-        © {new Date().getFullYear()} Hernández Devs S.A.{" "}
-        {t("settings.about.rights")}
-      </Typography>
-    </Stack>
+  const color = isError
+    ? "bg-red-500"
+    : isWarn
+      ? "bg-yellow-500"
+      : "bg-green-500";
+
+  const text = isError ? "Error" : isWarn ? "Advertencia" : "Operativo";
+
+  return (
+    <div className="flex items-center gap-2 text-xs text-[var(--muted-foreground)]">
+      <span
+        className={`
+          w-2 h-2 rounded-full
+          ${color}
+          ${animated ? "animate-pulse" : ""}
+        `}
+      />
+      {text}
+    </div>
+  );
+}
+
+/* ---------------- MOBILE ---------------- */
+
+function MobileAbout({ t, grouped, loadingStatus }) {
+  const [openInfo, setOpenInfo] = useState(false);
+  const [openStatus, setOpenStatus] = useState(false);
+
+  return (
+    <div className="space-y-6">
+      {/* HEADER */}
+      <div className="text-center bg-[var(--secondary)] rounded-xl p-4 mb-3">
+        <div className="w-16 h-16 mx-auto rounded-xl bg-[hsl(var(--primary))] text-white flex items-center justify-center text-xl font-bold mb-3">
+          APP
+        </div>
+
+        <p className="font-semibold">{import.meta.env.VITE_APP_TITLE}</p>
+        <p className="text-sm text-[var(--muted-foreground)]">
+          v{import.meta.env.PACKAGE_VERSION}
+        </p>
+      </div>
+
+      {/* LISTA iOS */}
+      <div className="rounded-2xl border dark:bg-[var(--popover)] divide-y">
+        <IOSRow label="Información técnica" onClick={() => setOpenInfo(true)} />
+        <IOSRow
+          label="Estado del sistema"
+          onClick={() => setOpenStatus(true)}
+        />
+      </div>
+
+      {/* MODAL INFO */}
+      <IOSModal
+        open={openInfo}
+        onClose={() => setOpenInfo(false)}
+        title="Información técnica">
+        {[
+          ["Versión", `v${import.meta.env.PACKAGE_VERSION}`],
+          ["Build", import.meta.env.MODE],
+          ["Plataforma", navigator.platform],
+          ["Idioma", navigator.language],
+        ].map(([label, value]) => (
+          <div key={label} className="flex justify-between px-4 py-3 text-sm">
+            <span>{label}</span>
+            <span className="font-mono">{value}</span>
+          </div>
+        ))}
+      </IOSModal>
+
+      {/* MODAL STATUS */}
+      <IOSModal
+        open={openStatus}
+        onClose={() => setOpenStatus(false)}
+        title="Estado del sistema">
+        {loadingStatus ? (
+          <StatusSkeleton />
+        ) : (
+          <>
+            <div className="p-3">
+              <GlobalStatus services={grouped} />
+            </div>
+
+            {Object.entries(grouped).map(([group, items]) => {
+              const hasError = items.some((i) =>
+                /down|error|fail/i.test(i.status),
+              );
+
+              return (
+                <div
+                  key={group}
+                  className="flex justify-between px-4 py-3 text-sm">
+                  <span>{group}</span>
+                  <StatusBadge
+                    status={hasError ? "Error" : "Operativo"}
+                    animated
+                  />
+                </div>
+              );
+            })}
+          </>
+        )}
+      </IOSModal>
+    </div>
+  );
+}
+
+/* ---------------- IOS ROW ---------------- */
+
+function IOSRow({ label, onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      className="w-full flex justify-between px-4 py-4 text-[15px] active:bg-[var(--muted)]">
+      {label}
+      <ChevronRight size={18} className="text-[var(--muted-foreground)]" />
+    </button>
+  );
+}
+
+/* ---------------- IOS MODAL ---------------- */
+
+function IOSModal({ open, onClose, title, children }) {
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-50">
+      {/* BACKDROP */}
+      <div
+        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+        onClick={onClose}
+      />
+
+      {/* SHEET */}
+      <div
+        className="
+          absolute bottom-0 left-0 right-0
+          rounded-t-3xl
+          dark:bg-[var(--popover)]
+          p-4
+          animate-ios-forward
+        ">
+        <div className="text-center mb-4 font-medium">{title}</div>
+
+        <div className="overflow-hidden">{children}</div>
+
+        <button
+          onClick={onClose}
+          className="w-full mt-4 py-3 text-[hsl(var(--primary))]">
+          Cancelar
+        </button>
+      </div>
+    </div>
   );
 }

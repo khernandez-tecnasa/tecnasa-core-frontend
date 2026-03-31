@@ -86,22 +86,59 @@ export function SettingsProvider({ children }) {
       const prev = settings ? settings[sectionKey] || {} : {};
       const optimistic = deepMerge(prev, partialPayload);
 
-      // set optimistic + mark saving
+      // Si el payload corresponde a una acción de 2FA (keys que empiezan con 'tfa_'),
+      // evitamos aplicar el 'optimistic update' y no tocamos `settings` antes de la respuesta.
+      const isTfaAction = Object.keys(partialPayload || {}).some((k) =>
+        String(k).startsWith("tfa_"),
+      );
+
+      if (isTfaAction) {
+        // Marcamos savingMap solo para visibilidad, pero evitamos tocar settings
+        setSavingMap((m) => ({ ...(m || {}), [sectionKey]: true }));
+        try {
+          const res = await SettingsService.patchSection(
+            sectionKey,
+            partialPayload,
+          );
+
+          if (res && res.action) {
+            // toast.showToast("Acción iniciada", "info");
+            return res?.data || res;
+          }
+
+          const serverPayload = res && res.data ? res.data : prev;
+          // Actualizamos settings solo si el servidor devuelve datos definitivos
+          setSettings((s) => ({ ...(s || {}), [sectionKey]: serverPayload }));
+          toast.showToast("Guardado", "success");
+          return serverPayload;
+        } catch (err) {
+          toast.showToast(err?.message || "Error al guardar", "danger");
+          throw err;
+        } finally {
+          setSavingMap((m) => ({ ...(m || {}), [sectionKey]: false }));
+        }
+      }
+
+      // set optimistic + mark saving (caso normal)
       setSettings((s) => ({ ...(s || {}), [sectionKey]: optimistic }));
       setSavingMap((m) => ({ ...(m || {}), [sectionKey]: true }));
 
       try {
         const res = await SettingsService.patchSection(
           sectionKey,
-          partialPayload
+          partialPayload,
         );
-        const serverPayload = res && res.data ? res.data : optimistic;
-        setSettings((s) => ({ ...(s || {}), [sectionKey]: serverPayload }));
 
+        // Si el backend indica que la operación es una acción (por ejemplo: iniciar enroll 2FA),
+        // no sobrescribimos la sección de settings con la carga parcial devuelta. Esto evita que
+        // el componente que muestra la sección (p. ej. `Seguridad`) se remonte y pierda su estado local.
         if (res && res.action) {
           toast.showToast("Acción iniciada", "info");
-          return res;
+          return res?.data || res;
         }
+
+        const serverPayload = res && res.data ? res.data : optimistic;
+        setSettings((s) => ({ ...(s || {}), [sectionKey]: serverPayload }));
 
         toast.showToast("Guardado", "success");
         return serverPayload;
@@ -114,7 +151,7 @@ export function SettingsProvider({ children }) {
         setSavingMap((m) => ({ ...(m || {}), [sectionKey]: false }));
       }
     },
-    [settings, toast]
+    [settings, toast],
   );
 
   // opción: función pública para forzar recarga desde server (por ejemplo después de reset global)
@@ -130,9 +167,19 @@ export function SettingsProvider({ children }) {
     }
   }, [toast]);
 
+  const value = React.useMemo(
+    () => ({
+      settings,
+      loading,
+      saveSection,
+      savingMap,
+      reload,
+    }),
+    [settings, loading, saveSection, savingMap, reload],
+  );
+
   return (
-    <SettingsContext.Provider
-      value={{ settings, loading, saveSection, savingMap, reload }}>
+    <SettingsContext.Provider value={value}>
       {children}
     </SettingsContext.Provider>
   );

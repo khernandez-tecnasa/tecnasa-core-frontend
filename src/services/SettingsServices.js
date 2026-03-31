@@ -131,6 +131,19 @@ export async function revokeOtherSessions() {
   return json;
 }
 
+export async function revokeSession(sessionId) {
+  const res = await fetchConToken(endpoints.revokeSessions, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ session_id: sessionId }),
+  });
+  const json = await res.json();
+
+  if (!res.ok) throw new Error(json.message || "Error al revocar la sesión");
+
+  return json;
+}
+
 /* ---------------------------
    Exports por defecto
    --------------------------- */

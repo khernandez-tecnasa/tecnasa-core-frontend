@@ -1,31 +1,13 @@
-// src/pages/Settings/sections/Accesibilidad.jsx
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  Box,
-  Card,
-  Stack,
-  Typography,
-  Switch,
-  Slider,
-  Divider,
-  Button,
-  List,
-  ListItem,
-  ListItemDecorator,
-  ListItemContent,
-} from "@mui/joy";
+import useIsMobile from "@/hooks/useIsMobile";
 
 import { SectionHeader } from "./_shared/SectionHeader.jsx";
-
-// Iconos
-import FormatSizeRoundedIcon from "@mui/icons-material/FormatSizeRounded";
-import ContrastRoundedIcon from "@mui/icons-material/ContrastRounded";
-import AnimationRoundedIcon from "@mui/icons-material/AnimationRounded";
-import SaveRoundedIcon from "@mui/icons-material/SaveRounded";
+import { Type, Contrast, Sparkles, ChevronRight } from "lucide-react";
 
 export default function Accesibilidad({ initialData, onSave, saving }) {
   const { t } = useTranslation();
+  const isMobile = useIsMobile();
 
   const [baseState, setBaseState] = useState({
     fontSize: "medium",
@@ -33,12 +15,13 @@ export default function Accesibilidad({ initialData, onSave, saving }) {
     highContrast: false,
   });
 
-  const [form, setForm] = useState({
-    fontSize: "medium",
-    reducedMotion: false,
-    highContrast: false,
-  });
+  const [form, setForm] = useState(baseState);
 
+  const [openFont, setOpenFont] = useState(false);
+
+  /* ============================
+      INIT
+  ============================ */
   useEffect(() => {
     if (initialData) {
       const data = {
@@ -51,35 +34,28 @@ export default function Accesibilidad({ initialData, onSave, saving }) {
     }
   }, [initialData]);
 
-  // Preview en tiempo real
+  /* ============================
+      LIVE PREVIEW 🔥
+  ============================ */
   useEffect(() => {
     const html = document.documentElement;
     const body = document.body;
 
-    if (form.fontSize === "small") html.style.fontSize = "90%";
-    else if (form.fontSize === "large") html.style.fontSize = "110%";
-    else html.style.fontSize = "100%";
+    html.style.fontSize =
+      form.fontSize === "small"
+        ? "90%"
+        : form.fontSize === "large"
+          ? "110%"
+          : "100%";
 
-    if (form.reducedMotion) body.classList.add("reduce-motion");
-    else body.classList.remove("reduce-motion");
-
-    if (form.highContrast) body.classList.add("high-contrast");
-    else body.classList.remove("high-contrast");
+    body.classList.toggle("reduce-motion", form.reducedMotion);
+    body.classList.toggle("high-contrast", form.highContrast);
   }, [form]);
 
-  const hasChanges = useMemo(() => {
-    return JSON.stringify(baseState) !== JSON.stringify(form);
-  }, [baseState, form]);
-
-  const handleFontChange = (event, newValue) => {
-    const sizes = ["small", "medium", "large"];
-    setForm((prev) => ({ ...prev, fontSize: sizes[newValue] }));
-  };
-
-  const getSliderValue = () => {
-    const map = { small: 0, medium: 1, large: 2 };
-    return map[form.fontSize] ?? 1;
-  };
+  const hasChanges = useMemo(
+    () => JSON.stringify(baseState) !== JSON.stringify(form),
+    [baseState, form],
+  );
 
   const handleChange = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -90,123 +66,391 @@ export default function Accesibilidad({ initialData, onSave, saving }) {
     setBaseState(form);
   };
 
-  return (
-    <Stack spacing={2}>
-      <Card variant="outlined" sx={{ borderRadius: 16, boxShadow: "sm" }}>
+  /* =========================================================
+      📱 MOBILE (iOS STYLE)
+  ========================================================= */
+  if (isMobile) {
+    return (
+      <div className="space-y-4 px-4 py-4">
         <SectionHeader
           title={t("settings.accessibility.title")}
           subtitle={t("settings.accessibility.subtitle")}
         />
 
-        <List sx={{ "--ListItem-paddingY": "1rem" }}>
-          {/* ITEM 1: TAMAÑO DE TEXTO (SLIDER) */}
-          <ListItem
-            sx={{
-              flexDirection: { xs: "column", sm: "row" },
-              alignItems: { xs: "start", sm: "center" },
-              gap: 2,
-            }}>
-            <ListItemDecorator
-              sx={{ alignSelf: { xs: "flex-start", sm: "center" } }}>
-              <FormatSizeRoundedIcon fontSize="large" />
-            </ListItemDecorator>
+        {/* LISTA iOS */}
+        <div
+          className="
+          rounded-2xl overflow-hidden
+          border border-[var(--border)]
+          dark:bg-[var(--popover)]
+          mt-8
+        ">
+          {/* FONT SIZE */}
+          <IOSRow
+            label="Tamaño de texto"
+            value={
+              form.fontSize === "small"
+                ? "Pequeño"
+                : form.fontSize === "large"
+                  ? "Grande"
+                  : "Normal"
+            }
+            onClick={() => setOpenFont(true)}
+          />
 
-            <ListItemContent sx={{ flex: 1 }}>
-              <Typography level="title-sm">
-                {t("settings.accessibility.font_size")}
-              </Typography>
-              <Typography level="body-sm" color="neutral">
-                {t("settings.accessibility.font_size_desc")}
-              </Typography>
-            </ListItemContent>
+          {/* MOTION */}
+          <IOSRowToggle
+            label="Reducir animaciones"
+            checked={form.reducedMotion}
+            onChange={() => handleChange("reducedMotion", !form.reducedMotion)}
+          />
 
-            {/* Slider container */}
-            <Box
-              sx={{
-                width: { xs: "100%", sm: 200 },
-                px: 1,
-                pt: { xs: 2, sm: 0 },
-              }}>
-              <Slider
-                value={getSliderValue()}
-                min={0}
-                max={2}
-                step={1}
-                marks={[
-                  { value: 0, label: "A" },
-                  { value: 1, label: "Aa" },
-                  { value: 2, label: "Aaa" },
-                ]}
-                onChange={handleFontChange}
-                valueLabelDisplay="off"
-                sx={{ "--Slider-trackSize": "4px" }}
-              />
-            </Box>
-          </ListItem>
+          {/* CONTRAST */}
+          <IOSRowToggle
+            label="Alto contraste"
+            checked={form.highContrast}
+            onChange={() => handleChange("highContrast", !form.highContrast)}
+          />
+        </div>
 
-          <Divider component="li" />
+        {/* SAVE */}
+        {hasChanges && (
+          <button
+            onClick={handleSaveClick}
+            className="
+              w-full py-3 rounded-xl
+              bg-[hsl(var(--primary))]
+              text-white
+            ">
+            {saving ? "Guardando..." : "Guardar cambios"}
+          </button>
+        )}
 
-          {/* ITEM 2: REDUCCIÓN DE MOVIMIENTO */}
-          <ListItem
-            endAction={
-              <Switch
-                checked={form.reducedMotion}
-                onChange={(e) =>
-                  handleChange("reducedMotion", e.target.checked)
-                }
-                sx={{ ml: 2 }}
-              />
-            }>
-            <ListItemDecorator>
-              <AnimationRoundedIcon fontSize="large" />
-            </ListItemDecorator>
-            <ListItemContent>
-              <Typography level="title-sm">
-                {t("settings.accessibility.reduced_motion")}
-              </Typography>
-              <Typography level="body-sm" color="neutral">
-                {t("settings.accessibility.reduced_motion_desc")}
-              </Typography>
-            </ListItemContent>
-          </ListItem>
+        {/* MODAL FONT SIZE */}
+        <IOSModal
+          open={openFont}
+          onClose={() => setOpenFont(false)}
+          title="Tamaño de texto">
+          {["small", "medium", "large"].map((size) => (
+            <IOSOption
+              key={size}
+              label={
+                size === "small"
+                  ? "Pequeño"
+                  : size === "large"
+                    ? "Grande"
+                    : "Normal"
+              }
+              active={form.fontSize === size}
+              onClick={() => {
+                handleChange("fontSize", size);
+                setOpenFont(false);
+              }}
+            />
+          ))}
+        </IOSModal>
+      </div>
+    );
+  }
 
-          <Divider component="li" />
+  /* =========================================================
+      🖥 DESKTOP
+  ========================================================= */
+  return (
+    <div className="space-y-4 max-w-5xl mx-auto">
+      <SectionHeader
+        title={t("settings.accessibility.title")}
+        subtitle={t("settings.accessibility.subtitle")}
+      />
 
-          {/* ITEM 3: ALTO CONTRASTE */}
-          <ListItem
-            endAction={
-              <Switch
-                checked={form.highContrast}
-                onChange={(e) => handleChange("highContrast", e.target.checked)}
-                sx={{ ml: 2 }}
-              />
-            }>
-            <ListItemDecorator>
-              <ContrastRoundedIcon fontSize="large" />
-            </ListItemDecorator>
-            <ListItemContent>
-              <Typography level="title-sm">
-                {t("settings.accessibility.high_contrast")}
-              </Typography>
-              <Typography level="body-sm" color="neutral">
-                {t("settings.accessibility.high_contrast_desc")}
-              </Typography>
-            </ListItemContent>
-          </ListItem>
-        </List>
-      </Card>
+      {/* FONT SIZE */}
+      <SettingCard
+        icon={Type}
+        title="Tamaño de texto"
+        desc="Ajusta la legibilidad del contenido">
+        <div className="flex gap-2">
+          {["small", "medium", "large"].map((size) => {
+            const isActive = form.fontSize === size;
 
-      {/* BOTÓN GUARDAR (FUERA DE LA CARD, IGUAL QUE EN LOS OTROS) */}
-      <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
-        <Button
-          size="lg"
-          startDecorator={<SaveRoundedIcon />}
-          disabled={!hasChanges}
-          loading={saving}
-          onClick={handleSaveClick}>
-          {t("common.actions.save_changes")}
-        </Button>
-      </Box>
-    </Stack>
+            return (
+              <button
+                key={size}
+                onClick={() => handleChange("fontSize", size)}
+                className={`
+                  px-3 py-2 rounded-lg text-sm
+                  transition
+                  ${
+                    isActive
+                      ? "bg-[hsl(var(--primary))] text-white"
+                      : "bg-[var(--muted)]"
+                  }
+                `}>
+                {size === "small" && "A"}
+                {size === "medium" && "Aa"}
+                {size === "large" && "Aaa"}
+              </button>
+            );
+          })}
+        </div>
+      </SettingCard>
+
+      {/* MOTION */}
+      <SettingCard
+        icon={Sparkles}
+        title="Reducir animaciones"
+        desc="Menos movimiento en la interfaz">
+        <Toggle
+          checked={form.reducedMotion}
+          onChange={() => handleChange("reducedMotion", !form.reducedMotion)}
+        />
+      </SettingCard>
+
+      {/* CONTRAST */}
+      <SettingCard
+        icon={Contrast}
+        title="Alto contraste"
+        desc="Mejora la visibilidad del contenido">
+        <Toggle
+          checked={form.highContrast}
+          onChange={() => handleChange("highContrast", !form.highContrast)}
+        />
+      </SettingCard>
+
+      {/* SAVE */}
+      {hasChanges && (
+        <div className="flex justify-end">
+          <button
+            onClick={handleSaveClick}
+            className="
+              px-5 py-2 rounded-xl
+              bg-[hsl(var(--primary))]
+              text-white
+            ">
+            {saving ? "Guardando..." : "Guardar cambios"}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* =========================================================
+    COMPONENTES
+========================================================= */
+
+function SettingCard({ icon: Icon, title, desc, children }) {
+  return (
+    <div
+      className="
+        rounded-xl border border-[var(--border)]
+        dark:bg-[var(--popover)]
+        px-4 py-4
+        flex items-center justify-between gap-4
+      ">
+      <div className="flex items-center gap-3">
+        <Icon size={20} />
+        <div>
+          <p className="text-sm font-medium">{title}</p>
+          <p className="text-xs text-[var(--muted-foreground)]">{desc}</p>
+        </div>
+      </div>
+
+      {children}
+    </div>
+  );
+}
+
+function Toggle({ checked, onChange }) {
+  return (
+    <button
+      onClick={onChange}
+      className={`
+        w-11 h-6 rounded-full relative transition
+        ${checked ? "bg-[hsl(var(--primary))]" : "bg-[var(--muted)]"}
+      `}>
+      <span
+        className={`
+          absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition
+          ${checked ? "translate-x-5" : ""}
+        `}
+      />
+    </button>
+  );
+}
+
+/* ================= IOS ================= */
+
+function IOSRow({ label, value, onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      className="
+        w-full flex items-center justify-between
+        px-4 py-4
+        border-b last:border-none border-[var(--border)]
+      ">
+      <span>{label}</span>
+
+      <div className="flex items-center gap-2">
+        <span className="text-[var(--muted-foreground)] text-sm">{value}</span>
+        <ChevronRight size={16} />
+      </div>
+    </button>
+  );
+}
+
+function IOSRowToggle({ label, checked, onChange }) {
+  return (
+    <div
+      className="
+        flex items-center justify-between
+        px-4 py-4
+        border-b last:border-none border-[var(--border)]
+      ">
+      <span>{label}</span>
+
+      <Toggle checked={checked} onChange={onChange} />
+    </div>
+  );
+}
+
+// function IOSModal({ open, onClose, title, children }) {
+//   if (!open) return null;
+
+//   return (
+//     <div className="fixed inset-0 z-50 flex items-end">
+//       {/* OVERLAY */}
+//       <div className="absolute inset-0 bg-black/40 z-0" onClick={onClose} />
+
+//       {/* MODAL */}
+//       <div
+//         className="
+//           relative z-10 w-full
+//           rounded-t-3xl
+//           bg-[var(--popover)]
+//           p-5
+//           animate-ios-forward
+//         ">
+//         {/* HANDLE */}
+//         <div className="w-10 h-1.5 bg-[var(--muted)] rounded-full mx-auto mb-4" />
+
+//         <p className="text-center font-medium mb-4">{title}</p>
+
+//         {children}
+//       </div>
+//     </div>
+//   );
+// }
+
+function IOSModal({ open, onClose, title, children }) {
+  const [dragY, setDragY] = useState(0);
+  const [isClosing, setIsClosing] = useState(false);
+
+  const startY = useRef(0);
+  const currentY = useRef(0);
+
+  useEffect(() => {
+    if (!open) {
+      setDragY(0);
+      setIsClosing(false);
+    }
+  }, [open]);
+
+  if (!open) return null;
+
+  // 🖐 START
+  const handleStart = (e) => {
+    startY.current = e.touches ? e.touches[0].clientY : e.clientY;
+  };
+
+  // 🖐 MOVE
+  const handleMove = (e) => {
+    const y = e.touches ? e.touches[0].clientY : e.clientY;
+    currentY.current = y;
+
+    const diff = y - startY.current;
+
+    if (diff > 0) {
+      setDragY(diff);
+    }
+  };
+
+  // 🖐 END
+  const handleEnd = () => {
+    if (dragY > 120) {
+      setIsClosing(true);
+      setTimeout(onClose, 200);
+    } else {
+      setDragY(0);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end">
+      {/* 🔥 BACKDROP (BLUR REAL) */}
+      <div
+        onClick={onClose}
+        className="
+          absolute inset-0
+          bg-black/30
+          backdrop-blur-sm
+          transition-opacity
+        "
+      />
+
+      {/* 🔥 MODAL */}
+      <div
+        style={{
+          transform: `translateY(${dragY}px)`,
+          transition: isClosing
+            ? "transform 0.2s ease"
+            : dragY === 0
+              ? "transform 0.35s cubic-bezier(0.22, 1, 0.36, 1)"
+              : "none",
+        }}
+        onMouseDown={handleStart}
+        onMouseMove={handleMove}
+        onMouseUp={handleEnd}
+        onTouchStart={handleStart}
+        onTouchMove={handleMove}
+        onTouchEnd={handleEnd}
+        className="
+          relative z-10 w-full
+          rounded-t-3xl
+          bg-[var(--background)]
+          dark:bg-[var(--popover)]
+          border-t border-[var(--border)]
+          p-5
+          shadow-2xl
+        ">
+        {/* HANDLE */}
+        <div className="w-10 h-1.5 bg-[var(--muted)] rounded-full mx-auto mb-4" />
+
+        {/* TITLE */}
+        <p className="text-center font-semibold mb-4 text-[var(--foreground)]">
+          {title}
+        </p>
+
+        {/* CONTENT */}
+        <div className="rounded-2xl overflow-hidden bg-[var(--popover)]">
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function IOSOption({ label, active, onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      className="
+        w-full flex justify-between
+        px-4 py-3 rounded-lg
+        hover:bg-[var(--muted)]
+      ">
+      <span>{label}</span>
+      {active && <span className="text-[hsl(var(--primary))]">✓</span>}
+    </button>
   );
 }

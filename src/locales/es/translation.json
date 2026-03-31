@@ -181,6 +181,7 @@
         "warning_desc": "Tu cuenta no está totalmente segura. {{action}} para máxima protección.",
         "action_2fa": "Activa el 2FA",
         "action_alerts": "Activa las alertas",
+        "action_passkey": "Registra una passkey",
         "btn_details": "Ver detalles",
         "btn_improve": "Mejorar seguridad"
       },
@@ -224,7 +225,12 @@
         "manual_entry": "Código manual",
         "input_label": "Ingresa el código de 6 dígitos",
         "verify_btn": "Verificar y Activar",
-        "error_invalid": "Código incorrecto. Inténtalo de nuevo."
+        "error_invalid": "Código incorrecto. Inténtalo de nuevo.",
+        "copy_btn": "Copiar",
+        "copying": "Copiando...",
+        "copied": "Código copiado",
+        "copied_short": "Copiado",
+        "copy_error": "No se pudo copiar"
       },
       "sessions": {
         "title": "Sesiones Activas",

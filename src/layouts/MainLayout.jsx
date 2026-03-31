@@ -187,7 +187,7 @@ export default function MainLayout() {
           gap: 1,
         }}>
         {/* Breadcrumbs */}
-        <Box sx={{ display: "flex", alignItems: "center" }}>
+        {/* <Box sx={{ display: "flex", alignItems: "center" }}>
           <Breadcrumbs
             size="sm"
             aria-label="breadcrumbs"
@@ -221,7 +221,7 @@ export default function MainLayout() {
               )
             )}
           </Breadcrumbs>
-        </Box>
+        </Box> */}
 
         {/* 👇 clave: forzar remount cuando trigger() incrementa refreshKey */}
         <div key={refreshKey}>

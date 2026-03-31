@@ -1,25 +1,7 @@
-// src/pages/Settings/sections/modals/TwoFactorSetupModal.jsx
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  Modal,
-  ModalDialog,
-  ModalClose,
-  Typography,
-  Stack,
-  Button,
-  Box,
-  LinearProgress,
-  Alert,
-  Divider,
-} from "@mui/joy";
-import {
-  QrCode,
-  CheckCircle,
-  AlertCircle,
-  KeyRound,
-  Smartphone,
-} from "lucide-react";
+import { QrCode, KeyRound, Smartphone, X } from "lucide-react";
+import { useToast } from "@/context/ToastContext";
 
 export default function TwoFactorSetupModal({
   open,
@@ -28,26 +10,32 @@ export default function TwoFactorSetupModal({
   onVerify,
 }) {
   const { t } = useTranslation();
+  const { showToast } = useToast();
 
-  // Lógica OTP (6 dígitos)
   const length = 6;
   const [values, setValues] = useState(Array(length).fill(""));
   const inputsRef = useRef([]);
 
   const [verifying, setVerifying] = useState(false);
   const [error, setError] = useState(null);
+  const [copying, setCopying] = useState(false);
+  const [copied, setCopied] = useState(false);
 
-  // Reset al abrir
   useEffect(() => {
     if (open) {
       setValues(Array(length).fill(""));
       setError(null);
-      // Focus al primer input tras renderizar
       setTimeout(() => inputsRef.current[0]?.focus(), 100);
     }
   }, [open]);
 
-  // Manejo de cambios en cada input
+  useEffect(() => {
+    const code = values.join("");
+    if (code.length === length && !verifying) {
+      handleVerify();
+    }
+  }, [values]);
+
   const handleChangeAt = useCallback((index, raw) => {
     const digit = raw.replace(/\D/g, "").slice(0, 1);
     if (!digit) return;
@@ -58,62 +46,36 @@ export default function TwoFactorSetupModal({
       return next;
     });
 
-    // Focus siguiente
-    const nextIndex = index + 1;
-    if (nextIndex < length) {
-      inputsRef.current[nextIndex]?.focus();
+    if (index + 1 < length) {
+      inputsRef.current[index + 1]?.focus();
     }
   }, []);
 
-  // Manejo de teclado (Backspace, Flechas)
   const handleKeyDown = useCallback((e, index) => {
-    const key = e.key;
-    if (key === "Backspace") {
+    if (e.key === "Backspace") {
       e.preventDefault();
       setValues((prev) => {
         const next = [...prev];
-        if (next[index]) {
-          next[index] = ""; // Borrar actual
-          // Mantener foco
-        } else {
-          // Borrar anterior y mover foco
-          const prevIndex = Math.max(0, index - 1);
-          next[prevIndex] = "";
-          inputsRef.current[prevIndex]?.focus();
+        if (next[index]) next[index] = "";
+        else if (index > 0) {
+          next[index - 1] = "";
+          inputsRef.current[index - 1]?.focus();
         }
         return next;
       });
-    } else if (key === "ArrowLeft") {
-      e.preventDefault();
-      const prevIndex = Math.max(0, index - 1);
-      inputsRef.current[prevIndex]?.focus();
-    } else if (key === "ArrowRight") {
-      e.preventDefault();
-      const nextIndex = Math.min(length - 1, index + 1);
-      inputsRef.current[nextIndex]?.focus();
     }
   }, []);
 
-  // Manejo de pegar (Paste)
   const handlePaste = useCallback((e) => {
     e.preventDefault();
-    const text = (e.clipboardData || window.clipboardData)
-      .getData("text")
-      .replace(/\D/g, "");
-    if (!text) return;
-
+    const text = e.clipboardData.getData("text").replace(/\D/g, "");
     const digits = text.slice(0, length).split("");
+
     setValues((prev) => {
       const next = [...prev];
-      for (let i = 0; i < length; i++) {
-        if (digits[i]) next[i] = digits[i];
-      }
+      digits.forEach((d, i) => (next[i] = d));
       return next;
     });
-
-    // Focus al último llenado o siguiente
-    const lastFilled = Math.min(length - 1, digits.length);
-    inputsRef.current[lastFilled < length ? lastFilled : length - 1]?.focus();
   }, []);
 
   const code = values.join("");
@@ -125,201 +87,177 @@ export default function TwoFactorSetupModal({
     try {
       await onVerify(code);
       onClose();
-    } catch (err) {
-      setError(t("settings.security.2fa_modal.error_invalid"));
-      setValues(Array(length).fill("")); // Limpiar inputs error
-      inputsRef.current[0]?.focus(); // Volver al inicio
+    } catch {
+      if (navigator.vibrate) navigator.vibrate(200);
+      setError("Código inválido");
+      setValues(Array(length).fill(""));
+      inputsRef.current[0]?.focus();
     } finally {
       setVerifying(false);
     }
   };
 
-  const handleClose = () => {
-    if (!verifying) {
-      setError(null);
-      setValues(Array(length).fill(""));
-      onClose();
-    }
-  };
+  if (!open) return null;
 
   return (
-    <Modal open={open} onClose={handleClose}>
-      <ModalDialog
-        sx={{
-          maxWidth: 420,
-          width: "100%",
-          p: 3,
-          borderRadius: "xl",
-          boxShadow: "lg",
-        }}>
-        <ModalClose disabled={verifying} />
+    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center">
+      {/* BACKDROP */}
+      <div
+        onClick={onClose}
+        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+      />
 
-        {/* Header */}
-        <Stack spacing={1} alignItems="center" textAlign="center" mb={2}>
-          <Box
-            sx={{
-              p: 1.5,
-              bgcolor: "primary.100",
-              borderRadius: "50%",
-              color: "primary.600",
-            }}>
-            <QrCode size={32} />
-          </Box>
-          <Typography level="h3">
+      {/* MODAL */}
+      <div
+        className="
+        relative w-full md:max-w-md
+        bg-[var(--background)]
+        rounded-t-2xl md:rounded-2xl
+        shadow-xl
+        p-5
+        animate-ios-forward
+        text-[var(--foreground)]
+        border
+        border-3
+      ">
+        {/* CLOSE */}
+        <button
+          onClick={onClose}
+          className="absolute right-4 top-4 text-[var(--muted-foreground)]">
+          <X size={18} />
+        </button>
+
+        {/* HEADER */}
+        <div className="text-center space-y-2 mb-4">
+          <div className="mx-auto w-12 h-12 flex items-center justify-center rounded-full bg-[var(--muted)]">
+            <QrCode size={22} />
+          </div>
+
+          <h2 className="text-lg font-semibold">
             {t("settings.security.2fa_modal.title")}
-          </Typography>
-          <Typography level="body-sm" color="neutral">
+          </h2>
+
+          <p className="text-sm text-[var(--muted-foreground)]">
             {t("settings.security.2fa_modal.subtitle")}
-          </Typography>
-        </Stack>
+          </p>
+        </div>
 
-        <Divider />
-
-        {/* QR Section */}
-        <Box
-          sx={{
-            py: 3,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            gap: 2,
-          }}>
-          <Box
-            sx={{
-              p: 2,
-              border: "1px solid",
-              borderColor: "divider",
-              borderRadius: "lg",
-              bgcolor: "white",
-              boxShadow: "sm",
-            }}>
+        {/* QR */}
+        <div className="flex flex-col items-center gap-3 mb-5">
+          <div className="p-3 rounded-xl border border-[var(--border)] bg-white">
             {setupData?.qr_image ? (
-              <img
-                src={setupData.qr_image}
-                alt="2FA QR Code"
-                style={{
-                  width: 180,
-                  height: 180,
-                  objectFit: "contain",
-                  display: "block",
-                }}
-              />
+              <img src={setupData.qr_image} className="w-40 h-40" />
             ) : (
-              <Box
-                sx={{
-                  width: 180,
-                  height: 180,
-                  display: "grid",
-                  placeItems: "center",
-                }}>
-                <LinearProgress
-                  variant="plain"
-                  thickness={2}
-                  sx={{ width: "50%" }}
-                />
-              </Box>
+              <div className="w-40 h-40 flex items-center justify-center">
+                <div className="w-10 h-1 bg-[var(--muted)] animate-pulse rounded" />
+              </div>
             )}
-          </Box>
+          </div>
 
-          {/* Manual Entry */}
           {setupData?.secret && (
-            <Stack
-              spacing={0.5}
-              alignItems="center"
-              sx={{
-                bgcolor: "background.level1",
-                px: 2,
-                py: 1,
-                borderRadius: "md",
-                width: "100%",
-              }}>
-              <Typography
-                level="body-xs"
-                startDecorator={<KeyRound size={12} />}
-                sx={{ textTransform: "uppercase", letterSpacing: 0.5 }}>
-                {t("settings.security.2fa_modal.manual_entry")}
-              </Typography>
-              <Typography
-                level="title-md"
-                fontFamily="monospace"
-                sx={{ letterSpacing: 2, userSelect: "all" }}>
-                {setupData.secret}
-              </Typography>
-            </Stack>
+            <div className="text-center bg-[var(--muted)] px-3 py-2 rounded-lg w-full">
+              <div className="text-center bg-[var(--muted)] px-3 py-2 rounded-lg w-full space-y-1">
+                <p className="text-xs flex items-center justify-center gap-1">
+                  <KeyRound size={12} />
+                  Código manual
+                </p>
+
+                <div className="flex items-center justify-center gap-2">
+                  <p className="font-mono text-sm tracking-widest select-all text-[var(--muted-foreground)]">
+                    {setupData.secret}
+                  </p>
+
+                  <button
+                    onClick={async () => {
+                      if (!setupData?.secret) return;
+                      try {
+                        setCopying(true);
+                        await navigator.clipboard.writeText(setupData.secret);
+                        setCopied(true);
+                        showToast(
+                          t("settings.security.2fa_modal.copied"),
+                          "success",
+                        );
+                        setTimeout(() => setCopied(false), 1800);
+                      } catch (e) {
+                        console.error("Error copiando secret:", e);
+                        showToast(
+                          t("settings.security.2fa_modal.copy_error"),
+                          "danger",
+                        );
+                      } finally {
+                        setCopying(false);
+                      }
+                    }}
+                    aria-label={t("settings.security.2fa_modal.copy_btn")}
+                    className="text-xs px-2 py-1 rounded-md border border-[var(--border)] hover:bg-[var(--muted)] transition">
+                    {copying
+                      ? t("settings.security.2fa_modal.copying")
+                      : copied
+                        ? t("settings.security.2fa_modal.copied_short") ||
+                          t("settings.security.2fa_modal.copied")
+                        : t("settings.security.2fa_modal.copy_btn")}
+                  </button>
+                </div>
+              </div>
+            </div>
           )}
-        </Box>
+        </div>
 
-        {/* Verification Section */}
-        <Stack spacing={2} mt={1}>
-          <Typography level="body-sm" startDecorator={<Smartphone size={16} />}>
+        {/* OTP */}
+        <div className="space-y-4">
+          <p className="text-sm flex items-center gap-2 justify-center">
+            <Smartphone size={16} />
             {t("settings.security.2fa_modal.input_label")}
-          </Typography>
+          </p>
 
-          {/* OTP Inputs */}
-          <Box
-            sx={{
-              display: "flex",
-              gap: 1,
-              justifyContent: "center",
-              alignItems: "center",
-            }}
-            onPaste={handlePaste}>
+          <div onPaste={handlePaste} className="flex justify-center gap-2">
             {values.map((val, i) => (
               <input
                 key={i}
                 ref={(el) => (inputsRef.current[i] = el)}
-                inputMode="numeric"
-                pattern="[0-9]*"
-                maxLength={1}
                 value={val}
                 onChange={(e) => handleChangeAt(i, e.target.value)}
                 onKeyDown={(e) => handleKeyDown(e, i)}
-                disabled={verifying}
-                style={{
-                  width: 48,
-                  height: 56,
-                  borderRadius: 8,
-                  border: "1px solid var(--joy-palette-neutral-300)",
-                  textAlign: "center",
-                  fontSize: 24,
-                  fontFamily: "monospace",
-                  outline: "none",
-                  background: "var(--joy-palette-background-surface)",
-                  color: "var(--joy-palette-text-primary)",
-                  transition: "border-color 0.2s, box-shadow 0.2s",
-                }}
-                onFocus={(e) => {
-                  e.target.style.borderColor = "var(--joy-palette-primary-500)";
-                  e.target.style.boxShadow =
-                    "0 0 0 2px var(--joy-palette-primary-100)";
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = "var(--joy-palette-neutral-300)";
-                  e.target.style.boxShadow = "none";
-                }}
+                maxLength={1}
+                inputMode="numeric"
+                autoComplete={i === 0 ? "one-time-code" : "off"}
+                name={i === 0 ? "otp" : undefined}
+                className="
+                  w-10 h-12 md:w-12 md:h-14
+                  text-center text-lg font-mono
+                  border border-[var(--border)]
+                  rounded-lg
+                  dark:bg-[var(--popover)]
+                  focus:outline-none
+                  focus:ring-2 focus:ring-[hsl(var(--primary))]
+                  transition
+                  focus:scale-105
+                  transition-transform
+                "
               />
             ))}
-          </Box>
+          </div>
 
-          {error && (
-            <Alert
-              color="danger"
-              variant="soft"
-              startDecorator={<AlertCircle size={18} />}>
-              {error}
-            </Alert>
-          )}
+          {error && <p className="text-xs text-red-500 text-center">{error}</p>}
 
-          <Button
+          <button
             onClick={handleVerify}
-            loading={verifying}
-            disabled={code.length !== length}
-            size="lg"
-            fullWidth>
-            {t("settings.security.2fa_modal.verify_btn")}
-          </Button>
-        </Stack>
-      </ModalDialog>
-    </Modal>
+            disabled={code.length !== length || verifying}
+            className="
+              w-full py-3 rounded-lg
+              bg-[hsl(var(--primary))]
+              text-white
+              font-medium
+              disabled:opacity-50
+              transition
+            ">
+            {verifying
+              ? "Verificando..."
+              : t("settings.security.2fa_modal.verify_btn")}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }

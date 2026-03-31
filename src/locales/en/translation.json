@@ -181,6 +181,7 @@
         "warning_desc": "Your account is not fully secure. {{action}} for maximum protection.",
         "action_2fa": "Enable 2FA",
         "action_alerts": "Enable alerts",
+        "action_passkey": "Register a passkey",
         "btn_details": "View details",
         "btn_improve": "Improve security"
       },
@@ -219,7 +220,12 @@
         "manual_entry": "Manual entry",
         "input_label": "Enter the 6-digit code",
         "verify_btn": "Verify and Activate",
-        "error_invalid": "Invalid code. Try again."
+        "error_invalid": "Invalid code. Try again.",
+        "copy_btn": "Copy",
+        "copying": "Copying...",
+        "copied": "Code copied",
+        "copied_short": "Copied",
+        "copy_error": "Could not copy"
       },
       "disable_modal": {
         "title": "Disable 2FA?",

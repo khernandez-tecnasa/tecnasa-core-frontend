@@ -164,6 +164,16 @@ export const endpoints = {
   sessions: `${API_BASE_URL}/auth/sessions`,
   activityLogs: `${API_BASE_URL}/auth/activity-logs`,
   revokeSessions: `${API_BASE_URL}/auth/sessions/revoke`,
+
+  webauthnRegisterOptions: `${API_BASE_URL}/webauthn/register/options`,
+  webauthnRegisterVerify: `${API_BASE_URL}/webauthn/register/verify`,
+  webauthnLoginOptions: `${API_BASE_URL}/webauthn/login/options`,
+  webauthnLoginVerify: `${API_BASE_URL}/webauthn/login/verify`,
+
+  webauthnStatus: `${API_BASE_URL}/webauthn/status`,
+  webauthnList: `${API_BASE_URL}/webauthn/passkeys`,
+  webauthnDelete: `${API_BASE_URL}/webauthn/passkeys`,
+  webauthnUpdateName: `${API_BASE_URL}/webauthn/passkeys`,
 };
 
 // src/js/config/variables.js

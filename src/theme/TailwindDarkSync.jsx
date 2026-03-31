@@ -58,15 +58,19 @@ const hexToChannel = (hex) => {
 };
 
 export default function TailwindDarkSync() {
-  const { mode } = useColorScheme();
+  const { mode, systemMode } = useColorScheme();
   const theme = useTheme();
 
   useEffect(() => {
     const root = document.documentElement;
 
-    // 1. Sincronizar Modo
-    if (mode === "dark") root.classList.add("dark");
-    else root.classList.remove("dark");
+    const resolved = mode === "system" ? systemMode || "light" : mode;
+
+    // 🔥 LIMPIEZA TOTAL (CLAVE)
+    root.classList.remove("light", "dark");
+
+    // 🔥 SOLO UNA CLASE
+    root.classList.add(resolved);
 
     // 2. Sincronizar Color
     const primaryColor = theme.palette.primary.main;
@@ -83,40 +87,42 @@ export default function TailwindDarkSync() {
       // Variables Base
       root.style.setProperty("--joy-palette-primary-main", primaryColor);
       root.style.setProperty("--joy-palette-primary-500", primaryColor);
-      root.style.setProperty("--joy-palette-primary-mainChannel", channel); // 👈 ESTO ARREGLA LOS FONDOS SUAVES
+      root.style.setProperty("--joy-palette-primary-mainChannel", channel);
 
       // 🟢 CORRECCIÓN DE SINTAXIS: Usamos barra '/' para la opacidad
       // Sólidos
       root.style.setProperty("--joy-palette-primary-solidBg", primaryColor);
       root.style.setProperty(
         "--joy-palette-primary-solidHoverBg",
-        primaryColor
+        primaryColor,
       );
 
       // Suaves (La clave de la transparencia)
       root.style.setProperty(
         "--joy-palette-primary-softBg",
-        `rgba(${channel} / 0.15)`
+        `rgba(${channel} / 0.15)`,
       ); // ✅ Correcto
       root.style.setProperty(
         "--joy-palette-primary-softHoverBg",
-        `rgba(${channel} / 0.25)`
+        `rgba(${channel} / 0.25)`,
       );
 
       // Bordes
       root.style.setProperty(
         "--joy-palette-primary-outlinedBorder",
-        `rgba(${channel} / 0.50)`
+        `rgba(${channel} / 0.50)`,
       );
       root.style.setProperty(
         "--joy-palette-primary-outlinedColor",
-        primaryColor
+        primaryColor,
       );
 
       // Textos
       root.style.setProperty("--joy-palette-primary-plainColor", primaryColor);
+
+      root.style.setProperty("--primary-foreground", "255 255 255");
     }
-  }, [mode, theme]);
+  }, [mode, systemMode]);
 
   return null;
 }

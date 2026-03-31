@@ -24,7 +24,20 @@ import {
   Avatar,
   Skeleton,
   Tooltip,
+  Input,
+  IconButton,
 } from "@mui/joy";
+import useIsMobile from "@/hooks/useIsMobile";
+
+import { startRegistration } from "@simplewebauthn/browser";
+import {
+  getRegisterOptions,
+  verifyRegisterPasskey,
+  getPasskeysStatus,
+  getPasskeysList,
+  deletePasskey,
+  updatePasskeyName,
+} from "@/services/webAuthn.service.js";
 
 // Iconos
 import ShieldRoundedIcon from "@mui/icons-material/ShieldRounded";
@@ -35,18 +48,23 @@ import HistoryRoundedIcon from "@mui/icons-material/HistoryRounded";
 import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
 import WarningRoundedIcon from "@mui/icons-material/WarningRounded";
 import CircleIcon from "@mui/icons-material/Circle";
+import EditIcon from "@mui/icons-material/Edit";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 
 // Componentes y Hooks compartidos
 import { SectionHeader } from "./_shared/SectionHeader.jsx";
 import TwoFactorSetupModal from "./modals/TwoFactorSetupModal.jsx";
 import usePermissions from "../../../hooks/usePermissions.js";
 import { useSettings } from "../../../context/SettingsContext.jsx";
+import { useToast } from "@/context/ToastContext";
 
 // Servicios
 import {
   getSecurityData,
   revokeOtherSessions,
+  revokeSession,
 } from "@/services/SettingsServices";
+import { FingerprintIcon, Pencil, ChevronDown } from "lucide-react";
 
 // --- Helper para formatear fechas ---
 const formatDate = (isoString, locale = "es-HN") => {
@@ -70,6 +88,9 @@ export default function Seguridad({ initialData = {}, onSave }) {
   const perms = usePermissions();
   const { reload } = useSettings();
   const canEdit = perms.has("editar_configuraciones") || perms.isAdmin;
+  const isSmallScreen = useIsMobile();
+
+  const { showToast } = useToast();
 
   // --- Estados de Configuración (2FA / Alertas) ---
   const [tfaEnabled, setTfaEnabled] = useState(false);
@@ -82,6 +103,29 @@ export default function Seguridad({ initialData = {}, onSave }) {
   const [sessions, setSessions] = useState([]);
   const [logs, setLogs] = useState([]);
   const [loadingData, setLoadingData] = useState(true); // Para esqueletos de carga
+
+  const [loadingPasskey, setLoadingPasskey] = useState(false);
+  const [hasPasskey, setHasPasskey] = useState(false);
+  const [passkeysList, setPasskeysList] = useState([]);
+  const [loadingList, setLoadingList] = useState(true);
+
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [selectedPasskey, setSelectedPasskey] = useState(null);
+  const [openPasskeys, setOpenPasskeys] = useState(false);
+
+  const [nameModalOpen, setNameModalOpen] = useState(false);
+  const [editingPasskey, setEditingPasskey] = useState(null);
+  const [deviceNameInput, setDeviceNameInput] = useState("");
+  const [isEditing, setIsEditing] = useState(false);
+  const [expandedSessionId, setExpandedSessionId] = useState(null);
+
+  const [confirmSessionsOpen, setConfirmSessionsOpen] = useState(false);
+  const [loading2FA, setLoading2FA] = useState(false);
+
+  const handleAskDelete = (pk) => {
+    setSelectedPasskey(pk);
+    setDeleteModalOpen(true);
+  };
 
   // 1. Sincronizar datos iniciales de props
   useEffect(() => {
@@ -107,32 +151,145 @@ export default function Seguridad({ initialData = {}, onSave }) {
     loadSecurityInfo();
   }, [loadSecurityInfo]);
 
+  const loadPasskeys = useCallback(async () => {
+    setLoadingList(true);
+    try {
+      const res = await getPasskeysList(); // Tu servicio que llama al endpoint
+      if (res.ok) setPasskeysList(res.data || []);
+    } catch (error) {
+      console.error("Error cargando passkeys:", error);
+    } finally {
+      setLoadingList(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadPasskeys();
+  }, [loadPasskeys]);
+
+  useEffect(() => {
+    const loadPasskeyStatus = async () => {
+      try {
+        const res = await getPasskeysStatus();
+        setHasPasskey(res.hasPasskeys);
+      } catch (e) {
+        console.error("Error passkey status:", e);
+      }
+    };
+
+    loadPasskeyStatus();
+  }, []);
+
   // --- MANEJADORES: 2FA ---
+
+  // const handleRegisterPasskey = async () => {
+  //   try {
+  //     setLoadingPasskey(true);
+
+  //     const res = await getRegisterOptions();
+  //     const options = res.data || res;
+
+  //     console.log("options", options);
+  //     console.log("res", res);
+
+  //     const attestation = await startRegistration(options);
+
+  //     await verifyRegisterPasskey(attestation);
+
+  //     const status = await getPasskeysStatus();
+  //     setHasPasskey(status.hasPasskeys);
+
+  //     showToast("Registro exitoso", "success");
+  //   } catch (error) {
+  //     console.error("Error registrando passkey:", error);
+  //     showToast("Error al registrar passkey", "error");
+  //   } finally {
+  //     setLoadingPasskey(false);
+  //   }
+  // };
+
+  const handleRegisterPasskey = async () => {
+    try {
+      setLoadingPasskey(true);
+
+      const res = await getRegisterOptions();
+      const options = res.data || res;
+
+      const attestation = await startRegistration(options);
+
+      // 🔥 guardamos temporalmente el attestation
+      setEditingPasskey({ attestation });
+      setDeviceNameInput("");
+      setIsEditing(false);
+      setNameModalOpen(true);
+    } catch (error) {
+      console.error("Error registrando passkey:", error);
+    } finally {
+      setLoadingPasskey(false);
+    }
+  };
+
+  const handleSaveDeviceName = async () => {
+    try {
+      setLoadingAction(true);
+
+      if (isEditing) {
+        // 🔥 EDITAR
+        await updatePasskeyName(editingPasskey.id, deviceNameInput);
+        showToast("Nombre actualizado correctamente", "success");
+      } else {
+        // 🔥 REGISTRAR
+        await verifyRegisterPasskey({
+          ...editingPasskey.attestation,
+          deviceName: deviceNameInput,
+        });
+        showToast("Dispositivo guardado correctamente", "success");
+      }
+
+      setNameModalOpen(false);
+      setEditingPasskey(null);
+      setDeviceNameInput("");
+
+      await loadPasskeys();
+    } catch (error) {
+      console.error("Error guardando nombre:", error);
+    } finally {
+      setLoadingAction(false);
+    }
+  };
+
+  const handleEditPasskey = (pk) => {
+    setEditingPasskey(pk);
+    setDeviceNameInput(pk.device_name || "");
+    setIsEditing(true);
+    setNameModalOpen(true);
+  };
 
   const handleToggleTfa = async (event) => {
     const isChecking = event.target.checked;
     if (isChecking) {
       try {
-        setLoadingAction(true);
-        // Iniciamos el proceso en backend (genera secreto temporal)
+        setLoading2FA(true);
         const res = await onSave({ tfa_enroll_init: true });
-        const data = res.data || res;
 
-        if (data?.qr_image) {
-          setSetupData(data);
+        const setupPayload = res?.qr_image
+          ? res
+          : res?.data?.qr_image
+            ? res.data
+            : res;
+
+        if (setupPayload?.qr_image) {
+          setSetupData(setupPayload);
           setSetupModalOpen(true);
         } else {
-          // Si por alguna razón no devuelve QR (ej: ya estaba configurado), recargamos
-          await reload();
+          showToast("No se pudo obtener el código QR.", "warning");
         }
       } catch (error) {
         console.error("Error iniciando 2FA", error);
-        reload();
       } finally {
-        setLoadingAction(false);
+        setLoading2FA(false);
       }
     } else {
-      // Si quiere desactivar, pedimos confirmación
       setConfirmDisableOpen(true);
     }
   };
@@ -147,10 +304,9 @@ export default function Seguridad({ initialData = {}, onSave }) {
       });
       setSetupModalOpen(false);
       setSetupData(null);
-      await reload(); // Recargar settings globales
       return res;
     } catch (error) {
-      throw error; // El modal manejará el error visualmente
+      throw error;
     }
   };
 
@@ -159,7 +315,6 @@ export default function Seguridad({ initialData = {}, onSave }) {
       setLoadingAction(true);
       await onSave({ tfa_enabled: false });
       setConfirmDisableOpen(false);
-      await reload();
     } catch (error) {
       console.error(error);
     } finally {
@@ -170,7 +325,6 @@ export default function Seguridad({ initialData = {}, onSave }) {
   const handleCloseModal = () => {
     setSetupModalOpen(false);
     setSetupData(null);
-    reload();
   };
 
   // --- MANEJADORES: SESIONES ---
@@ -188,302 +342,347 @@ export default function Seguridad({ initialData = {}, onSave }) {
     }
   };
 
+  const handleRevokeSession = async (sessionId) => {
+    try {
+      if (!window.confirm("¿Cerrar esta sesión?")) return;
+
+      setLoadingAction(true);
+      await revokeSession(sessionId);
+      await loadSecurityInfo();
+    } catch (error) {
+      console.error("Error cerrando sesión:", error);
+    } finally {
+      setLoadingAction(false);
+    }
+  };
+
+  const toggleSessionDetails = (sessionId) => {
+    setExpandedSessionId((current) =>
+      current === sessionId ? null : sessionId,
+    );
+  };
+
+  const handleDeletePasskey = async (id) => {
+    try {
+      const confirm = window.confirm("¿Eliminar esta passkey?");
+      if (!confirm) return;
+
+      await deletePasskey(id);
+
+      // 🔥 refresca lista
+      await loadPasskeys();
+    } catch (error) {
+      console.error("Error eliminando passkey:", error);
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    try {
+      setLoadingAction(true);
+
+      await deletePasskey(selectedPasskey.id);
+
+      setDeleteModalOpen(false);
+      setSelectedPasskey(null);
+
+      await loadPasskeys();
+    } catch (error) {
+      console.error("Error eliminando:", error);
+    } finally {
+      setLoadingAction(false);
+    }
+  };
+
   return (
-    <Stack spacing={3}>
-      <Card variant="outlined" sx={{ borderRadius: 16, boxShadow: "sm" }}>
-        {/* Cabecera Principal */}
-        <SectionHeader
-          title={t("settings.security.title")}
-          subtitle={t("settings.security.subtitle")}
-        />
+    <div className="space-y-6">
+      {/* HEADER */}
+      <SectionHeader
+        title={t("settings.security.title")}
+        subtitle={t("settings.security.subtitle")}
+      />
 
-        <List sx={{ "--ListItem-paddingY": "1rem" }}>
-          {/* SECCIÓN 1: Autenticación de Dos Factores */}
-          <ListItem
-            endAction={
-              <Switch
-                checked={tfaEnabled}
-                onChange={handleToggleTfa}
-                disabled={!canEdit || loadingAction}
-                sx={{ ml: 2 }}
-              />
-            }>
-            <ListItemDecorator>
-              <ShieldRoundedIcon fontSize="large" />
-            </ListItemDecorator>
-            <ListItemContent>
-              <Typography level="title-sm">
-                {t("settings.security.2fa.title")}
-              </Typography>
-              <Typography level="body-sm" color="neutral">
-                {t("settings.security.2fa.desc")}
-              </Typography>
-              {tfaEnabled && (
-                <Chip size="sm" color="success" variant="soft" sx={{ mt: 1 }}>
-                  {t("common.status.active")}
-                </Chip>
-              )}
-            </ListItemContent>
-          </ListItem>
+      {/* 🔐 PASSKEYS */}
+      <div className="rounded-xl border border-[var(--border)] dark:bg-[var(--popover)] text-[var(--muted-foreground)] overflow-hidden">
+        <button
+          onClick={() => setOpenPasskeys(!openPasskeys)}
+          className="w-full flex items-center justify-between px-4 py-4 text-left hover:bg-[var(--joy-palette-primary-softHoverBg)] transition">
+          <div className="flex items-center gap-3">
+            <FingerprintIcon size={18} />
 
-          <Divider component="li" />
+            <div>
+              <p className="text-sm font-medium text-[var(--foreground)]">
+                Passkeys
+              </p>
+              <p className="text-xs text-[var(--muted-foreground)]">
+                {passkeysList.length} dispositivo
+                {passkeysList.length !== 1 ? "s" : ""}
+              </p>
+            </div>
+          </div>
 
-          {/* SECCIÓN 2: Alertas de Inicio de Sesión */}
-          <ListItem
-            endAction={
-              <Switch
-                checked={!!initialData?.login_alerts}
-                disabled={!canEdit}
-                onChange={async (e) => {
-                  await onSave({ login_alerts: e.target.checked });
-                }}
-                sx={{ ml: 2 }}
-              />
-            }>
-            <ListItemDecorator>
-              <SmartphoneRoundedIcon fontSize="large" />
-            </ListItemDecorator>
-            <ListItemContent>
-              <Typography level="title-sm">
-                {t("settings.security.alerts.title")}
-              </Typography>
-              <Typography level="body-sm" color="neutral">
-                {t("settings.security.alerts.desc")}
-              </Typography>
-            </ListItemContent>
-          </ListItem>
+          <span
+            className={`transition-transform duration-300 ${
+              openPasskeys ? "rotate-180" : ""
+            }`}>
+            +
+          </span>
+        </button>
 
-          <Divider component="li" />
+        {/* 🔥 ANIMACIÓN */}
+        <div
+          className={`overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]
+        ${openPasskeys ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"}`}>
+          <div className="border-t border-[var(--border)] divide-y">
+            {passkeysList.map((pk) => (
+              <div
+                key={pk.id}
+                className="flex items-center justify-between px-4 py-3">
+                <div>
+                  <p className="text-sm font-medium">
+                    {pk.device_name || "Dispositivo"}
+                  </p>
+                  <p className="text-xs text-[var(--muted-foreground)]">
+                    {formatDate(pk.created_at)}
+                  </p>
+                </div>
 
-          {/* SECCIÓN 3: Sesiones Activas */}
-          <Box sx={{ p: 2 }}>
-            <Stack direction="row" spacing={2} alignItems="center" mb={2}>
-              <DevicesRoundedIcon
-                sx={{ color: "text.secondary", fontSize: 28 }}
-              />
-              <Box>
-                <Typography level="title-sm">
-                  {t("settings.security.sessions.title")}
-                </Typography>
-                <Typography level="body-sm" color="neutral">
-                  {t("settings.security.sessions.desc")}
-                </Typography>
-              </Box>
-            </Stack>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleEditPasskey(pk)}
+                    className="text-xs px-2 py-1 rounded-md hover:bg-[var(--muted)]">
+                    Editar
+                  </button>
 
-            <Sheet
-              variant="outlined"
-              sx={{ borderRadius: "md", overflow: "hidden" }}>
-              {loadingData ? (
-                <Box p={2}>
-                  <Skeleton
-                    variant="text"
-                    width="60%"
-                    height={30}
-                    sx={{ mb: 1 }}
-                  />
-                  <Skeleton variant="text" width="40%" height={20} />
-                </Box>
-              ) : (
-                <List sx={{ "--ListItem-paddingY": "12px" }}>
-                  {sessions.length > 0 ? (
-                    sessions.map((session, index) => (
-                      <React.Fragment key={session.id || index}>
-                        <ListItem>
-                          <ListItemDecorator>
-                            <Avatar
-                              size="sm"
-                              color={session.current ? "success" : "neutral"}
-                              variant="soft">
-                              {/* Lógica simple para icono: Si dice mobile o android/ios es cel, sino laptop */}
-                              {session.type === "mobile" ||
-                              /android|iphone|ipad|mobile/i.test(
-                                session.device || ""
-                              ) ? (
-                                <SmartphoneRoundedIcon />
-                              ) : (
-                                <LaptopRoundedIcon />
-                              )}
-                            </Avatar>
-                          </ListItemDecorator>
-                          <ListItemContent>
-                            <Stack
-                              direction="row"
-                              alignItems="center"
-                              spacing={1}
-                              flexWrap="wrap">
-                              <Typography level="body-sm" fontWeight="md">
-                                {session.device}
-                              </Typography>
-                              {session.current && (
-                                <Chip
-                                  size="sm"
-                                  color="success"
-                                  variant="solid"
-                                  sx={{ minHeight: 20, px: 1 }}>
-                                  {t("settings.security.sessions.current")}
-                                </Chip>
-                              )}
-                            </Stack>
-                            <Typography level="body-xs">
-                              {session.ip} ·{" "}
-                              {session.current
-                                ? t("common.status.now")
-                                : formatDate(
-                                    session.last_active,
-                                    i18n.language
-                                  )}
-                            </Typography>
-                          </ListItemContent>
-                        </ListItem>
-                        {index < sessions.length - 1 && <Divider />}
-                      </React.Fragment>
-                    ))
-                  ) : (
-                    <Typography
-                      level="body-sm"
-                      p={2}
-                      textAlign="center"
-                      color="neutral">
-                      No se encontraron sesiones activas.
-                    </Typography>
-                  )}
-                </List>
-              )}
+                  <button
+                    onClick={() => handleAskDelete(pk)}
+                    className="text-xs px-2 py-1 rounded-md text-red-500 hover:bg-[var(--muted)]">
+                    Eliminar
+                  </button>
+                </div>
+              </div>
+            ))}
 
-              {/* Botón Revocar: Solo aparece si ya cargó y hay más de una sesión */}
-              {!loadingData && sessions.length > 1 && (
-                <Box
-                  sx={{
-                    p: 1.5,
-                    borderTop: "1px solid",
-                    borderColor: "divider",
-                    display: "flex",
-                    justifyContent: "flex-end",
-                    bgcolor: "background.level1",
-                  }}>
-                  <Button
-                    size="sm"
-                    color="danger"
-                    variant="outlined"
-                    startDecorator={<LogoutRoundedIcon />}
-                    onClick={handleRevokeAll}
-                    loading={loadingAction}>
-                    {t("settings.security.sessions.revoke_all")}
-                  </Button>
-                </Box>
-              )}
-            </Sheet>
-          </Box>
+            <div className="p-4">
+              <button
+                onClick={handleRegisterPasskey}
+                className="w-full text-sm px-4 py-2 rounded-lg bg-[hsl(var(--primary))] text-white hover:opacity-90 transition">
+                Añadir dispositivo
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
 
-          <Divider component="li" />
+      {/* 🔒 2FA */}
+      <ToggleRow
+        icon={ShieldRoundedIcon}
+        title={t("settings.security.2fa.title")}
+        desc={t("settings.security.2fa.desc")}
+        checked={tfaEnabled}
+        onChange={handleToggleTfa}
+        loading={loading2FA}
+      />
 
-          {/* SECCIÓN 4: Historial de Actividad */}
-          <Box sx={{ p: 2 }}>
-            <Stack direction="row" spacing={2} alignItems="center" mb={2}>
-              <HistoryRoundedIcon
-                sx={{ color: "text.secondary", fontSize: 28 }}
-              />
-              <Box>
-                <Typography level="title-sm">
-                  {t("settings.security.logs.title")}
-                </Typography>
-                <Typography level="body-sm" color="neutral">
-                  {t("settings.security.logs.desc")}
-                </Typography>
-              </Box>
-            </Stack>
+      {/* 📲 ALERTAS */}
+      <ToggleRow
+        icon={SmartphoneRoundedIcon}
+        title={t("settings.security.alerts.title")}
+        desc={t("settings.security.alerts.desc")}
+        checked={!!initialData?.login_alerts}
+        onChange={(e) => onSave({ login_alerts: e.target.checked })}
+      />
 
-            <Sheet
-              variant="outlined"
-              sx={{ borderRadius: "md", overflow: "hidden" }}>
-              <Box sx={{ maxHeight: 300, overflowY: "auto" }}>
-                {loadingData ? (
-                  <Box p={2}>
-                    <Skeleton
-                      variant="rectangular"
-                      height={40}
-                      sx={{ mb: 1 }}
-                    />
-                    <Skeleton
-                      variant="rectangular"
-                      height={40}
-                      sx={{ mb: 1 }}
-                    />
-                    <Skeleton variant="rectangular" height={40} />
-                  </Box>
-                ) : (
-                  <Table stickyHeader hoverRow size="sm" borderAxis="header">
-                    <thead>
-                      <tr>
-                        <th style={{ width: "40%" }}>
-                          {t("settings.security.logs.action")}
-                        </th>
-                        <th>{t("settings.security.logs.device")}</th>
-                        <th style={{ textAlign: "right" }}>
-                          {t("settings.security.logs.date")}
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {logs.length > 0 ? (
-                        logs.map((log, index) => (
-                          <tr key={log.id || index}>
-                            <td>
-                              <Stack
-                                direction="row"
-                                spacing={1}
-                                alignItems="center">
-                                <CircleIcon
-                                  sx={{ fontSize: 8, color: "neutral.400" }}
-                                />
-                                <Typography level="body-xs" fontWeight="md">
-                                  {log.action}
-                                </Typography>
-                              </Stack>
-                            </td>
-                            <td>
-                              <Tooltip
-                                title={log.device_info || log.device || log.ip}>
-                                <Typography
-                                  level="body-xs"
-                                  noWrap
-                                  sx={{ maxWidth: 150 }}>
-                                  {log.device_info || log.device || log.ip}
-                                </Typography>
-                              </Tooltip>
-                            </td>
-                            <td style={{ textAlign: "right" }}>
-                              <Typography level="body-xs" color="neutral">
-                                {formatDate(
-                                  log.created_at || log.date,
-                                  i18n.language
-                                )}
-                              </Typography>
-                            </td>
-                          </tr>
-                        ))
-                      ) : (
-                        <tr>
-                          <td
-                            colSpan={3}
-                            style={{
-                              textAlign: "center",
-                              padding: "2rem",
-                              color: "var(--joy-palette-neutral-500)",
-                            }}>
-                            Sin actividad reciente.
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </Table>
-                )}
-              </Box>
-            </Sheet>
-          </Box>
-        </List>
-      </Card>
+      {/* 📊 SESSIONS */}
+      <div className="space-y-3">
+        <div>
+          <h3 className="text-sm font-medium text-[var(--foreground)]">
+            {t("settings.security.sessions.title")}
+          </h3>
+          <p className="text-xs text-[var(--muted-foreground)]">
+            {t("settings.security.sessions.desc")}
+          </p>
+        </div>
+
+        <div className="rounded-xl border border-[var(--border)] dark:bg-[var(--popover)] divide-y overflow-hidden">
+          {loadingData ? (
+            <div className="p-4 space-y-2">
+              <div className="h-4 w-1/2 bg-[var(--popover)] rounded animate-pulse" />
+            </div>
+          ) : (
+            sessions.map((session) => {
+              const isSessionMobile =
+                session.type === "mobile" ||
+                /android|iphone|ipad|mobile/i.test(session.device || "");
+
+              const isSuspicious =
+                !session.current &&
+                (!session.device || session.location === "Unknown");
+
+              const normalizedDevice = (session.device || "")
+                .replace(/\s+/g, " ")
+                .trim();
+              const shortDevice =
+                normalizedDevice.length > 40
+                  ? `${normalizedDevice.slice(0, 40)}...`
+                  : normalizedDevice;
+              const isExpanded = expandedSessionId === session.id;
+
+              return (
+                <div
+                  key={session.id}
+                  className="relative overflow-hidden group">
+                  {/* <button
+                    type="button"
+                    onClick={() => handleRevokeSession(session.id)}
+                    className="absolute inset-y-0 right-0 flex items-center justify-center w-24 bg-red-500 text-white text-xs font-semibold transition-colors duration-200 hover:bg-red-600">
+                    Cerrar
+                  </button> */}
+
+                  <div className="relative z-10 dark:bg-[var(--popover)]">
+                    <div className="flex items-center justify-between px-4 py-3 transition-transform duration-200">
+                      <div className="flex items-center gap-3">
+                        {/* ICON */}
+                        <div className="w-9 h-9 flex items-center justify-center rounded-lg bg-[var(--muted)]">
+                          {isSessionMobile ? "📱" : "💻"}
+                        </div>
+
+                        <div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="text-sm font-medium break-words text-[var(--foreground)]">
+                              {isSmallScreen
+                                ? shortDevice ||
+                                  t(
+                                    "settings.security.sessions.unknown_device",
+                                    "Sesión",
+                                  )
+                                : session.device}
+                            </p>
+
+                            {session.current && (
+                              <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-500/10 text-green-600">
+                                Actual
+                              </span>
+                            )}
+
+                            {isSuspicious && (
+                              <span className="text-[10px] px-2 py-0.5 rounded-full bg-yellow-500/10 text-yellow-600">
+                                ⚠ Riesgo
+                              </span>
+                            )}
+                          </div>
+
+                          <p className="text-xs text-[var(--muted-foreground)]">
+                            {session.ip} ·{" "}
+                            {session.current
+                              ? t("common.status.now")
+                              : formatDate(session.last_active, i18n.language)}
+                          </p>
+                        </div>
+                      </div>
+
+                      {isSmallScreen ? (
+                        <button
+                          type="button"
+                          onClick={() => toggleSessionDetails(session.id)}
+                          className="inline-flex items-center gap-1 text-xs text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition">
+                          <span>
+                            {isExpanded ? "Mostrar menos" : "Mostrar más"}
+                          </span>
+                          <ChevronDown
+                            className={`h-3 w-3 transition-transform ${
+                              isExpanded ? "rotate-180" : ""
+                            }`}
+                          />
+                        </button>
+                      ) : null}
+                    </div>
+
+                    {isSmallScreen ? (
+                      <div
+                        className={`overflow-hidden transition-all duration-200 px-4 ${
+                          isExpanded
+                            ? "max-h-44 py-3 opacity-100"
+                            : "max-h-0 py-0 opacity-0"
+                        }`}>
+                        <div className="space-y-1 text-xs text-[var(--muted-foreground)]">
+                          {normalizedDevice &&
+                          normalizedDevice !== shortDevice ? (
+                            <p className="break-words">{normalizedDevice}</p>
+                          ) : null}
+                          {session.location && (
+                            <p>
+                              <span className="font-medium">Ubicación:</span>{" "}
+                              {session.location}
+                            </p>
+                          )}
+                          <p>
+                            <span className="font-medium">IP:</span>{" "}
+                            {session.ip}
+                          </p>
+                          <p>
+                            <span className="font-medium">
+                              Última actividad:
+                            </span>{" "}
+                            {session.current
+                              ? t("common.status.now")
+                              : formatDate(session.last_active, i18n.language)}
+                          </p>
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        {/* BOTÓN */}
+        {!loadingData && sessions.length > 1 && (
+          <div className="flex justify-end">
+            <Button
+              variant="soft"
+              color="danger"
+              onClick={() => setConfirmSessionsOpen(true)}
+              size="sm">
+              {t("settings.security.sessions.revoke_all")}
+            </Button>
+          </div>
+        )}
+      </div>
+
+      {/* 📊 LOGS */}
+      <div className="space-y-3">
+        <div>
+          <h3 className="text-sm font-medium text-[var(--foreground)]">
+            {t("settings.security.logs.title")}
+          </h3>
+          <p className="text-xs text-[var(--muted-foreground)]">
+            {t("settings.security.logs.desc")}
+          </p>
+        </div>
+
+        <div className="rounded-xl border border-[var(--border)] dark:bg-[var(--popover)] overflow-hidden">
+          {logs.map((log) => (
+            <div
+              key={log.id}
+              className="flex items-center justify-between px-4 py-3 hover:bg-[var(--joy-palette-primary-softHoverBg)] transition">
+              <div>
+                <p className="text-sm font-medium text-[var(--foreground)]">
+                  {log.action}
+                </p>
+                <p className="text-xs text-[var(--muted-foreground)]">
+                  {log.device || log.ip}
+                </p>
+              </div>
+
+              <div className="text-xs text-[var(--muted-foreground)]">
+                {formatDate(log.created_at || log.date, i18n.language)}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
 
       {/* --- MODALES --- */}
 
@@ -524,6 +723,157 @@ export default function Seguridad({ initialData = {}, onSave }) {
           </DialogActions>
         </ModalDialog>
       </Modal>
-    </Stack>
+
+      {/* Modal Eliminar Passkey */}
+      <Modal open={deleteModalOpen} onClose={() => setDeleteModalOpen(false)}>
+        <ModalDialog variant="outlined" role="alertdialog">
+          <DialogTitle>
+            <WarningRoundedIcon /> Eliminar Passkey
+          </DialogTitle>
+
+          <Divider />
+
+          <DialogContent>
+            ¿Seguro que quieres eliminar esta passkey?
+            <Box mt={1}>
+              <Typography level="body-sm" fontWeight="md">
+                {selectedPasskey?.device_name || "Dispositivo"}
+              </Typography>
+
+              <Typography level="body-xs" color="neutral">
+                Último uso:{" "}
+                {selectedPasskey?.last_used
+                  ? formatDate(selectedPasskey.last_used)
+                  : "Nunca"}
+              </Typography>
+            </Box>
+          </DialogContent>
+
+          <DialogActions>
+            <Button
+              variant="solid"
+              color="danger"
+              onClick={handleConfirmDelete}
+              loading={loadingAction}>
+              Eliminar
+            </Button>
+
+            <Button
+              variant="plain"
+              color="neutral"
+              onClick={() => setDeleteModalOpen(false)}>
+              Cancelar
+            </Button>
+          </DialogActions>
+        </ModalDialog>
+      </Modal>
+
+      {/* Modal Nombre Passkey */}
+      <Modal open={nameModalOpen} onClose={() => setNameModalOpen(false)}>
+        <ModalDialog variant="outlined" role="dialog" sx={{ minWidth: 350 }}>
+          <DialogTitle>
+            <FingerprintIcon size={20} style={{ marginRight: 8 }} />
+            {isEditing ? "Editar dispositivo" : "Nombrar dispositivo"}
+          </DialogTitle>
+
+          <Divider />
+
+          <DialogContent>
+            <Typography level="body-sm" mb={1}>
+              {isEditing
+                ? "Puedes cambiar el nombre de este dispositivo."
+                : "Asigna un nombre para identificar esta passkey."}
+            </Typography>
+
+            <Input
+              autoFocus
+              placeholder="Ej: iPhone de Kevin"
+              value={deviceNameInput}
+              onChange={(e) => setDeviceNameInput(e.target.value)}
+            />
+          </DialogContent>
+
+          <DialogActions>
+            <Button
+              variant="solid"
+              onClick={handleSaveDeviceName}
+              loading={loadingAction}
+              disabled={!deviceNameInput.trim()}>
+              Guardar
+            </Button>
+
+            <Button
+              variant="plain"
+              color="neutral"
+              onClick={() => setNameModalOpen(false)}>
+              Cancelar
+            </Button>
+          </DialogActions>
+        </ModalDialog>
+      </Modal>
+
+      <Modal
+        open={confirmSessionsOpen}
+        onClose={() => setConfirmSessionsOpen(false)}>
+        <ModalDialog variant="outlined" role="alertdialog">
+          <DialogTitle>⚠ Cerrar sesiones</DialogTitle>
+
+          <Divider />
+
+          <DialogContent>
+            Esto cerrará todas las sesiones excepto la actual.
+          </DialogContent>
+
+          <DialogActions>
+            <Button
+              color="danger"
+              onClick={async () => {
+                await handleRevokeAll();
+                setConfirmSessionsOpen(false);
+              }}>
+              Confirmar
+            </Button>
+
+            <Button onClick={() => setConfirmSessionsOpen(false)}>
+              Cancelar
+            </Button>
+          </DialogActions>
+        </ModalDialog>
+      </Modal>
+    </div>
+  );
+}
+
+function ToggleRow({ icon: Icon, title, desc, checked, onChange, loading }) {
+  return (
+    <div className="flex items-center justify-between px-4 py-4 rounded-xl border border-[var(--border)] dark:bg-[var(--popover)]">
+      <div className="flex items-start gap-3">
+        <Icon size={18} />
+
+        <div>
+          <p className="text-sm font-medium text-[var(--foreground)]">
+            {title}
+          </p>
+          <p className="text-xs text-[var(--muted-foreground)]">{desc}</p>
+        </div>
+      </div>
+
+      {/* SWITCH SIMPLE */}
+      {loading ? (
+        <div className="w-10 h-6 flex items-center justify-center">
+          <div className="w-4 h-4 border-2 border-[var(--muted-foreground)] border-t-transparent rounded-full animate-spin" />
+        </div>
+      ) : (
+        <button
+          onClick={() => onChange({ target: { checked: !checked } })}
+          className={`w-10 h-6 rounded-full transition relative
+      ${checked ? "bg-[hsl(var(--primary))]" : "bg-[var(--muted)]"}`}>
+          <span
+            className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition
+        ${checked ? "translate-x-4" : ""}`}
+          />
+        </button>
+      )}
+    </div>
   );
 }

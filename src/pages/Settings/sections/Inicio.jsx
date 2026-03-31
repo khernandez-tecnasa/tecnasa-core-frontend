@@ -1,244 +1,179 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import {
-  Box,
-  Card,
-  Typography,
-  Stack,
-  Button,
-  Divider,
-  LinearProgress,
-  Chip,
-} from "@mui/joy";
-import {
   ShieldCheck,
   ShieldAlert,
   Palette,
-  ExternalLink,
   Fingerprint,
   Lock,
+  ChevronRight,
 } from "lucide-react";
-import { SectionHeader } from "./_shared/SectionHeader.jsx";
+import { getPasskeysStatus } from "@/services/webAuthn.service.js";
 
-function InfoCard({
-  icon: Icon,
-  title,
-  desc,
-  actionLabel,
-  onAction,
-  color = "primary",
-  badge,
-}) {
+export default function Inicio({ allSettings, onNavigate }) {
+  const { t } = useTranslation();
+
+  const seg = allSettings?.seguridad || {};
+
+  const has2FA = !!seg.tfa_enabled;
+  const hasAlerts = !!seg.login_alerts;
+  const [hasPasskey, setHasPasskey] = React.useState(
+    Boolean(seg?.has_passkeys || false),
+  );
+
+  React.useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const res = await getPasskeysStatus();
+        if (!mounted) return;
+        const has =
+          Boolean(res?.hasPasskeys) ||
+          Boolean(res?.has_passkeys) ||
+          Boolean(res?.count > 0);
+        setHasPasskey(Boolean(has));
+      } catch (e) {
+        console.error("Error fetching passkey status:", e);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const isSecure = has2FA && hasAlerts && hasPasskey;
+  const partsCount = [has2FA, hasAlerts, hasPasskey].filter(Boolean).length;
+  const securityScore = Math.round((partsCount / 3) * 100);
+
+  const missingActionText = !has2FA
+    ? t("settings.home.security.action_2fa")
+    : !hasAlerts
+      ? t("settings.home.security.action_alerts")
+      : !hasPasskey
+        ? t("settings.home.security.action_passkey")
+        : t("settings.home.security.action_alerts");
+
   return (
-    <Card
-      variant="outlined"
-      sx={{
-        flex: 1,
-        minWidth: 200,
-        boxShadow: "sm",
-        position: "relative",
-        overflow: "hidden",
-      }}>
-      {/* Barra lateral de color decorativa */}
-      <Box
-        sx={{
-          position: "absolute",
-          left: 0,
-          top: 0,
-          bottom: 0,
-          width: 4,
-          bgcolor: `${color}.500`,
-        }}
-      />
+    <div className="space-y-6">
+      {/* 🔒 HEADER / STATUS */}
+      <div className="rounded-2xl border border-[var(--border)] dark:bg-[var(--popover)] p-5 flex gap-4 items-start">
+        <div className="p-3 rounded-xl bg-[var(--joy-palette-primary-softBg)] text-[var(--foreground)]">
+          {isSecure ? <ShieldCheck size={24} /> : <Lock size={24} />}
+        </div>
 
-      <Stack
-        direction="row"
-        justifyContent="space-between"
-        alignItems="flex-start"
-        mb={1}>
-        <Stack direction="row" gap={2} alignItems="center">
-          <Box
-            sx={{
-              p: 1,
-              borderRadius: "md",
-              bgcolor: `${color}.100`,
-              color: `${color}.600`,
-            }}>
-            <Icon size={24} />
-          </Box>
-          <Typography level="title-md">{title}</Typography>
-        </Stack>
-        {badge && (
-          <Chip size="sm" color={color} variant="soft">
-            {badge}
-          </Chip>
+        <div className="flex-1">
+          <h2 className="text-lg font-semibold text-[var(--foreground)]">
+            {isSecure
+              ? t("settings.home.welcome_secure")
+              : t("settings.home.welcome_warning")}
+          </h2>
+
+          <p className="text-sm text-[var(--muted-foreground)] mt-1">
+            {isSecure
+              ? t("settings.home.welcome_desc_secure")
+              : t("settings.home.welcome_desc_warning")}
+          </p>
+        </div>
+      </div>
+
+      {/* ⚡ QUICK ACTIONS */}
+      <div className="space-y-2">
+        <h3 className="text-sm font-medium text-[var(--foreground)]">
+          {t("settings.home.shortcuts")}
+        </h3>
+
+        <div className="divide-y divide-[var(--border)] rounded-xl border border-[var(--border)] dark:bg-[var(--popover)] overflow-hidden">
+          {/* SEGURIDAD */}
+          <Row
+            icon={isSecure ? ShieldCheck : ShieldAlert}
+            label={t("settings.menu.security")}
+            desc={
+              isSecure
+                ? t("settings.home.security.secure_desc")
+                : t("settings.home.security.warning_desc", {
+                    action: missingActionText,
+                  })
+            }
+            onClick={() => onNavigate("seguridad")}
+          />
+
+          {/* APARIENCIA */}
+          <Row
+            icon={Palette}
+            label={t("settings.home.appearance.title")}
+            desc={t("settings.home.appearance.desc")}
+            onClick={() => onNavigate("apariencia")}
+          />
+
+          {/* PRIVACIDAD */}
+          <Row
+            icon={Fingerprint}
+            label={t("settings.home.privacy.title")}
+            desc={t("settings.home.privacy.desc")}
+            onClick={() => onNavigate("privacidad")}
+          />
+        </div>
+      </div>
+
+      {/* 📊 SECURITY SCORE */}
+      <div className="space-y-3 rounded-xl border border-[var(--border)] dark:bg-[var(--popover)] p-5">
+        <div className="flex justify-between items-center">
+          <span className="text-sm text-[var(--foreground)]">
+            {t("settings.home.health.label")}
+          </span>
+
+          <span className="text-sm font-semibold text-[var(--muted-foreground)] ">
+            {securityScore}%
+          </span>
+        </div>
+
+        {/* PROGRESS BAR */}
+        <div className="h-2 w-full rounded-full bg-[var(--muted)] overflow-hidden">
+          <div
+            className="h-full bg-[hsl(var(--primary))] transition-all duration-500"
+            style={{ width: `${securityScore}%` }}
+          />
+        </div>
+
+        {!isSecure && (
+          <p className="text-xs text-[var(--muted-foreground)]">
+            {t("settings.home.health.recommendation_prefix")}{" "}
+            <span className="font-medium text-[var(--foreground)]">
+              {t("settings.menu.security")}
+            </span>{" "}
+            {t("settings.home.health.recommendation_suffix")}
+          </p>
         )}
-      </Stack>
-
-      <Typography level="body-sm" mb={2} flex={1} sx={{ pl: 1 }}>
-        {desc}
-      </Typography>
-
-      {actionLabel && (
-        <Button
-          variant="soft"
-          color={color}
-          size="sm"
-          onClick={onAction}
-          endDecorator={<ExternalLink size={14} />}
-          sx={{ ml: 1 }}>
-          {actionLabel}
-        </Button>
-      )}
-    </Card>
+      </div>
+    </div>
   );
 }
 
-export default function Inicio({ allSettings, onNavigate }) {
-  const { t } = useTranslation(); // 👈 Hook
-
-  // Leemos la configuración de seguridad del objeto global
-  const seg = allSettings?.seguridad || {};
-
-  // Calculamos el nivel de seguridad
-  const has2FA = !!seg.tfa_enabled;
-  const hasAlerts = !!seg.login_alerts;
-
-  // Lógica de estado de seguridad
-  const isSecure = has2FA && hasAlerts;
-  const securityScore = (has2FA ? 50 : 0) + (hasAlerts ? 50 : 0);
-
-  // Determinamos el texto de la acción faltante para la traducción
-  const missingActionText = !has2FA
-    ? t("settings.home.security.action_2fa")
-    : t("settings.home.security.action_alerts");
-
-  const securityConfig = isSecure
-    ? {
-        icon: ShieldCheck,
-        color: "success",
-        title: t("settings.home.security.secure_title"),
-        badge: t("settings.home.security.secure_badge"),
-        desc: t("settings.home.security.secure_desc"),
-        label: t("settings.home.security.btn_details"),
-      }
-    : {
-        icon: ShieldAlert,
-        color: "warning",
-        title: t("settings.home.security.warning_title"),
-        badge: t("settings.home.security.warning_badge"),
-        desc: t("settings.home.security.warning_desc", {
-          action: missingActionText,
-        }),
-        label: t("settings.home.security.btn_improve"),
-      };
-
+/* 🔥 ROW COMPONENT (tipo iOS settings) */
+function Row({ icon: Icon, label, desc, onClick }) {
   return (
-    <Stack spacing={2}>
-      {/* Banner de Bienvenida */}
-      <Card
-        variant="soft"
-        color={isSecure ? "primary" : "warning"}
-        sx={{ borderRadius: "lg" }}>
-        <Stack direction="row" gap={2} alignItems="center">
-          <Box
-            sx={{ p: 1.5, bgcolor: "background.surface", borderRadius: "50%" }}>
-            {isSecure ? (
-              <ShieldCheck size={32} color="green" />
-            ) : (
-              <Lock size={32} color="orange" />
-            )}
-          </Box>
-          <Box>
-            <Typography level="h4" textColor="text.primary">
-              {isSecure
-                ? t("settings.home.welcome_secure")
-                : t("settings.home.welcome_warning")}
-            </Typography>
-            <Typography level="body-sm" textColor="text.secondary">
-              {isSecure
-                ? t("settings.home.welcome_desc_secure")
-                : t("settings.home.welcome_desc_warning")}
-            </Typography>
-          </Box>
-        </Stack>
-      </Card>
+    <button
+      onClick={onClick}
+      className="
+        w-full flex items-center justify-between px-4 py-3 text-left group
+        hover:bg-[var(--joy-palette-primary-softHoverBg)]
+        transition
+        first:rounded-t-xl last:rounded-b-xl
+      ">
+      <div className="flex items-start gap-3">
+        <div className="mt-0.5 text-[var(--muted-foreground)] group-hover:text-[var(--foreground)] transition">
+          <Icon size={18} />
+        </div>
 
-      <Typography level="title-sm" sx={{ mt: 1 }}>
-        {t("settings.home.shortcuts")}
-      </Typography>
+        <div>
+          <p className="text-sm font-medium text-[var(--foreground)]">
+            {label}
+          </p>
+          <p className="text-xs text-[var(--muted-foreground)]">{desc}</p>
+        </div>
+      </div>
 
-      <Stack direction={{ xs: "column", md: "row" }} gap={2}>
-        {/* 1. Tarjeta Dinámica de Seguridad */}
-        <InfoCard
-          icon={securityConfig.icon}
-          title={securityConfig.title}
-          desc={securityConfig.desc}
-          actionLabel={securityConfig.label}
-          color={securityConfig.color}
-          badge={securityConfig.badge}
-          onAction={() => onNavigate("seguridad")}
-        />
-
-        {/* 2. Tarjeta de Apariencia */}
-        <InfoCard
-          icon={Palette}
-          title={t("settings.home.appearance.title")}
-          desc={t("settings.home.appearance.desc")}
-          actionLabel={t("settings.home.appearance.btn")}
-          color="primary"
-          onAction={() => onNavigate("apariencia")}
-        />
-
-        {/* 3. Tarjeta de Privacidad */}
-        <InfoCard
-          icon={Fingerprint}
-          title={t("settings.home.privacy.title")}
-          desc={t("settings.home.privacy.desc")}
-          actionLabel={t("settings.home.privacy.btn")}
-          color="neutral"
-          onAction={() => onNavigate("privacidad")}
-        />
-      </Stack>
-
-      <Divider sx={{ my: 2 }} />
-
-      {/* Sección opcional de 'Nivel de Perfil' gamificado */}
-      <Card variant="outlined">
-        <SectionHeader
-          title={t("settings.home.health.title")}
-          subtitle={t("settings.home.health.subtitle")}
-        />
-        <Stack spacing={2} mt={1}>
-          <Stack direction="row" justifyContent="space-between">
-            <Typography level="body-sm">
-              {t("settings.home.health.label")}
-            </Typography>
-            <Typography
-              level="body-sm"
-              fontWeight="bold"
-              color={isSecure ? "success" : "warning"}>
-              {securityScore}%
-            </Typography>
-          </Stack>
-          <LinearProgress
-            determinate
-            value={securityScore}
-            color={isSecure ? "success" : "warning"}
-            thickness={8}
-            sx={{ borderRadius: 5 }}
-          />
-          {!isSecure && (
-            <Typography
-              level="body-xs"
-              startDecorator={<ShieldAlert size={14} />}>
-              {t("settings.home.health.recommendation_prefix")}{" "}
-              <b>{t("settings.menu.security")}</b>{" "}
-              {t("settings.home.health.recommendation_suffix")}
-            </Typography>
-          )}
-        </Stack>
-      </Card>
-    </Stack>
+      <ChevronRight size={18} className="text-[var(--muted-foreground)]" />
+    </button>
   );
 }

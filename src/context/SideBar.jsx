@@ -198,7 +198,7 @@ export default function Sidebar() {
 
   const checkPermission = React.useCallback(
     (permiso) => userRole === "Admin" || (permiso ? hasPermiso(permiso) : true),
-    [userRole, hasPermiso]
+    [userRole, hasPermiso],
   );
 
   // =========================
@@ -252,7 +252,7 @@ export default function Sidebar() {
         group: "General",
       },
     ],
-    [t, checkPermission]
+    [t, checkPermission],
   );
 
   const managementItems = React.useMemo(
@@ -294,7 +294,7 @@ export default function Sidebar() {
         group: "Gestión",
       },
     ],
-    [t, checkPermission]
+    [t, checkPermission],
   );
 
   const inventoryItems = React.useMemo(
@@ -318,7 +318,7 @@ export default function Sidebar() {
         group: "Inventario",
       },
     ],
-    [t, checkPermission]
+    [t, checkPermission],
   );
 
   const systemItems = React.useMemo(
@@ -342,7 +342,7 @@ export default function Sidebar() {
         group: "Sistema",
       },
     ],
-    [t, checkPermission]
+    [t, checkPermission],
   );
 
   const supportAndHelpItems = React.useMemo(
@@ -384,7 +384,7 @@ export default function Sidebar() {
         group: "Soporte y Ayuda",
       },
     ],
-    [t, checkPermission]
+    [t, checkPermission],
   );
 
   // Index plano para búsqueda local
@@ -416,7 +416,7 @@ export default function Sidebar() {
           r.canView &&
           (r.title.toLowerCase().includes(t) ||
             r.subtitle.toLowerCase().includes(t) ||
-            r.url.toLowerCase().includes(t))
+            r.url.toLowerCase().includes(t)),
       );
       const ranked = items
         .map((r) => {
@@ -440,7 +440,7 @@ export default function Sidebar() {
         perm: r.perm,
       }));
     },
-    [routeIndex]
+    [routeIndex],
   );
 
   const searchAll = React.useCallback(async (text) => {
