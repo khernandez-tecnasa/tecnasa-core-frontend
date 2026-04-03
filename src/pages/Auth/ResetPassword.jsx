@@ -31,7 +31,7 @@ import CancelRoundedIcon from "@mui/icons-material/CancelRounded";
 import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
 
 // Servicio
-import { restablecerContrasenia } from "../../services/AuthServices";
+import { resetPassword } from "../../services/AuthServices";
 
 export default function ResetPassword() {
   const { t } = useTranslation();
@@ -55,7 +55,7 @@ export default function ResetPassword() {
   useEffect(() => {
     if (!token) {
       setGeneralError(
-        t("reset.error_no_token", "Enlace inválido o incompleto.")
+        t("reset.error_no_token", "Enlace inválido o incompleto."),
       );
     }
     return () => {
@@ -111,15 +111,15 @@ export default function ResetPassword() {
       setGeneralError(
         t(
           "reset.error_validation",
-          "Por favor corrige los errores antes de continuar."
-        )
+          "Por favor corrige los errores antes de continuar.",
+        ),
       );
       setLoading(false);
       return;
     }
 
     try {
-      await restablecerContrasenia(token, newPassword);
+      await resetPassword(token, newPassword);
       setSuccess(true);
 
       timeoutRef.current = setTimeout(() => {
@@ -130,7 +130,7 @@ export default function ResetPassword() {
       setGeneralError(
         err.response?.data?.message ||
           err.message ||
-          t("reset.error_generic", "No se pudo restablecer la contraseña.")
+          t("reset.error_generic", "No se pudo restablecer la contraseña."),
       );
     } finally {
       setLoading(false);
@@ -213,7 +213,7 @@ export default function ResetPassword() {
           <Typography level="body-sm" color="neutral">
             {t(
               "reset.subtitle",
-              "Crea una contraseña nueva y segura para tu cuenta."
+              "Crea una contraseña nueva y segura para tu cuenta.",
             )}
           </Typography>
         </Box>
@@ -235,7 +235,7 @@ export default function ResetPassword() {
             <Typography level="body-sm">
               {t(
                 "reset.success_desc",
-                "Tu contraseña ha sido cambiada. Redirigiendo al login..."
+                "Tu contraseña ha sido cambiada. Redirigiendo al login...",
               )}
             </Typography>
           </Alert>
@@ -260,7 +260,7 @@ export default function ResetPassword() {
                   type={showPassword ? "text" : "password"}
                   placeholder={t(
                     "reset.placeholder_pass",
-                    "Mínimo 8 caracteres"
+                    "Mínimo 8 caracteres",
                   )}
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
@@ -333,7 +333,7 @@ export default function ResetPassword() {
                       fulfilled={requirements.special}
                       label={t(
                         "req.special",
-                        "Un carácter especial (@$!%*?&._-)"
+                        "Un carácter especial (@$!%*?&._-)",
                       )}
                     />
                   </List>
@@ -351,7 +351,7 @@ export default function ResetPassword() {
                   type={showConfirmPassword ? "text" : "password"}
                   placeholder={t(
                     "reset.placeholder_confirm",
-                    "Repite la contraseña"
+                    "Repite la contraseña",
                   )}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}

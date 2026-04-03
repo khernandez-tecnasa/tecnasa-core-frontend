@@ -189,6 +189,10 @@ export const useLoginFlow = () => {
     navigate(routes[rol] || routes.default);
   };
 
+  const onForgotPassword = () => {
+    navigate("/auth/forgot-password");
+  };
+
   return {
     credentials,
     setCredentials,
@@ -201,5 +205,6 @@ export const useLoginFlow = () => {
     availableMethods,
     checkPasskeyAvailability,
     handlePasswordless,
+    onForgotPassword,
   };
 };
