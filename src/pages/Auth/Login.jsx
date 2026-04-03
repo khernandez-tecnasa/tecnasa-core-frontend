@@ -17,6 +17,7 @@ export default function Login() {
     availableMethods,
     checkPasskeyAvailability,
     handlePasswordless,
+    onForgotPassword,
   } = useLoginFlow();
 
   return (
@@ -34,6 +35,7 @@ export default function Login() {
         onPasskeyClick={handlePasskey}
         loading={loading}
         onPasswordlessClick={handlePasswordless}
+        onForgotPassword={onForgotPassword}
       />
 
       {step === "method-selection" && (

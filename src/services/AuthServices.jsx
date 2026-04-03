@@ -103,7 +103,7 @@ export async function getUsers() {
 export async function getEmailSupervisor(idEmpleado) {
   try {
     const res = await fetchConToken(
-      `${endpoints.getEmailSupervisor}?id_empleado=${idEmpleado}`
+      `${endpoints.getEmailSupervisor}?id_empleado=${idEmpleado}`,
     );
     const data = await res.json();
     return res.ok ? data : null;
@@ -159,7 +159,7 @@ export async function updateMyAccount(user) {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(user),
-      }
+      },
     );
 
     const data = await res.json();
@@ -222,25 +222,46 @@ export async function restoreUser(id) {
   }
 }
 
-export async function restablecerContrasenia(token, newPassword) {
+export async function forgotPassword(email) {
   try {
-    const res = await fetch(endpoints.resetPassword, {
-      method: "POST", // CAMBIO: De PUT a POST
+    const res = await fetch(endpoints.forgotPassword, {
+      method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token, newPassword }), // 'dataSend' debe contener { token: "...", newPassword: "..." }
+      body: JSON.stringify({ email }),
     });
 
-    console.log("Enviando:", { token, newPassword });
+    const data = await res.json().catch(() => ({}));
 
     if (!res.ok) {
-      const errorData = await res.json();
       throw new Error(
-        errorData.message || "No se pudo restablecer la contraseña."
+        data?.message || "Error al solicitar recuperación de contraseña",
       );
     }
-    return await res.json();
+
+    return data;
   } catch (err) {
-    console.error("restablecerContraseña error:", err);
+    console.error("forgotPassword error:", err);
+    throw err;
+  }
+}
+
+export async function resetPassword(token, newPassword) {
+  try {
+    const res = await fetch(endpoints.resetPassword, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token, newPassword }),
+    });
+
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      throw new Error(data?.message || "No se pudo restablecer la contraseña");
+    }
+
+    return data;
+  } catch (err) {
+    console.error("resetPassword error:", err);
     throw err;
   }
 }

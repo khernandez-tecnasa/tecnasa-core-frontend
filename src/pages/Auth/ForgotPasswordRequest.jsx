@@ -14,7 +14,7 @@ import {
 import EmailRoundedIcon from "@mui/icons-material/EmailRounded";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
-import { sendRecoveryPassword } from "../../services/MailServices"; // Ajusta la ruta si hace falta
+import { forgotPassword } from "@/services/AuthServices";
 import { useNavigate } from "react-router-dom";
 
 export default function ForgotPasswordRequest() {
@@ -78,13 +78,13 @@ export default function ForgotPasswordRequest() {
 
     setLoading(true);
     try {
-      const response = await sendRecoveryPassword(email);
+      const response = await forgotPassword(email);
 
       const successText =
         response?.message ||
         t(
           "forgot.success_message",
-          "Si tu correo está registrado, recibirás un enlace para restablecer tu contraseña."
+          "Si tu correo está registrado, recibirás un enlace para restablecer tu contraseña.",
         );
 
       setMessage(successText);
@@ -163,7 +163,7 @@ export default function ForgotPasswordRequest() {
             <Typography level="body-sm" textColor="neutral.500">
               {t(
                 "forgot.subtitle",
-                "Introduce tu correo y te enviaremos un enlace para restablecer tu contraseña."
+                "Introduce tu correo y te enviaremos un enlace para restablecer tu contraseña.",
               )}
             </Typography>
           </Box>
@@ -177,7 +177,7 @@ export default function ForgotPasswordRequest() {
               type="email"
               placeholder={t(
                 "forgot.placeholder_email",
-                "Tu correo electrónico"
+                "Tu correo electrónico",
               )}
               value={email}
               onChange={handleEmailChange}
