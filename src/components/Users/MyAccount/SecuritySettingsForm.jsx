@@ -50,9 +50,10 @@ export default function SecuritySettingsForm({ user, showSnackbar }) {
   const formik = useFormik({
     initialValues: {
       password: "",
+      email: user.email || "",
     },
     validationSchema,
-    onSubmit: async ({ password }, { resetForm }) => {
+    onSubmit: async ({ password, email }, { resetForm }) => {
       const confirm = await Swal.fire({
         title: t("account.security.confirm_title"),
         text: t("account.security.confirm_text"),
@@ -67,9 +68,12 @@ export default function SecuritySettingsForm({ user, showSnackbar }) {
       if (confirm.isConfirmed) {
         try {
           const data = await updateUser({
-            id_usuario: user.id_usuario || user.id, // Asegurar ID
+            id_usuario: user.id_usuario || user.id,
+            email,
             password,
           });
+
+          console.log("Update user response:", data);
 
           if (data && data.error) {
             showSnackbar(data.error, "danger");
