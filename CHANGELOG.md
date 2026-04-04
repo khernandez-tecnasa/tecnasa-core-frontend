@@ -1,3 +1,12 @@
+## v2.4.1 - 2026-04-03
+
+* chore(release): v2.4.1 (b7db733)
+* Merge pull request #1 from khernandez-tecnasa/dev (00a69f6)
+* refactor: remove client-side email logic and delegate to backend api (7ffc3ae)
+* docs(changelog): v2.4.0 (8ea6bef)
+
+🔗 **Comparación:** https://github.com/khernandez-tecnasa/tecnasa-core-frontend/compare/v2.4.0...v2.4.1
+
 ## v2.4.0 - 2026-03-31
 
 * chore(release): v2.4.0 (b286cc5)
@@ -182,6 +191,7 @@
 - Full changelog: https://github.com/khernan14/AutoLog/compare/prod-2025-11-04...v1.0.0
 
 > Nota: si sigues **Conventional Commits** (`feat:`, `fix:`, `chore:`…), herramientas como `conventional-changelog` te generan estas secciones solitas.
+
 
 
 
