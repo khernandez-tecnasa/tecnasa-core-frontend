@@ -1,3 +1,11 @@
+## v2.4.2 - 2026-04-03
+
+* chore(release): v2.4.2 (28b2822)
+* fix(ui): No se enviaba el correo de alerta al cambiar la password desde la app (cf1a872)
+* docs(changelog): v2.4.1 (03a9a9c)
+
+🔗 **Comparación:** https://github.com/khernandez-tecnasa/tecnasa-core-frontend/compare/v2.4.1...v2.4.2
+
 ## v2.4.1 - 2026-04-03
 
 * chore(release): v2.4.1 (b7db733)
@@ -191,6 +199,7 @@
 - Full changelog: https://github.com/khernan14/AutoLog/compare/prod-2025-11-04...v1.0.0
 
 > Nota: si sigues **Conventional Commits** (`feat:`, `fix:`, `chore:`…), herramientas como `conventional-changelog` te generan estas secciones solitas.
+
 
 
 
