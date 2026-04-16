@@ -98,3 +98,72 @@ body.high-contrast .MuiDivider-root {
   background-color: currentColor !important;
   opacity: 1 !important;
 }
+
+/* Fuerza la aparición de los puntos de agarre para resize */
+.fc-event-resizer {
+  display: block !important;
+  opacity: 1 !important;
+  background-color: rgba(0, 0, 0, 0.2); /* Color suave para ver dónde están */
+}
+
+/* En vista de mes (dayGridMonth), el resize solo funciona al FINAL del evento */
+.fc-daygrid-event {
+  cursor: grab;
+}
+
+.fc-v-event .fc-event-resizer {
+  cursor: s-resize;
+}
+
+/* Estilos para modernizar FullCalendar */
+.fc {
+  --fc-border-color: rgba(0, 0, 0, 0.05);
+  --fc-button-bg-color: transparent;
+  --fc-button-border-color: #e2e8f0;
+  --fc-button-text-color: #64748b;
+  --fc-button-active-bg-color: #000;
+  --fc-button-active-border-color: #000;
+  --fc-button-hover-bg-color: #f1f5f9;
+  --fc-page-bg-color: transparent;
+  font-family: inherit;
+}
+
+.fc .fc-toolbar-title {
+  font-size: 1.25rem !important;
+  font-weight: 900 !important;
+  text-transform: uppercase;
+  letter-spacing: -0.025em;
+}
+
+.fc .fc-button {
+  border-radius: 12px !important;
+  font-size: 0.8rem !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  padding: 8px 16px !important;
+  transition: all 0.2s;
+}
+
+.fc .fc-col-header-cell {
+  background: #f8fafc;
+  padding: 12px 0 !important;
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.fc .fc-daygrid-day-number {
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  padding: 10px !important;
+}
+
+.fc-event {
+  border-radius: 8px !important;
+  padding: 4px 8px !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  border: none !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}

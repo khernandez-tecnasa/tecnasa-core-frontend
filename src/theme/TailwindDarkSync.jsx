@@ -119,6 +119,7 @@ export default function TailwindDarkSync() {
 
       // Textos
       root.style.setProperty("--joy-palette-primary-plainColor", primaryColor);
+      root.style.setProperty("--joy-palette-primary", "0 0 0");
 
       root.style.setProperty("--primary-foreground", "255 255 255");
     }

@@ -37,16 +37,31 @@ export async function getPublicVehiculos() {
 export async function ListarVehiculosEmpleado(id_empleado) {
   try {
     const res = await fetchConToken(
-      endpoints.getVehiculos + `${id_empleado}/`,
+      `${endpoints.getVehiculos}empleado/${id_empleado}`,
       {
         method: "GET",
-      }
+      },
     );
 
     if (!res.ok) throw new Error("No se pudo obtener los vehículos");
     return await res.json();
   } catch (err) {
     console.error("Login error:", err);
+    return null;
+  }
+}
+
+export async function getDisponibles() {
+  try {
+    const res = await fetchConToken(endpoints.getVehiculosDisponibles, {
+      method: "GET",
+    });
+
+    if (!res.ok)
+      throw new Error("No se pudo obtener los vehículos disponibles");
+    return await res.json();
+  } catch (err) {
+    console.error("Error getDisponibles:", err);
     return null;
   }
 }
@@ -119,7 +134,7 @@ export async function restoreVehiculo(id) {
       endpoints.restoreVehiculo + "restaurar/" + id,
       {
         method: "PUT",
-      }
+      },
     );
 
     if (!res.ok) throw new Error("No se pudo restaurar el vehículo");
@@ -143,7 +158,7 @@ export async function getRegistroLinkForVehiculo(idVehiculo) {
         headers: {
           "Content-Type": "application/json",
         },
-      }
+      },
     );
 
     if (!res.ok) {
@@ -170,14 +185,14 @@ export async function resolveVehiculoFromQrToken(token) {
     // => "http://localhost:3000/api/vehiculos/registro/resolve?token=..."
     const res = await fetchConToken(
       `${endpoints.getVehiculos}registro/resolve?token=${encodeURIComponent(
-        token
+        token,
       )}`,
       {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
         },
-      }
+      },
     );
 
     if (!res.ok) {

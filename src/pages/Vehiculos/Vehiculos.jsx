@@ -97,7 +97,7 @@ export default function Vehiculos() {
       } else {
         setError(
           t("vehiculos.load_error") ||
-            "No se pudieron cargar los vehículos. Intenta más tarde."
+            "No se pudieron cargar los vehículos. Intenta más tarde.",
         );
       }
     } catch (err) {
@@ -107,7 +107,7 @@ export default function Vehiculos() {
       setError(
         isNetwork
           ? t("vehiculos.no_connection") || "No hay conexión con el servidor."
-          : err?.message || t("vehiculos.unknown_error")
+          : err?.message || t("vehiculos.unknown_error"),
       );
     } finally {
       setLoading(false);
@@ -124,7 +124,7 @@ export default function Vehiculos() {
       showToast(
         t("vehiculos.no_permission_create") ||
           "No tienes permiso para crear vehículos.",
-        "warning"
+        "warning",
       );
       return;
     }
@@ -137,7 +137,7 @@ export default function Vehiculos() {
       showToast(
         t("vehiculos.no_permission_edit") ||
           "No tienes permiso para editar vehículos.",
-        "warning"
+        "warning",
       );
       return;
     }
@@ -154,7 +154,7 @@ export default function Vehiculos() {
       showToast(
         t("vehiculos.no_permission_delete") ||
           "No tienes permiso para inhabilitar vehículos.",
-        "warning"
+        "warning",
       );
       return;
     }
@@ -173,24 +173,24 @@ export default function Vehiculos() {
         const resp = await deleteVehiculo(id);
         if (resp && !resp.error) {
           setVehiculos((prev) =>
-            prev.map((v) => (v.id === id ? { ...v, estado: "Inactivo" } : v))
+            prev.map((v) => (v.id === id ? { ...v, estado: "Inactivo" } : v)),
           );
           showToast(
             t("vehiculos.disabled_success") ||
               "Vehículo inactivado correctamente",
-            "success"
+            "success",
           );
         } else {
           showToast(
             t("vehiculos.disabled_error") || "Error al inactivar el vehículo.",
-            "danger"
+            "danger",
           );
         }
       } catch (err) {
         showToast(
           t("vehiculos.disabled_network_error") ||
             "Error de conexión al intentar inactivar el vehículo.",
-          "danger"
+          "danger",
         );
       }
     }
@@ -201,7 +201,7 @@ export default function Vehiculos() {
       showToast(
         t("vehiculos.no_permission_restore") ||
           "No tienes permiso para restaurar vehículos.",
-        "warning"
+        "warning",
       );
       return;
     }
@@ -220,24 +220,24 @@ export default function Vehiculos() {
         const resp = await restoreVehiculo(id);
         if (resp && !resp.error) {
           setVehiculos((prev) =>
-            prev.map((v) => (v.id === id ? { ...v, estado: "Disponible" } : v))
+            prev.map((v) => (v.id === id ? { ...v, estado: "Disponible" } : v)),
           );
           showToast(
             t("vehiculos.restored_success") ||
               "Vehículo restaurado correctamente",
-            "success"
+            "success",
           );
         } else {
           showToast(
             t("vehiculos.restored_error") || "Error al restaurar el vehículo.",
-            "danger"
+            "danger",
           );
         }
       } catch (err) {
         showToast(
           t("vehiculos.restored_network_error") ||
             "Error de conexión al intentar restaurar el vehículo.",
-          "danger"
+          "danger",
         );
       }
     }
@@ -248,7 +248,7 @@ export default function Vehiculos() {
       showToast(
         t("vehiculos.no_permission_save") ||
           "No tienes permisos para guardar vehículos.",
-        "warning"
+        "warning",
       );
       return;
     }
@@ -259,31 +259,31 @@ export default function Vehiculos() {
           showToast(
             t("vehiculos.updated_success") ||
               "Vehículo actualizado correctamente",
-            "success"
+            "success",
           );
         else
           showToast(
             t("vehiculos.updated_error") || "Error al actualizar el vehículo.",
-            "danger"
+            "danger",
           );
       } else {
         const resp = await addVehiculos(vehiculo);
         if (resp && !resp.error)
           showToast(
             t("vehiculos.added_success") || "Vehículo agregado correctamente",
-            "success"
+            "success",
           );
         else
           showToast(
             t("vehiculos.added_error") || "Error al agregar el vehículo.",
-            "danger"
+            "danger",
           );
       }
     } catch (err) {
       showToast(
         t("vehiculos.save_network_error") ||
           "Error de conexión al guardar el vehículo.",
-        "danger"
+        "danger",
       );
     } finally {
       setOpenModal(false);
@@ -294,7 +294,7 @@ export default function Vehiculos() {
 
   const can = useCallback(
     (p) => isAdmin || hasPermiso(p),
-    [isAdmin, hasPermiso]
+    [isAdmin, hasPermiso],
   );
 
   const canQR = can("crear_QR");
@@ -304,7 +304,7 @@ export default function Vehiculos() {
       showToast(
         t("vehiculos.no_permission_qr") ||
           "No tienes permisos para ver el QR de registro.",
-        "warning"
+        "warning",
       );
       return;
     }
@@ -383,7 +383,7 @@ export default function Vehiculos() {
     if (isOwner && registro.id_registro) {
       // navegar al formulario de regreso indicando el registro exacto
       navigate(
-        `/admin/panel-vehiculos/register?mode=regreso&id_registro=${registro.id_registro}`
+        `/admin/panel-vehiculos?mode=regreso&id_registro=${registro.id_registro}`,
       );
       return;
     }
@@ -391,7 +391,7 @@ export default function Vehiculos() {
     // Si NO es el propietario -> mostrar Swal informativo con opciones:
     const infoText = `${t(
       "vehiculos.qr_in_use_detected",
-      "Este vehículo está en uso por"
+      "Este vehículo está en uso por",
     )} ${nombre ?? t("vehiculos.unknown_user", "un usuario")}${
       email ? ` (${email})` : ""
     }${fechaText ? ` — ${t("vehiculos.since", "Salida:")} ${fechaText}` : ""}.`;
@@ -403,7 +403,7 @@ export default function Vehiculos() {
         "\n\n" +
         t(
           "vehiculos.qr_in_use_next_steps",
-          "Pide al usuario que registre el regreso o utiliza una de las acciones abajo."
+          "Pide al usuario que registre el regreso o utiliza una de las acciones abajo.",
         ),
       icon: "info",
       showCancelButton: true,
@@ -420,11 +420,11 @@ export default function Vehiculos() {
         await Swal.fire({
           title: t(
             "vehiculos.qr_in_use_no_email_title",
-            "No se encontró email"
+            "No se encontró email",
           ),
           text: t(
             "vehiculos.qr_in_use_no_email_text",
-            "No se encontró el correo del usuario responsable. No se puede enviar notificación automática."
+            "No se encontró el correo del usuario responsable. No se puede enviar notificación automática.",
           ),
           icon: "warning",
         });
@@ -444,7 +444,7 @@ export default function Vehiculos() {
           title: t("vehiculos.qr_notify_sent_title", "Notificación enviada"),
           text: t(
             "vehiculos.qr_notify_sent_text",
-            "Se ha enviado un correo al usuario responsable."
+            "Se ha enviado un correo al usuario responsable.",
           ),
           icon: "success",
         });
@@ -454,7 +454,7 @@ export default function Vehiculos() {
           title: t("vehiculos.qr_notify_error_title", "Error"),
           text: t(
             "vehiculos.qr_notify_error_text",
-            "No se pudo enviar la notificación. Intenta más tarde."
+            "No se pudo enviar la notificación. Intenta más tarde.",
           ),
           icon: "error",
         });
@@ -528,7 +528,7 @@ export default function Vehiculos() {
           <Typography level="body-sm" color="neutral">
             {t(
               "vehiculos.subtitle",
-              "Gestión del catálogo de vehículos de la flota."
+              "Gestión del catálogo de vehículos de la flota.",
             )}
           </Typography>
           <Typography level="body-xs" sx={{ opacity: 0.7, mt: 0.5 }}>
@@ -551,7 +551,7 @@ export default function Vehiculos() {
             !canCreate
               ? t(
                   "vehiculos.add_disabled_reason",
-                  "No tienes permiso para crear. Solicítalo al administrador."
+                  "No tienes permiso para crear. Solicítalo al administrador.",
                 )
               : undefined
           }
@@ -574,7 +574,7 @@ export default function Vehiculos() {
               emptyTitle={t("vehiculos.empty_title", "Sin vehículos")}
               emptyDescription={t(
                 "vehiculos.empty_description",
-                "Aún no hay vehículos registrados."
+                "Aún no hay vehículos registrados.",
               )}
             />
           ) : filteredVehiculos.length === 0 ? (
@@ -590,11 +590,11 @@ export default function Vehiculos() {
                   vehiculos.length
                     ? t(
                         "vehiculos.no_matches_desc",
-                        "No encontramos vehículos con los filtros actuales."
+                        "No encontramos vehículos con los filtros actuales.",
                       )
                     : t(
                         "vehiculos.empty_description",
-                        "Aún no hay vehículos registrados."
+                        "Aún no hay vehículos registrados.",
                       )
                 }
               />

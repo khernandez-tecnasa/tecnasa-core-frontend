@@ -1,0 +1,606 @@
+This file is a merged representation of a subset of the codebase, containing specifically included files, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of a subset of the repository's contents that is considered the most important context.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Only files matching these patterns are included: ../AutoLogAPI/src/modules/viaticos/*.js
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+../AutoLogAPI/src/modules/viaticos/viaticos.controller.js
+../AutoLogAPI/src/modules/viaticos/viaticos.repository.js
+../AutoLogAPI/src/modules/viaticos/viaticos.routes.js
+../AutoLogAPI/src/modules/viaticos/viaticos.schema.js
+../AutoLogAPI/src/modules/viaticos/viaticos.service.js
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path="../AutoLogAPI/src/modules/viaticos/viaticos.controller.js">
+import * as service from "./viaticos.service.js";
+
+export const createViatico = async (req, res, next) => {
+  try {
+    const result = await service.create(req.body);
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const getAll = async (req, res, next) => {
+  try {
+    const data = await service.getAll();
+    res.json(data);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const getById = async (req, res, next) => {
+  try {
+    const data = await service.getById(req.params.id);
+    res.json(data);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const update = async (req, res, next) => {
+  try {
+    const result = await service.update(req.params.id, req.body);
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const remove = async (req, res, next) => {
+  try {
+    await service.remove(req.params.id);
+    res.json({ message: "Eliminado" });
+  } catch (err) {
+    next(err);
+  }
+};
+</file>
+
+<file path="../AutoLogAPI/src/modules/viaticos/viaticos.repository.js">
+import pool from "../../config/connectionToSql.js";
+
+export const createViatico = async (data) => {
+  const [result] = await pool.query("INSERT INTO viaticos SET ?", [data]);
+  return { id: result.insertId };
+};
+
+export const insertDetalles = async (viaticoId, detalles) => {
+  const values = detalles.map((d) => [
+    viaticoId,
+    d.tipo,
+    d.descripcion,
+    d.cantidad,
+    d.precio_unitario,
+    d.fecha,
+  ]);
+
+  await pool.query(
+    `INSERT INTO viaticos_detalle 
+    (viatico_id, tipo, descripcion, cantidad, precio_unitario, fecha)
+    VALUES ?`,
+    [values],
+  );
+};
+
+export const calculateTotal = async (viaticoId) => {
+  const [rows] = await pool.query(
+    "SELECT SUM(total) as total FROM viaticos_detalle WHERE viatico_id = ?",
+    [viaticoId],
+  );
+  return rows[0].total || 0;
+};
+
+export const updateTotal = async (id, total) => {
+  await pool.query("UPDATE viaticos SET total_general = ? WHERE id = ?", [
+    total,
+    id,
+  ]);
+};
+
+export const getAll = async () => {
+  const [rows] = await pool.query("SELECT * FROM viaticos");
+  return rows;
+};
+
+export const getById = async (id) => {
+  const [rows] = await pool.query("SELECT * FROM viaticos WHERE id = ?", [id]);
+  return rows[0];
+};
+
+export const updateViatico = async (id, data) => {
+  await pool.query("UPDATE viaticos SET ? WHERE id = ?", [data, id]);
+};
+
+export const deleteDetalles = async (viaticoId) => {
+  await pool.query("DELETE FROM viaticos_detalle WHERE viatico_id = ?", [
+    viaticoId,
+  ]);
+};
+
+export const deleteViatico = async (id) => {
+  await pool.query("DELETE FROM viaticos WHERE id = ?", [id]);
+};
+
+export const checkConflictoFechas = async (
+  empleadoId,
+  inicio,
+  fin,
+  conn,
+  excludeId = null,
+) => {
+  let query = `
+    SELECT id FROM viaticos
+    WHERE empleado_id = ?
+    AND (fecha_salida <= ? AND fecha_regreso >= ?)
+  `;
+
+  const params = [empleadoId, fin, inicio];
+
+  if (excludeId) {
+    query += " AND id != ?";
+    params.push(excludeId);
+  }
+
+  const [rows] = await conn.query(query, params);
+  return rows.length > 0;
+};
+
+export const checkVehiculoDisponible = async (
+  vehiculoId,
+  inicio,
+  fin,
+  conn,
+) => {
+  const [rows] = await conn.query(
+    `
+    SELECT id FROM reservas_vehiculos
+    WHERE vehiculo_id = ?
+    AND estado IN ('Reservado','En Uso')
+    AND (fecha_inicio <= ? AND fecha_fin >= ?)
+  `,
+    [vehiculoId, fin, inicio],
+  );
+
+  return rows.length > 0;
+};
+
+export const getNombreDestino = async (siteId, conn) => {
+  const [rows] = await conn.query(
+    "SELECT nombre FROM clientes_sites WHERE id = ?",
+    [siteId],
+  );
+
+  return rows[0];
+};
+
+export const getByReservaId = async (reservaId, conn) => {
+  const [rows] = await conn.query(
+    "SELECT id FROM viaticos WHERE reserva_id = ?",
+    [reservaId],
+  );
+  return rows[0];
+};
+
+//
+export const checkConflictoEmpleado = async (empleadoId, inicio, fin, conn) => {
+  const [rows] = await conn.query(
+    `
+    SELECT id FROM viaticos 
+    WHERE empleado_id = ? 
+    AND estado NOT IN ('Rechazado', 'Finalizado')
+    AND (fecha_salida <= ? AND fecha_regreso >= ?)`,
+    [empleadoId, fin, inicio],
+  );
+  return rows.length > 0;
+};
+</file>
+
+<file path="../AutoLogAPI/src/modules/viaticos/viaticos.routes.js">
+import { Router } from "express";
+import {
+  createViatico,
+  getAll,
+  getById,
+  update,
+  remove,
+} from "./viaticos.controller.js";
+
+import {
+  authenticate,
+  authorizeByPermisos,
+} from "../../middleware/auth.middleware.js";
+
+import { validateRequest } from "../../middleware/validateRequest.js";
+import { createSchema } from "./viaticos.schema.js";
+
+const router = Router();
+
+router.post(
+  "/",
+  authenticate,
+  authorizeByPermisos(["create_viatico"]),
+  validateRequest(createSchema),
+  createViatico,
+);
+
+router.get("/", authenticate, authorizeByPermisos(["read_viatico"]), getAll);
+
+router.get(
+  "/:id",
+  authenticate,
+  authorizeByPermisos(["read_viatico"]),
+  getById,
+);
+
+router.put(
+  "/:id",
+  authenticate,
+  authorizeByPermisos(["update_viatico"]),
+  validateRequest(createSchema),
+  update,
+);
+
+router.delete(
+  "/:id",
+  authenticate,
+  authorizeByPermisos(["delete_viatico"]),
+  remove,
+);
+
+export default router;
+</file>
+
+<file path="../AutoLogAPI/src/modules/viaticos/viaticos.schema.js">
+import Joi from "joi";
+
+export const createSchema = Joi.object({
+  empleado_id: Joi.number().required(),
+  vehiculo_id: Joi.number().required(),
+  // cliente_id: Joi.number().required(),
+
+  fecha_salida: Joi.date().required(),
+  fecha_regreso: Joi.date().required(),
+
+  origen_site_id: Joi.number().optional().allow(null),
+  destino_site_id: Joi.number().optional().allow(null),
+
+  motivo_viaje: Joi.string().allow(null, ""),
+
+  detalles: Joi.array()
+    .items(
+      Joi.object({
+        tipo: Joi.string()
+          .valid(
+            "DESAYUNO",
+            "ALMUERZO",
+            "CENA",
+            "HOSPEDAJE",
+            "COMBUSTIBLE",
+            "PEAJE",
+            "IMPREVISTO",
+          )
+          .required(),
+
+        descripcion: Joi.string().allow("", null),
+
+        cantidad: Joi.number().min(1).required(),
+        precio_unitario: Joi.number().min(0).required(),
+
+        fecha: Joi.date().required(),
+      }),
+    )
+    .min(1)
+    .required(),
+});
+</file>
+
+<file path="../AutoLogAPI/src/modules/viaticos/viaticos.service.js">
+import * as repo from "./viaticos.repository.js";
+import pool from "../../config/connectionToSql.js";
+
+const preciosBase = {
+  DESAYUNO: 120,
+  ALMUERZO: 200,
+  CENA: 180,
+  HOSPEDAJE: 1500,
+};
+
+const obtenerMultiplicador = (zona) => {
+  if (!zona) return 1;
+
+  const z = zona.toUpperCase();
+
+  if (z.includes("ROATAN")) return 1.5;
+  if (z.includes("CEIBA")) return 1.3;
+
+  return 1;
+};
+
+export const create = async (data) => {
+  const conn = await pool.getConnection();
+
+  try {
+    await conn.beginTransaction();
+
+    // 1. VALIDACIÓN DE FECHAS
+    if (new Date(data.fecha_salida) > new Date(data.fecha_regreso)) {
+      throw new Error(
+        "La fecha de salida no puede ser mayor que la de regreso",
+      );
+    }
+
+    // 2. VALIDAR CONFLICTO DE VIÁTICOS (EMPLEADO)
+    const conflictoEmpleado = await repo.checkConflictoFechas(
+      data.empleado_id,
+      data.fecha_salida,
+      data.fecha_regreso,
+      conn,
+    );
+
+    if (conflictoEmpleado) {
+      throw new Error("El empleado ya tiene un viático en ese rango de fechas");
+    }
+
+    // 3. VALIDAR VEHÍCULO DISPONIBLE
+    const conflictoVehiculo = await repo.checkVehiculoDisponible(
+      data.vehiculo_id,
+      data.fecha_salida,
+      data.fecha_regreso,
+      conn,
+    );
+
+    if (conflictoVehiculo) {
+      throw new Error("El vehículo ya está ocupado en ese rango de fechas");
+    }
+
+    // 4. CREAR VIÁTICO
+    const viatico = await repo.createViatico(data, conn);
+
+    // 5. INSERTAR DETALLES
+    let detalles = data.detalles;
+
+    if (!detalles || detalles.length === 0) {
+      let zona = "";
+
+      if (data.destino_site_id) {
+        const destino = await repo.getNombreDestino(data.destino_site_id, conn);
+
+        zona = destino?.nombre || "";
+      }
+
+      detalles = generarDetallesAutomaticos(
+        data.fecha_salida,
+        data.fecha_regreso,
+        zona,
+      );
+    }
+
+    // 🔥 guardar detalles
+    await repo.insertDetalles(viatico.id, detalles, conn);
+
+    // 6. CALCULAR TOTAL
+    const total = await repo.calculateTotal(viatico.id, conn);
+
+    await repo.updateTotal(viatico.id, total, conn);
+
+    await conn.commit();
+
+    return { id: viatico.id };
+  } catch (error) {
+    await conn.rollback();
+    throw error;
+  } finally {
+    conn.release();
+  }
+};
+
+export const getAll = repo.getAll;
+export const getById = repo.getById;
+
+export const update = async (id, data) => {
+  const conn = await pool.getConnection();
+
+  try {
+    await conn.beginTransaction();
+
+    // validar fechas
+    if (new Date(data.fecha_salida) > new Date(data.fecha_regreso)) {
+      throw new Error("Fechas inválidas");
+    }
+
+    // conflicto empleado (excluyendo el actual)
+    const conflicto = await repo.checkConflictoFechas(
+      data.empleado_id,
+      data.fecha_salida,
+      data.fecha_regreso,
+      conn,
+      id,
+    );
+
+    if (conflicto) {
+      throw new Error("Conflicto de fechas con otro viático");
+    }
+
+    await repo.updateViatico(id, data, conn);
+
+    if (data.detalles) {
+      await repo.deleteDetalles(id, conn);
+      await repo.insertDetalles(id, data.detalles, conn);
+    }
+
+    const total = await repo.calculateTotal(id, conn);
+    await repo.updateTotal(id, total, conn);
+
+    await conn.commit();
+
+    return { success: true };
+  } catch (error) {
+    await conn.rollback();
+    throw error;
+  } finally {
+    conn.release();
+  }
+};
+
+export const generarViaticoDesdeReserva = async (reserva, conn) => {
+  const data = {
+    empleado_id: reserva.empleado_id,
+    vehiculo_id: reserva.vehiculo_id,
+    cliente_id: null,
+    reserva_id: reserva.id,
+
+    fecha_salida: reserva.fecha_inicio,
+    fecha_regreso: reserva.fecha_fin,
+
+    estado: "Borrador",
+  };
+
+  const viatico = await repo.createViatico(data, conn);
+
+  return viatico;
+};
+
+// const generarDetallesAutomaticos = (fechaInicio, fechaFin) => {
+//   const detalles = [];
+
+//   const precios = {
+//     DESAYUNO: 5,
+//     ALMUERZO: 10,
+//     CENA: 8,
+//   };
+
+//   const inicio = new Date(fechaInicio);
+//   const fin = new Date(fechaFin);
+
+//   let current = new Date(inicio);
+
+//   while (current <= fin) {
+//     const fecha = new Date(current);
+
+//     detalles.push({
+//       tipo: "DESAYUNO",
+//       cantidad: 1,
+//       precio_unitario: precios.DESAYUNO,
+//       fecha,
+//     });
+
+//     detalles.push({
+//       tipo: "ALMUERZO",
+//       cantidad: 1,
+//       precio_unitario: precios.ALMUERZO,
+//       fecha,
+//     });
+
+//     detalles.push({
+//       tipo: "CENA",
+//       cantidad: 1,
+//       precio_unitario: precios.CENA,
+//       fecha,
+//     });
+
+//     current.setDate(current.getDate() + 1);
+//   }
+
+//   return detalles;
+// };
+
+const generarDetallesAutomaticos = (fechaInicio, fechaFin, zona) => {
+  const detalles = [];
+
+  const multiplicador = obtenerMultiplicador(zona);
+
+  const inicio = new Date(fechaInicio);
+  const fin = new Date(fechaFin);
+
+  let current = new Date(inicio);
+
+  while (current <= fin) {
+    const fecha = new Date(current);
+
+    detalles.push({
+      tipo: "DESAYUNO",
+      cantidad: 1,
+      precio_unitario: preciosBase.DESAYUNO * multiplicador,
+      fecha,
+    });
+
+    detalles.push({
+      tipo: "ALMUERZO",
+      cantidad: 1,
+      precio_unitario: preciosBase.ALMUERZO * multiplicador,
+      fecha,
+    });
+
+    detalles.push({
+      tipo: "CENA",
+      cantidad: 1,
+      precio_unitario: preciosBase.CENA * multiplicador,
+      fecha,
+    });
+
+    current.setDate(current.getDate() + 1);
+  }
+
+  // 🔥 calcular noches
+  const noches = Math.max(0, Math.ceil((fin - inicio) / (1000 * 60 * 60 * 24)));
+
+  if (noches > 0) {
+    detalles.push({
+      tipo: "HOSPEDAJE",
+      cantidad: noches,
+      precio_unitario: preciosBase.HOSPEDAJE * multiplicador,
+      fecha: inicio,
+    });
+  }
+
+  return detalles;
+};
+
+export const remove = repo.deleteViatico;
+</file>
+
+</files>

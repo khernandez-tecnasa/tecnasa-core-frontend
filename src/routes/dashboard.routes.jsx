@@ -10,7 +10,7 @@ import MyAccount from "@/pages/Users/MyAccount/MyAccount";
 import Vehiculos from "@/pages/Vehiculos/Vehiculos";
 import Register from "@/pages/Register/Register";
 import RegisterForm from "@/pages/Register/RegisterForm";
-import Reservas from "@/pages/Register/Reservas";
+// import Reservas from "@/pages/Register/Reservas";
 
 import Countries from "@/pages/Administration/Locations/Countries";
 import Cities from "@/pages/Administration/Locations/Cities";
@@ -48,15 +48,26 @@ import StatusAdminPage from "@/pages/SoporteAdmin/StatusAdminPage.jsx";
 import HelpSearchResults from "@/pages/HelpPage/HelpSearchResults.jsx";
 import Notificaciones from "@/pages/Notificaciones/Notificaciones.jsx";
 import SettingsPage from "@/pages/Settings/SettingsPage";
-// Wrapper de permiso
-// import { useAuth } from "@/context/AuthContext";
-// function RequirePermission({ children, permiso = "help_manage" }) {
-//   const { hasPermiso, userData, checkingSession } = useAuth();
-//   const isAdmin = (userData?.rol || "").toLowerCase() === "admin";
-//   if (checkingSession) return null; // o un loader
-//   if (isAdmin || hasPermiso?.(permiso)) return children;
-//   return <div style={{ padding: 16 }}>No tienes permiso para acceder.</div>;
-// }
+
+// Rutas
+import RutasList from "@/pages/rutas/RutasList.jsx";
+import RutasForm from "@/pages/rutas/RutasForm.jsx";
+
+// Reservas
+import ReservasList from "@/pages/reservas/ReservasList.jsx";
+import ReservasForm from "@/pages/reservas/ReservasForm.jsx";
+
+// Viaticos
+import ViaticosList from "@/pages/viaticos/ViaticosList.jsx";
+import ViaticosForm from "@/pages/viaticos/ViaticosForm.jsx";
+
+// liquidaciones
+import LiquidacionForm from "@/pages/viaticos/LiquidacionForm.jsx";
+
+// Peajes
+import PeajesList from "@/pages/peajes/PeajesList.jsx";
+import PeajesForm from "@/pages/peajes/PeajesForm.jsx";
+import OperacionesPage from "@/pages/operaciones/OperacionesPage";
 
 export default function DashboardRoutes() {
   return (
@@ -75,9 +86,38 @@ export default function DashboardRoutes() {
 
         {/* Vehículos / Registro */}
         <Route path="vehiculos" element={<Vehiculos />} />
-        <Route path="panel-vehiculos" element={<Register />} />
+        <Route path="panel-vehiculos" element={<OperacionesPage />} />
         <Route path="panel-vehiculos/register" element={<RegisterForm />} />
-        <Route path="reservas" element={<Reservas />} />
+        {/* <Route path="reservas" element={<Reservas />} /> */}
+
+        {/* Rutas */}
+        <Route path="rutas">
+          <Route index element={<RutasList />} />
+          <Route path="new" element={<RutasForm />} />
+          <Route path="edit/:id" element={<RutasForm />} />
+        </Route>
+
+        {/* Reservas */}
+        <Route path="reservas-vehiculos">
+          <Route index element={<ReservasList />} />
+          <Route path="new" element={<ReservasForm />} />
+          <Route path="edit/:id" element={<ReservasForm />} />
+        </Route>
+
+        {/* Viaticos */}
+        <Route path="viaticos">
+          <Route index element={<ViaticosList />} />
+          <Route path="new" element={<ViaticosForm />} />
+          <Route path="edit/:id" element={<ViaticosForm />} />
+          <Route path=":id/liquidar" element={<LiquidacionForm />} />
+        </Route>
+
+        {/* Peajes */}
+        <Route path="peajes">
+          <Route index element={<PeajesList />} />
+          <Route path="new" element={<PeajesForm />} />
+          <Route path="edit/:id" element={<PeajesForm />} />
+        </Route>
 
         {/* Administración */}
         <Route path="countries" element={<Countries />} />
