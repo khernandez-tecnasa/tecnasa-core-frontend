@@ -14,30 +14,10 @@ import Tooltip from "@mui/joy/Tooltip";
 import { useColorScheme } from "@mui/joy/styles";
 import { useTranslation } from "react-i18next";
 
-import HomeRoundedIcon from "@mui/icons-material/HomeRounded";
-import DashboardRoundedIcon from "@mui/icons-material/DashboardRounded";
-import LocalShippingIcon from "@mui/icons-material/LocalShipping";
-import GroupRoundedIcon from "@mui/icons-material/GroupRounded";
-import SettingsRoundedIcon from "@mui/icons-material/SettingsRounded";
-import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
-import AppRegistrationIcon from "@mui/icons-material/AppRegistration";
-import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
-import AssessmentIcon from "@mui/icons-material/Assessment";
-import SupervisorAccountIcon from "@mui/icons-material/SupervisorAccount";
-import VpnKeyIcon from "@mui/icons-material/VpnKey";
-import AccountCircleIcon from "@mui/icons-material/AccountCircle";
-import PublicIcon from "@mui/icons-material/Public";
 import LocationCityIcon from "@mui/icons-material/LocationCity";
 import LocalParkingIcon from "@mui/icons-material/LocalParking";
-import HelpCenterIcon from "@mui/icons-material/HelpCenter";
-import SupportAgentIcon from "@mui/icons-material/SupportAgent";
-import QuestionAnswerRoundedIcon from "@mui/icons-material/QuestionAnswerRounded";
-import VideoLibraryRoundedIcon from "@mui/icons-material/VideoLibraryRounded";
-import AnnouncementRoundedIcon from "@mui/icons-material/AnnouncementRounded";
 import FactoryRoundedIcon from "@mui/icons-material/FactoryRounded";
-import DnsRoundedIcon from "@mui/icons-material/DnsRounded";
-import LockRoundedIcon from "@mui/icons-material/LockRounded";
 import StorageRoundedIcon from "@mui/icons-material/StorageRounded";
 import BusinessRoundedIcon from "@mui/icons-material/BusinessRounded";
 import PlaceRoundedIcon from "@mui/icons-material/PlaceRounded";
@@ -46,8 +26,40 @@ import DirectionsCarRoundedIcon from "@mui/icons-material/DirectionsCarRounded";
 import Inventory2RoundedIcon from "@mui/icons-material/Inventory2Rounded";
 import SummarizeRoundedIcon from "@mui/icons-material/SummarizeRounded";
 import ArticleRoundedIcon from "@mui/icons-material/ArticleRounded";
-import MarkChatUnreadIcon from "@mui/icons-material/MarkChatUnread";
-import { MoreHorizontalIcon, Sparkles } from "lucide-react";
+import {
+  Activity,
+  BarChart3,
+  BellDot,
+  Boxes,
+  Briefcase,
+  Building2,
+  CalendarCheck,
+  ClipboardList,
+  Globe2,
+  HelpCircle,
+  House,
+  LayoutDashboard,
+  LifeBuoy,
+  LogOut,
+  MapPin,
+  Megaphone,
+  MessageCircleQuestion,
+  Milestone,
+  MoreHorizontalIcon,
+  Package,
+  PlayCircle,
+  ReceiptText,
+  Route,
+  Settings,
+  Settings2,
+  ShieldCheck,
+  Sparkles,
+  SquareParking,
+  Truck,
+  User2,
+  Users2,
+  Warehouse,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -208,7 +220,7 @@ export default function Sidebar() {
     () => [
       {
         path: "/admin/home",
-        icon: <HomeRoundedIcon />,
+        icon: <House size={20} />,
         label: t("sidebar.inicio"),
         perm: null,
         canView: true,
@@ -217,7 +229,7 @@ export default function Sidebar() {
       },
       {
         path: "/admin/dashboard",
-        icon: <DashboardRoundedIcon />,
+        icon: <LayoutDashboard size={20} strokeWidth={1.5} />,
         label: t("sidebar.dashboard"),
         perm: "ver_dashboard",
         canView: checkPermission("ver_dashboard"),
@@ -226,16 +238,16 @@ export default function Sidebar() {
       },
       {
         path: "/admin/vehiculos",
-        icon: <LocalShippingIcon />,
+        icon: <Truck size={20} strokeWidth={1.5} />,
         label: t("sidebar.vehiculos"),
         perm: "gestionar_vehiculos",
-        canView: checkPermission("gestionar_vehiculos"),
+        canView: checkPermission("gestionar_vehiculos") || checkPermission("ver_vehiculos"),
         kind: "vehicle",
         group: "General",
       },
       {
         path: "/admin/panel-vehiculos",
-        icon: <AppRegistrationIcon />,
+        icon: <ClipboardList size={20} strokeWidth={1.5} />,
         label: t("sidebar.registros"),
         perm: "registrar_uso",
         canView: checkPermission("registrar_uso"),
@@ -244,7 +256,7 @@ export default function Sidebar() {
       },
       {
         path: "/admin/reports",
-        icon: <AssessmentIcon />,
+        icon: <BarChart3 size={20} strokeWidth={1.5} />,
         label: t("sidebar.reportes"),
         perm: "ver_reportes",
         canView: checkPermission("ver_reportes"),
@@ -255,11 +267,53 @@ export default function Sidebar() {
     [t, checkPermission],
   );
 
+  const logisticaItems = React.useMemo(
+    () => [
+      {
+        path: "/admin/rutas",
+        icon: <Route size={20} strokeWidth={1.5} />,
+        label: "Rutas",
+        perm: "gestionar_rutas",
+        canView: checkPermission("gestionar_rutas"),
+        kind: "route",
+        group: "Viáticos",
+      },
+      {
+        path: "/admin/reservas-vehiculos",
+        icon: <CalendarCheck size={20} strokeWidth={1.5} />,
+        label: "Reservas",
+        perm: "gestionar_reservas",
+        canView: checkPermission("gestionar_reservas"),
+        kind: "reservation",
+        group: "Viáticos",
+      },
+      {
+        path: "/admin/viaticos",
+        icon: <ReceiptText size={20} strokeWidth={1.5} />,
+        label: "Gastos",
+        perm: "gestionar_viaticos",
+        canView: checkPermission("gestionar_viaticos"),
+        kind: "viatico",
+        group: "Viáticos",
+      },
+      {
+        path: "/admin/peajes",
+        icon: <Milestone size={20} strokeWidth={1.5} />,
+        label: "Peajes",
+        perm: "gestionar_peajes",
+        canView: checkPermission("gestionar_peajes"),
+        kind: "peaje",
+        group: "Viáticos",
+      },
+    ],
+    [t, checkPermission],
+  );
+
   const managementItems = React.useMemo(
     () => [
       {
         path: "/admin/clientes",
-        icon: <GroupRoundedIcon />,
+        icon: <Building2 size={20} strokeWidth={1.5} />,
         label: t("sidebar.companias"),
         perm: "gestionar_companias",
         canView: checkPermission("gestionar_companias"),
@@ -268,7 +322,7 @@ export default function Sidebar() {
       },
       {
         path: "/admin/countries",
-        icon: <PublicIcon />,
+        icon: <Globe2 size={20} strokeWidth={1.5} />,
         label: t("sidebar.paises"),
         perm: "gestionar_paises",
         canView: checkPermission("gestionar_paises"),
@@ -277,7 +331,7 @@ export default function Sidebar() {
       },
       {
         path: "/admin/cities",
-        icon: <LocationCityIcon />,
+        icon: <MapPin size={20} strokeWidth={1.5} />,
         label: t("sidebar.ciudades"),
         perm: "gestionar_ciudades",
         canView: checkPermission("gestionar_ciudades"),
@@ -286,7 +340,7 @@ export default function Sidebar() {
       },
       {
         path: "/admin/parkings",
-        icon: <LocalParkingIcon />,
+        icon: <SquareParking size={20} strokeWidth={1.5} />,
         label: t("sidebar.estacionamientos"),
         perm: "gestionar_estacionamientos",
         canView: checkPermission("gestionar_estacionamientos"),
@@ -301,7 +355,7 @@ export default function Sidebar() {
     () => [
       {
         path: "/admin/inventario/bodegas",
-        icon: <FactoryRoundedIcon />,
+        icon: <Warehouse size={20} strokeWidth={1.5} />,
         label: t("sidebar.bodegas"),
         perm: "gestionar_bodegas",
         canView: checkPermission("gestionar_bodegas"),
@@ -310,7 +364,7 @@ export default function Sidebar() {
       },
       {
         path: "/admin/inventario/activos",
-        icon: <DnsRoundedIcon />,
+        icon: <Package size={20} strokeWidth={1.5} />,
         label: t("sidebar.activos"),
         perm: "gestionar_activos",
         canView: checkPermission("gestionar_activos"),
@@ -325,7 +379,7 @@ export default function Sidebar() {
     () => [
       {
         path: "/admin/usuarios",
-        icon: <SupervisorAccountIcon />,
+        icon: <Users2 size={20} strokeWidth={1.5} />,
         label: t("sidebar.gestion_usuarios"),
         perm: "gestionar_usuarios",
         canView: checkPermission("gestionar_usuarios"),
@@ -334,7 +388,7 @@ export default function Sidebar() {
       },
       {
         path: "/admin/notificaciones",
-        icon: <MarkChatUnreadIcon />,
+        icon: <BellDot size={20} strokeWidth={1.5} />,
         label: t("sidebar.notificaciones"),
         perm: "ver_notificaciones",
         canView: checkPermission("ver_notificaciones"),
@@ -349,7 +403,7 @@ export default function Sidebar() {
     () => [
       {
         path: "/admin/support/faqs",
-        icon: <QuestionAnswerRoundedIcon />,
+        icon: <MessageCircleQuestion size={20} strokeWidth={1.5} />,
         label: t("sidebar.gestionar_faqs"),
         perm: "help_manage",
         canView: checkPermission("help_manage"),
@@ -358,7 +412,7 @@ export default function Sidebar() {
       },
       {
         path: "/admin/support/tutorials",
-        icon: <VideoLibraryRoundedIcon />,
+        icon: <PlayCircle size={20} strokeWidth={1.5} />,
         label: t("sidebar.gestionar_tutoriales"),
         perm: "help_manage",
         canView: checkPermission("help_manage"),
@@ -367,7 +421,7 @@ export default function Sidebar() {
       },
       {
         path: "/admin/support/changelogs",
-        icon: <AnnouncementRoundedIcon />,
+        icon: <Megaphone size={20} strokeWidth={1.5} />,
         label: t("sidebar.gestionar_novedades"),
         perm: "help_manage",
         canView: checkPermission("help_manage"),
@@ -376,7 +430,7 @@ export default function Sidebar() {
       },
       {
         path: "/admin/support/services",
-        icon: <DnsRoundedIcon />,
+        icon: <Activity size={20} strokeWidth={1.5} />,
         label: t("sidebar.estado_de_servicios"),
         perm: "help_manage",
         canView: checkPermission("help_manage"),
@@ -400,6 +454,7 @@ export default function Sidebar() {
       }));
     return [
       ...pick(navItems),
+      ...pick(logisticaItems),
       ...pick(managementItems),
       ...pick(inventoryItems),
       ...pick(systemItems),
@@ -739,131 +794,173 @@ export default function Sidebar() {
               />
             ))}
 
+            {(checkPermission("gestionar_rutas") ||
+              checkPermission("gestionar_reservas") ||
+              checkPermission("gestionar_viaticos")) && (
+                <ListItem nested>
+                  <Toggler
+                    renderToggle={({ open, setOpen }) => (
+                      <ListItemButton
+                        onClick={() => setOpen(!open)}
+                        aria-expanded={open}
+                        sx={{
+                          fontWeight: "md",
+                          "&:hover": { backgroundColor: "neutral.softBg" },
+                        }}>
+                        <Briefcase size={20} strokeWidth={1.5} />
+                        <ListItemContent>
+                          <Typography level="title-sm">
+                            Control de Viajes
+                          </Typography>
+                        </ListItemContent>
+                        <KeyboardArrowDownIcon
+                          sx={{
+                            transform: open ? "rotate(180deg)" : "none",
+                            transition: "0.2s",
+                          }}
+                        />
+                      </ListItemButton>
+                    )}>
+                    {logisticaItems.map((item) => (
+                      <NavItem
+                        key={item.path}
+                        path={item.path}
+                        icon={item.icon}
+                        label={item.label}
+                        currentPath={currentPath}
+                        onNavigate={handleNavigate}
+                        canView={item.canView}
+                      />
+                    ))}
+                  </Toggler>
+                </ListItem>
+              )}
+
             {(checkPermission("gestionar_companias") ||
               checkPermission("gestionar_paises") ||
               checkPermission("gestionar_ciudades") ||
               checkPermission("gestionar_estacionamientos")) && (
-              <ListItem nested>
-                <Toggler
-                  renderToggle={({ open, setOpen }) => (
-                    <ListItemButton
-                      onClick={() => setOpen(!open)}
-                      aria-expanded={open}
-                      sx={{
-                        fontWeight: "md",
-                        "&:hover": { backgroundColor: "neutral.softBg" },
-                      }}>
-                      <AdminPanelSettingsIcon />
-                      <ListItemContent>
-                        <Typography level="title-sm">
-                          {t("sidebar.gestion")}
-                        </Typography>
-                      </ListItemContent>
-                      <KeyboardArrowDownIcon
+                <ListItem nested>
+                  <Toggler
+                    renderToggle={({ open, setOpen }) => (
+                      <ListItemButton
+                        onClick={() => setOpen(!open)}
+                        aria-expanded={open}
                         sx={{
-                          transform: open ? "rotate(180deg)" : "none",
-                          transition: "0.2s",
-                        }}
+                          fontWeight: "md",
+                          "&:hover": { backgroundColor: "neutral.softBg" },
+                        }}>
+                        <Settings2 size={20} strokeWidth={1.5} />
+                        <ListItemContent>
+                          <Typography level="title-sm">
+                            {t("sidebar.gestion")}
+                          </Typography>
+                        </ListItemContent>
+                        <KeyboardArrowDownIcon
+                          sx={{
+                            transform: open ? "rotate(180deg)" : "none",
+                            transition: "0.2s",
+                          }}
+                        />
+                      </ListItemButton>
+                    )}>
+                    {managementItems.map((item) => (
+                      <NavItem
+                        key={item.path}
+                        path={item.path}
+                        icon={item.icon}
+                        label={item.label}
+                        currentPath={currentPath}
+                        onNavigate={handleNavigate}
+                        canView={item.canView}
                       />
-                    </ListItemButton>
-                  )}>
-                  {managementItems.map((item) => (
-                    <NavItem
-                      key={item.path}
-                      path={item.path}
-                      icon={item.icon}
-                      label={item.label}
-                      currentPath={currentPath}
-                      onNavigate={handleNavigate}
-                      canView={item.canView}
-                    />
-                  ))}
-                </Toggler>
-              </ListItem>
-            )}
+                    ))}
+                  </Toggler>
+                </ListItem>
+              )}
 
             {(checkPermission("gestionar_bodegas") ||
               checkPermission("gestionar_activos")) && (
-              <ListItem nested>
-                <Toggler
-                  renderToggle={({ open, setOpen }) => (
-                    <ListItemButton
-                      onClick={() => setOpen(!open)}
-                      aria-expanded={open}
-                      sx={{
-                        fontWeight: "md",
-                        "&:hover": { backgroundColor: "neutral.softBg" },
-                      }}>
-                      <DnsRoundedIcon />
-                      <ListItemContent>
-                        <Typography level="title-sm">
-                          {t("sidebar.inventario")}
-                        </Typography>
-                      </ListItemContent>
-                      <KeyboardArrowDownIcon
+                <ListItem nested>
+                  <Toggler
+                    renderToggle={({ open, setOpen }) => (
+                      <ListItemButton
+                        onClick={() => setOpen(!open)}
+                        aria-expanded={open}
                         sx={{
-                          transform: open ? "rotate(180deg)" : "none",
-                          transition: "0.2s",
-                        }}
+                          fontWeight: "md",
+                          "&:hover": { backgroundColor: "neutral.softBg" },
+                        }}>
+                        <Boxes size={20} strokeWidth={1.5} />
+                        <ListItemContent>
+                          <Typography level="title-sm">
+                            {t("sidebar.inventario")}
+                          </Typography>
+                        </ListItemContent>
+                        <KeyboardArrowDownIcon
+                          sx={{
+                            transform: open ? "rotate(180deg)" : "none",
+                            transition: "0.2s",
+                          }}
+                        />
+                      </ListItemButton>
+                    )}>
+                    {inventoryItems.map((item) => (
+                      <NavItem
+                        key={item.path}
+                        path={item.path}
+                        icon={item.icon}
+                        label={item.label}
+                        currentPath={currentPath}
+                        onNavigate={handleNavigate}
+                        canView={item.canView}
                       />
-                    </ListItemButton>
-                  )}>
-                  {inventoryItems.map((item) => (
-                    <NavItem
-                      key={item.path}
-                      path={item.path}
-                      icon={item.icon}
-                      label={item.label}
-                      currentPath={currentPath}
-                      onNavigate={handleNavigate}
-                      canView={item.canView}
-                    />
-                  ))}
-                </Toggler>
-              </ListItem>
-            )}
+                    ))}
+                  </Toggler>
+                </ListItem>
+              )}
 
             {(checkPermission("asignar_permisos") ||
               checkPermission("ver_notificaciones") ||
               checkPermission("gestionar_usuarios")) && (
-              <ListItem nested>
-                <Toggler
-                  renderToggle={({ open, setOpen }) => (
-                    <ListItemButton
-                      onClick={() => setOpen(!open)}
-                      aria-expanded={open}
-                      sx={{
-                        fontWeight: "md",
-                        "&:hover": { backgroundColor: "neutral.softBg" },
-                      }}>
-                      <SettingsRoundedIcon />
-                      <ListItemContent>
-                        <Typography level="title-sm">
-                          {t("sidebar.sistema")}
-                        </Typography>
-                      </ListItemContent>
-                      <KeyboardArrowDownIcon
+                <ListItem nested>
+                  <Toggler
+                    renderToggle={({ open, setOpen }) => (
+                      <ListItemButton
+                        onClick={() => setOpen(!open)}
+                        aria-expanded={open}
                         sx={{
-                          transform: open ? "rotate(180deg)" : "none",
-                          transition: "0.2s",
-                        }}
+                          fontWeight: "md",
+                          "&:hover": { backgroundColor: "neutral.softBg" },
+                        }}>
+                        <ShieldCheck size={20} strokeWidth={1.5} />
+                        <ListItemContent>
+                          <Typography level="title-sm">
+                            {t("sidebar.sistema")}
+                          </Typography>
+                        </ListItemContent>
+                        <KeyboardArrowDownIcon
+                          sx={{
+                            transform: open ? "rotate(180deg)" : "none",
+                            transition: "0.2s",
+                          }}
+                        />
+                      </ListItemButton>
+                    )}>
+                    {systemItems.map((item) => (
+                      <NavItem
+                        key={item.path}
+                        path={item.path}
+                        icon={item.icon}
+                        label={item.label}
+                        currentPath={currentPath}
+                        onNavigate={handleNavigate}
+                        canView={item.canView}
                       />
-                    </ListItemButton>
-                  )}>
-                  {systemItems.map((item) => (
-                    <NavItem
-                      key={item.path}
-                      path={item.path}
-                      icon={item.icon}
-                      label={item.label}
-                      currentPath={currentPath}
-                      onNavigate={handleNavigate}
-                      canView={item.canView}
-                    />
-                  ))}
-                </Toggler>
-              </ListItem>
-            )}
+                    ))}
+                  </Toggler>
+                </ListItem>
+              )}
 
             {checkPermission("help_manage") && (
               <ListItem nested>
@@ -876,7 +973,7 @@ export default function Sidebar() {
                         fontWeight: "md",
                         "&:hover": { backgroundColor: "neutral.softBg" },
                       }}>
-                      <SupportAgentIcon />
+                      <LifeBuoy size={20} strokeWidth={1.5} />
                       <ListItemContent>
                         <Typography level="title-sm">
                           {t("sidebar.ayuda")}
@@ -969,7 +1066,7 @@ export default function Sidebar() {
                   <DropdownMenuItem
                     onSelect={() => navigate("/admin/mi-cuenta")}
                     className="gap-2">
-                    <AccountCircleIcon className="h-4 w-4" fontSize="small" />
+                    <User2 className="h-4 w-4" fontSize="small" />
                     <span>{t("sidebar.mi_perfil")}</span>
                   </DropdownMenuItem>
 
@@ -977,10 +1074,7 @@ export default function Sidebar() {
                     <DropdownMenuItem
                       onSelect={() => navigate("/admin/configuraciones")}
                       className="gap-2">
-                      <SettingsRoundedIcon
-                        className="h-4 w-4"
-                        fontSize="small"
-                      />
+                      <Settings className="h-4 w-4" fontSize="small" />
                       <span>{t("sidebar.configuraciones")}</span>
                       <DropdownMenuShortcut>Ctrl+,</DropdownMenuShortcut>
                     </DropdownMenuItem>
@@ -989,7 +1083,7 @@ export default function Sidebar() {
                   <DropdownMenuItem
                     onSelect={() => navigate("/admin/help")}
                     className="gap-2">
-                    <HelpCenterIcon className="h-4 w-4" fontSize="small" />
+                    <HelpCircle className="h-4 w-4" fontSize="small" />
                     <span>{t("sidebar.centro_de_ayuda")}</span>
                     <DropdownMenuShortcut>Ctrl+H</DropdownMenuShortcut>
                   </DropdownMenuItem>
@@ -1005,7 +1099,7 @@ export default function Sidebar() {
                     focus:text-red-700 dark:focus:text-red-300
                     focus:bg-red-50 dark:focus:bg-red-950
                   ">
-                  <LogoutRoundedIcon className="h-4 w-4" fontSize="small" />
+                  <LogOut className="h-4 w-4" fontSize="small" />
                   <span>{t("sidebar.cerrar_sesion")}</span>
                   <DropdownMenuShortcut>Ctrl+Q</DropdownMenuShortcut>
                 </DropdownMenuItem>
@@ -1075,7 +1169,7 @@ export default function Sidebar() {
             <CommandItem
               onSelect={() => navigate("/admin/help")}
               value="Centro de ayuda">
-              <HelpCenterIcon className="mr-2 h-4 w-4" />
+              <HelpCircle className="mr-2 h-4 w-4" />
               <span>{t("sidebar.centro_de_ayuda")}</span>
               <CommandShortcut>Ctrl+H</CommandShortcut>
             </CommandItem>
@@ -1084,7 +1178,7 @@ export default function Sidebar() {
               <CommandItem
                 onSelect={() => navigate("/admin/configuraciones")}
                 value="Configuraciones">
-                <SettingsRoundedIcon className="mr-2 h-4 w-4" />
+                <Settings className="mr-2 h-4 w-4" />
                 <span>{t("sidebar.configuraciones")}</span>
                 <CommandShortcut>Ctrl+,</CommandShortcut>
               </CommandItem>
@@ -1094,7 +1188,7 @@ export default function Sidebar() {
               onSelect={logoutHandler}
               value="Cerrar sesión"
               className="text-red-600 dark:text-red-400">
-              <LogoutRoundedIcon className="mr-2 h-4 w-4" />
+              <LogOut className="mr-2 h-4 w-4" />
               <span>{t("sidebar.cerrar_sesion")}</span>
               <CommandShortcut>Ctrl+Q</CommandShortcut>
             </CommandItem>

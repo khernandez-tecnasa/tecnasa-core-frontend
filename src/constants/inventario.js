@@ -45,6 +45,8 @@ export const PRODUCTO_TIPOS = ["Equipo", "Parte", "Consumible"];
 export const ROLES_USUARIO = [
   "Empleado",
   "Supervisor",
+  "Tecnico",
+  "Finanzas",
   // si quieres agregar "Admin" como seleccionable, lo añades aquí
 ];
 

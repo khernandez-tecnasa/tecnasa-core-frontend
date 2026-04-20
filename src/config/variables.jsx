@@ -10,6 +10,7 @@ export const endpoints = {
   login: `${API_BASE_URL}/auth/login`,
   addVehiculo: `${API_BASE_URL}/vehiculos/`,
   getVehiculos: `${API_BASE_URL}/vehiculos/`,
+  getVehiculosDisponibles: `${API_BASE_URL}/vehiculos/disponibles`,
   deleteVehiculo: `${API_BASE_URL}/vehiculos/`,
   restoreVehiculo: `${API_BASE_URL}/vehiculos/`,
   getRegistros: `${API_BASE_URL}/registros/`,
@@ -31,7 +32,7 @@ export const endpoints = {
   forgotPassword: `${API_BASE_URL}/auth/forgot-password`,
   getUbicaciones: `${API_BASE_URL}/vehiculos/ubicaciones`,
   getEmpleados: `${API_BASE_URL}/empleados/`,
-  Reservas: `${API_BASE_URL}/reservas`,
+  // Reservas: `${API_BASE_URL}/reservas`,
   getCountries: `${API_BASE_URL}/countries/`,
   addCountry: `${API_BASE_URL}/countries/`,
   updateCountry: `${API_BASE_URL}/countries/`,
@@ -149,10 +150,50 @@ export const endpoints = {
   notifConfig: `${API_BASE_URL}/notificaciones/config/`,
 
   //viaticos
-  viaticos: `${API_BASE_URL}/viaticos`,
-  viaticosCiudades: `${API_BASE_URL}/viaticos/ciudades`,
-  viaticosLiquidaciones: `${API_BASE_URL}/viaticos/liquidaciones`,
-  viaticosComprobantes: `${API_BASE_URL}/viaticos/comprobantes`,
+  // viaticos: `${API_BASE_URL}/viaticos`,
+  // viaticosCiudades: `${API_BASE_URL}/viaticos/ciudades`,
+  // viaticosLiquidaciones: `${API_BASE_URL}/viaticos/liquidaciones`,
+  // viaticosComprobantes: `${API_BASE_URL}/viaticos/comprobantes`,
+
+  // VIATICOS
+  getViaticos: "/api/viaticos",
+  getViatico: "/api/viaticos/",
+  createViatico: "/api/viaticos",
+  updateViatico: "/api/viaticos/",
+  deleteViatico: "/api/viaticos/",
+  aprobarViatico: "/api/viaticos/",
+  cancelarViatico: "/api/viaticos/",
+  enviarRevisionViatico: "/api/viaticos/",
+
+  // RUTAS
+  getRutas: "/api/rutas",
+  getRuta: "/api/rutas/",
+  createRuta: "/api/rutas",
+  updateRuta: "/api/rutas/",
+  deleteRuta: "/api/rutas/",
+
+  // PEAJES
+  getPeajes: "/api/peajes",
+  getPeaje: "/api/peajes/",
+  getPeajesByRuta: "/api/peajes/rutas/",
+  createPeaje: "/api/peajes",
+  updatePeaje: "/api/peajes/",
+  deletePeaje: "/api/peajes/",
+
+  // RESERVAS
+  getReservas: `${API_BASE_URL}/reservas/`,
+  getReserva: "/api/reservas/",
+  createReserva: `${API_BASE_URL}/reservas/`,
+  updateReserva: "/api/reservas/",
+  iniciarReserva: "/api/reservas/",
+  finalizarReserva: "/api/reservas/",
+  cancelarReserva: "/api/reservas/",
+  deleteReserva: "/api/reservas/",
+
+  // OPERACIONES
+  operacionesSalida: `${API_BASE_URL}/operaciones/salida`,
+  operacionesRegreso: `${API_BASE_URL}/operaciones/regreso`,
+  getOperacionActiva: `${API_BASE_URL}/operaciones/activa/`,
 
   // ajustes / settings
   getSettings: `${API_BASE_URL}/settings/`,
