@@ -50,6 +50,15 @@ import {
 
 import { sileo } from "sileo";
 
+// ─── Tabs de filtro — cada value se envía al backend como query param `tipo` ──
+const TABS = [
+  { label: "Activos", value: "activos" },
+  { label: "Liquidados", value: "historico" },
+  { label: "Todos", value: "todos" },
+];
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
 const getEstadoBadge = (estado) => {
   switch (estado) {
     case "Borrador":
@@ -63,6 +72,8 @@ const getEstadoBadge = (estado) => {
       return "bg-rose-100 text-rose-700 border-rose-200";
     case "Finalizado":
       return "bg-blue-100 text-blue-700 border-blue-200";
+    case "Liquidado":
+      return "bg-violet-100 text-violet-700 border-violet-200";
     default:
       return "bg-muted text-muted-foreground border-transparent";
   }
@@ -83,12 +94,17 @@ const formatLps = (amount) =>
 const capTipo = (tipo) =>
   tipo ? tipo.charAt(0).toUpperCase() + tipo.slice(1).toLowerCase() : "—";
 
+// ─── Componente ───────────────────────────────────────────────────────────────
+
 export default function ViaticosList() {
   const [viaticos, setViaticos] = useState([]);
   const [empMap, setEmpMap] = useState({});
   const [vehMap, setVehMap] = useState({});
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+
+  // Tab activo — controla qué query param se envía al backend
+  const [tipoActivo, setTipoActivo] = useState("activos");
 
   const [detalle, setDetalle] = useState(null);
   const [detalleItems, setDetalleItems] = useState([]);
@@ -118,37 +134,50 @@ export default function ViaticosList() {
   const canApprove = can("approve_viatico");
   const canExport = can("export_viatico");
   const canRead = can("read_liquidacion");
+  const canEnviarRevision = can("enviar_revision");
 
-  const fetchData = useCallback(async () => {
-    if (!canView) return setLoading(false);
-    setLoading(true);
-    try {
-      const [data, emps, vehs] = await Promise.all([
-        getViaticos(),
-        getEmpleados(),
-        obtenerVehiculos(),
-      ]);
-      setViaticos(data || []);
-      const em = {};
-      (emps || []).forEach((e) => {
-        em[e.id] = e.nombre;
-      });
-      setEmpMap(em);
-      const vm = {};
-      (vehs || []).forEach((v) => {
-        vm[v.id] = v.placa;
-      });
-      setVehMap(vm);
-    } catch {
-      showToast("Error al cargar los datos", "danger");
-    } finally {
-      setLoading(false);
-    }
-  }, [canView]);
+  // ── Fetch centralizado — llama al backend con el tipo del tab activo ────────
+  const fetchViaticos = useCallback(
+    async (tipo) => {
+      if (!canView) return setLoading(false);
+      setLoading(true);
+      try {
+        const [data, emps, vehs] = await Promise.all([
+          getViaticos(tipo),
+          getEmpleados(),
+          obtenerVehiculos(),
+        ]);
+        setViaticos(data || []);
+        const em = {};
+        (emps || []).forEach((e) => {
+          em[e.id] = e.nombre;
+        });
+        setEmpMap(em);
+        const vm = {};
+        (vehs || []).forEach((v) => {
+          vm[v.id] = v.placa;
+        });
+        setVehMap(vm);
+      } catch {
+        showToast("Error al cargar los datos", "danger");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [canView],
+  );
 
+  // Carga inicial y cada vez que el tab cambia
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    fetchViaticos(tipoActivo);
+  }, [tipoActivo, fetchViaticos]);
+
+  // ── Cambio de tab ──────────────────────────────────────────────────────────
+  const handleTabChange = (valor) => {
+    if (valor === tipoActivo) return;
+    setSearchTerm(""); // limpiar búsqueda al cambiar de vista
+    setTipoActivo(valor);
+  };
 
   const handleVerDetalle = async (v) => {
     setDetalle(v);
@@ -165,7 +194,7 @@ export default function ViaticosList() {
     const res = await deleteViatico(id);
     if (res) {
       showToast("Viático eliminado", "success");
-      fetchData();
+      fetchViaticos(tipoActivo);
     } else {
       showToast("Error al eliminar", "danger");
     }
@@ -178,7 +207,7 @@ export default function ViaticosList() {
     if (res) {
       showToast("Viático aprobado", "success");
       setDetalle(null);
-      fetchData();
+      fetchViaticos(tipoActivo);
     } else {
       showToast("Error al aprobar", "danger");
     }
@@ -195,7 +224,7 @@ export default function ViaticosList() {
       setCancelTarget(null);
       setMotivoRechazo("");
       setDetalle(null);
-      fetchData();
+      fetchViaticos(tipoActivo);
     } else {
       showToast("Error al cancelar", "danger");
     }
@@ -206,7 +235,7 @@ export default function ViaticosList() {
     const res = await enviarRevision(id);
     if (res) {
       showToast("Enviado a revisión", "success");
-      fetchData();
+      fetchViaticos(tipoActivo);
     } else {
       showToast("Error al enviar", "danger");
     }
@@ -260,9 +289,12 @@ export default function ViaticosList() {
     });
   };
 
-  const canEditRow = (v) => canUpdate && (isAdmin || v.estado !== "Aprobado");
-  const canDeleteRow = (v) => canDelete && (isAdmin || v.estado !== "Aprobado");
+  const canEditRow = (v) =>
+    canUpdate && (isAdmin || (v.estado !== "Aprobado" && v.estado !== "Liquidado"));
+  const canDeleteRow = (v) =>
+    canDelete && (isAdmin || (v.estado !== "Aprobado" && v.estado !== "Liquidado"));
 
+  // Búsqueda local por nombre de empleado o placa — no filtra por estado
   const filtered = viaticos.filter((v) => {
     const term = searchTerm.toLowerCase();
     return (
@@ -299,7 +331,7 @@ export default function ViaticosList() {
           </DropdownMenuItem>
         )}
 
-        {canRead && v.estado === "Aprobado" && (
+        {canRead && (v.estado === "Aprobado" || v.estado === "Liquidado") && (
           <DropdownMenuItem
             onClick={() => navigate(`/admin/viaticos/${v.id}/liquidar`)}>
             <Receipt className="mr-2 h-4 w-4" /> Ver Liquidación
@@ -324,7 +356,7 @@ export default function ViaticosList() {
             </>
           )}
 
-        {canApprove && v.estado === "Rechazado" && (
+        {canEnviarRevision && v.estado === "Rechazado" && (
           <DropdownMenuItem onClick={() => handleEnviarRevision(v.id)}>
             <ArrowRight className="mr-2 h-4 w-4" /> Enviar a Revisión
           </DropdownMenuItem>
@@ -375,7 +407,22 @@ export default function ViaticosList() {
         )}
       </div>
 
-      {/* FILTROS */}
+      {/* TABS — cada tab dispara una nueva petición al backend */}
+      <div className="bg-card border rounded-2xl p-1.5 shadow-sm flex gap-1 w-fit">
+        {TABS.map((tab) => (
+          <button
+            key={tab.value}
+            onClick={() => handleTabChange(tab.value)}
+            className={`px-5 py-2 rounded-xl text-sm font-bold transition-all ${tipoActivo === tab.value
+              ? "bg-primary text-primary-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+              }`}>
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* BARRA DE BÚSQUEDA */}
       <div className="bg-card border rounded-2xl p-4 shadow-sm flex gap-4 items-center">
         <div className="relative w-full">
           <Search
@@ -641,7 +688,7 @@ export default function ViaticosList() {
                           const subtotal =
                             item.subtotal ??
                             Number(item.cantidad || 1) *
-                              Number(item.precio_unitario || 0);
+                            Number(item.precio_unitario || 0);
                           return (
                             <tr key={idx} className="hover:bg-muted/10">
                               <td className="px-3 py-2 font-semibold">

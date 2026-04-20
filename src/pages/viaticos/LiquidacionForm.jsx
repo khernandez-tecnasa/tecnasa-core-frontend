@@ -15,7 +15,6 @@ import {
   FileText,
   Plus,
   Trash2,
-  ArrowRight,
   AlertTriangle,
   Info,
   Receipt,
@@ -60,9 +59,95 @@ const DETALLE_VACIO = {
   comprobante_url: "",
 };
 
-const ESTADOS_BLOQUEADOS = ["Aprobado", "Liquidado"];
+// ─── Helper: Reglas de UI por rol y estado ────────────────────────────────────
+//
+// Centraliza qué puede ver o hacer cada rol según el estado actual.
+// Recibe los permisos base del usuario (sin estado) y devuelve flags
+// que el JSX consume directamente — sin condiciones dispersas.
+//
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+function getUIRules(estado, userData, permisos) {
+  if (!estado) {
+    return {
+      canEdit: false,
+      canSend: false,
+      canApprove: false,
+      canReject: false,
+      canLiquidate: false,
+    };
+  }
+  const rol = (userData?.rol || "").toLowerCase();
+  const isAdmin = rol === "admin";
+  const isEmpleado = rol === "empleado";
+  const isSupervisor = rol === "supervisor";
+  const isFinanzas = rol === "finanzas";
+
+  if (isAdmin) {
+    return {
+      canEdit: true,
+      canSend: true,
+      canApprove: true,
+      canReject: true,
+      canLiquidate: true,
+    };
+  }
+
+  if (estado === "Liquidado") {
+    return {
+      canEdit: false,
+      canSend: false,
+      canApprove: false,
+      canReject: false,
+      canLiquidate: false,
+    };
+  }
+
+  // 🟡 EMPLEADO
+  if (isEmpleado) {
+    const editable = ["Borrador", "Pendiente", "Rechazado"].includes(estado);
+
+    return {
+      canEdit: editable,
+      canSend: editable,
+      canApprove: false,
+      canReject: false,
+      canLiquidate: false,
+    };
+  }
+
+  // 🔵 SUPERVISOR
+  if (isSupervisor) {
+    return {
+      canEdit: false,
+      canSend: false,
+      canApprove: estado === "Enviado",
+      canReject: estado === "Enviado",
+      canLiquidate: false,
+    };
+  }
+
+  // 🟢 FINANZAS
+  if (isFinanzas) {
+    return {
+      canEdit: false,
+      canSend: false,
+      canApprove: false,
+      canReject: estado === "Aprobado",
+      canLiquidate: estado === "Aprobado",
+    };
+  }
+
+  // fallback
+  return {
+    canEdit: false,
+    canSend: false,
+    canApprove: false,
+    canReject: false,
+    canLiquidate: false,
+  };
+}
+
+// ─── Helpers de formato ───────────────────────────────────────────────────────
 
 const formatFecha = (str) => {
   if (!str) return "—";
@@ -116,23 +201,23 @@ export default function LiquidacionForm() {
     [isAdmin, hasPermiso],
   );
 
-  // permisos
+  // Permisos base del usuario, independientes del estado
   const canRead = can("read_liquidacion");
-  const canEdit = can("update_liquidacion");
-  const canApprove = can("approve_liquidacion");
-  const canLiquidar = can("liquidar_liquidacion");
+  const canEditPerm = can("update_liquidacion");
+  const canApprovePerm = can("approve_liquidacion");
+  const canLiquidarPerm = can("liquidar_liquidacion");
 
   // ── Estado ──────────────────────────────────────────────────────────────────
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [liquidacion, setLiquidacion] = useState(null); // cabecera
+  const [liquidacion, setLiquidacion] = useState(null);
   const [detalles, setDetalles] = useState([]);
   const [observaciones, setObservaciones] = useState("");
 
   // modal de rechazo
-  const [rechazandо, setRechazando] = useState(false);
+  const [showRechazarModal, setShowRechazarModal] = useState(false);
   const [motivoRechazo, setMotivoRechazo] = useState("");
-  const [rechazando, setRechazo] = useState(false);
+  const [rechazandoSubmit, setRechazandoSubmit] = useState(false);
 
   // catálogos para el resumen
   const [empMap, setEmpMap] = useState({});
@@ -140,7 +225,29 @@ export default function LiquidacionForm() {
 
   const [exporting, setExporting] = useState(false);
 
-  // ── Carga ────────────────────────────────────────────────────────────────────
+  // ── Reglas de UI centralizadas ─────────────────────────────────────────────
+  // Se recalculan cuando cambia el estado o los permisos del usuario.
+  const uiRules = useMemo(
+    () =>
+      getUIRules(liquidacion?.estado, userData, {
+        canEditPerm,
+        canApprovePerm,
+        canLiquidarPerm,
+      }) || {
+        canEdit: false,
+        canSend: false,
+        canApprove: false,
+        canReject: false,
+        canLiquidate: false,
+      },
+    [liquidacion?.estado, userData, canEditPerm, canApprovePerm, canLiquidarPerm]
+  );
+  // Bandera auxiliar para mostrar el aviso de "estado bloqueado" en la tabla
+  const estadoBloqueado = ["Aprobado", "Liquidado"].includes(
+    liquidacion?.estado,
+  );
+
+  // ── Carga ─────────────────────────────────────────────────────────────────
   const fetchData = useCallback(async () => {
     if (!canRead) return setLoading(false);
     setLoading(true);
@@ -151,7 +258,6 @@ export default function LiquidacionForm() {
         obtenerVehiculos(),
       ]);
 
-      // mapas de lookup
       const em = {};
       (emps || []).forEach((e) => {
         em[e.id] = e.nombre;
@@ -173,7 +279,6 @@ export default function LiquidacionForm() {
       setLiquidacion(data);
       setObservaciones(data.observaciones || "");
 
-      // Si ya tiene detalles guardados, usar esos; si no, precargar sugeridos
       if (data.detalles?.length) {
         setDetalles(
           data.detalles.map((d) => ({
@@ -224,10 +329,6 @@ export default function LiquidacionForm() {
   const totalAsignado = Number(liquidacion?.total_asignado || 0);
   const diferencia = totalAsignado - totalGastado;
 
-  // ── Guards ────────────────────────────────────────────────────────────────
-  const bloqueado = ESTADOS_BLOQUEADOS.includes(liquidacion?.estado);
-  const editable = !bloqueado && canEdit;
-
   // ── Gestión de detalles ───────────────────────────────────────────────────
   const handleDetalleChange = (idx, field, value) => {
     setDetalles((prev) =>
@@ -262,7 +363,7 @@ export default function LiquidacionForm() {
   });
 
   const handleGuardar = async () => {
-    if (!editable) return;
+    if (!uiRules.canEdit) return;
     setSubmitting(true);
     try {
       await guardarLiquidacion(liquidacion.id, buildPayload());
@@ -276,13 +377,13 @@ export default function LiquidacionForm() {
   };
 
   const handleEnviar = async () => {
-    if (!editable) return;
+    if (!uiRules.canSend) return;
     if (!detalles.length)
       return showToast("Agrega al menos un detalle", "warning");
     if (!confirm("¿Enviar a revisión? Se notificará al supervisor.")) return;
     setSubmitting(true);
     try {
-      // Primero guardar, luego enviar
+      // Guardar primero, luego enviar
       await guardarLiquidacion(liquidacion.id, buildPayload());
       await enviarRevisionLiquidacion(liquidacion.id);
       showToast("Liquidación enviada a revisión", "success");
@@ -295,7 +396,7 @@ export default function LiquidacionForm() {
   };
 
   const handleAprobar = async () => {
-    if (!canApprove) return;
+    if (!uiRules.canApprove) return;
     if (!confirm("¿Aprobar esta liquidación?")) return;
     setSubmitting(true);
     try {
@@ -312,22 +413,22 @@ export default function LiquidacionForm() {
   const handleRechazarConfirm = async () => {
     if (!motivoRechazo.trim())
       return showToast("Ingresa el motivo de rechazo", "warning");
-    setRechazo(true);
+    setRechazandoSubmit(true);
     try {
       await rechazarLiquidacion(liquidacion.id, motivoRechazo);
       showToast("Liquidación rechazada", "success");
-      setRechazando(false);
+      setShowRechazarModal(false);
       setMotivoRechazo("");
       fetchData();
     } catch (err) {
       showToast(err.message || "Error al rechazar", "danger");
     } finally {
-      setRechazo(false);
+      setRechazandoSubmit(false);
     }
   };
 
   const handleLiquidar = async () => {
-    if (!canLiquidar) return;
+    if (!uiRules.canLiquidate) return;
     if (
       !confirm(
         "¿Confirmar liquidación final? Esta acción no se puede revertir.",
@@ -358,13 +459,9 @@ export default function LiquidacionForm() {
 
     const exportTask = async () => {
       setExporting(true);
-
       try {
         await exportLiquidacionExcel(
-          {
-            ...liquidacion,
-            empleado_nombre: empMap[liquidacion.empleado_id],
-          },
+          { ...liquidacion, empleado_nombre: empMap[liquidacion.empleado_id] },
           detalles,
         );
       } finally {
@@ -458,28 +555,24 @@ export default function LiquidacionForm() {
       {/* ── RESUMEN VIÁTICO ────────────────────────────────────────────────── */}
       <div className="bg-card border rounded-3xl shadow-sm overflow-hidden">
         <div className="p-5 bg-muted/20 border-b flex items-center justify-between gap-3">
-          {/* IZQUIERDA */}
           <h3 className="text-xs font-black text-primary uppercase tracking-[0.2em] flex items-center gap-2">
             <Info size={14} /> Resumen del Viático
           </h3>
 
-          {/* DERECHA */}
           <div className="flex items-center gap-2">
             <button
               onClick={handleExportExcel}
               disabled={exporting}
               className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl border transition-all
-              ${
-                exporting
+              ${exporting
                   ? "bg-muted text-muted-foreground cursor-not-allowed opacity-70"
                   : "bg-background hover:bg-muted"
-              }`}>
+                }`}>
               {exporting ? (
                 <Loader2 size={14} className="animate-spin" />
               ) : (
                 <FileText size={14} />
               )}
-
               {exporting ? "Generando..." : "Excel"}
             </button>
 
@@ -522,7 +615,6 @@ export default function LiquidacionForm() {
           />
         </div>
 
-        {/* Totales resumen */}
         <div
           className={`px-5 pb-5 grid gap-3 ${isMobile ? "grid-cols-1" : "grid-cols-3"}`}>
           <TotalTile
@@ -550,7 +642,7 @@ export default function LiquidacionForm() {
           <h3 className="text-xs font-black text-primary uppercase tracking-[0.2em] flex items-center gap-2">
             <Receipt size={14} /> Detalles de Gastos Reales
           </h3>
-          {editable && (
+          {uiRules?.canEdit && (
             <button
               type="button"
               onClick={agregarFila}
@@ -560,8 +652,8 @@ export default function LiquidacionForm() {
           )}
         </div>
 
-        {/* Aviso estado bloqueado */}
-        {bloqueado && (
+        {/* Aviso cuando el estado impide cualquier modificación */}
+        {estadoBloqueado && (
           <div className="mx-5 mt-5 flex items-center gap-2 text-[11px] bg-amber-50 border border-amber-200 text-amber-700 rounded-xl px-4 py-2.5">
             <AlertTriangle size={13} className="shrink-0" />
             <span>
@@ -595,7 +687,7 @@ export default function LiquidacionForm() {
                   <th className="px-3 py-3 text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground w-32">
                     Fecha
                   </th>
-                  {editable && <th className="px-3 py-3 w-10" />}
+                  {uiRules?.canEdit && <th className="px-3 py-3 w-10" />}
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -604,7 +696,7 @@ export default function LiquidacionForm() {
                     key={idx}
                     d={d}
                     idx={idx}
-                    editable={editable}
+                    editable={uiRules?.canEdit}
                     onChange={handleDetalleChange}
                     onRemove={eliminarFila}
                   />
@@ -620,7 +712,7 @@ export default function LiquidacionForm() {
                 key={idx}
                 d={d}
                 idx={idx}
-                editable={editable}
+                editable={uiRules?.canEdit}
                 onChange={handleDetalleChange}
                 onRemove={eliminarFila}
               />
@@ -628,7 +720,6 @@ export default function LiquidacionForm() {
           </div>
         )}
 
-        {/* Fila total */}
         <div className="mx-5 mb-5 bg-muted/30 border rounded-2xl px-6 py-4 flex justify-between items-center">
           <span className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">
             Total Gastado ({detalles.length} ítems)
@@ -648,7 +739,7 @@ export default function LiquidacionForm() {
           rows={3}
           value={observaciones}
           onChange={(e) => setObservaciones(e.target.value)}
-          disabled={!editable}
+          disabled={!uiRules?.canEdit}
           placeholder="Notas o comentarios adicionales..."
           className="w-full rounded-xl border bg-muted/50 px-4 py-3 text-sm resize-none focus:ring-2 ring-primary/20 outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         />
@@ -657,8 +748,8 @@ export default function LiquidacionForm() {
       {/* ── BARRA DE ACCIONES ─────────────────────────────────────────────────── */}
       <div
         className={`bg-card border rounded-3xl shadow-sm p-5 flex flex-wrap gap-3 ${isMobile ? "flex-col" : ""}`}>
-        {/* Guardar borrador */}
-        {editable && (
+        {/* Guardar borrador — empleado en estados editables */}
+        {uiRules?.canEdit && (
           <Button
             onClick={handleGuardar}
             disabled={submitting}
@@ -673,8 +764,8 @@ export default function LiquidacionForm() {
           </Button>
         )}
 
-        {/* Enviar a revisión */}
-        {editable && (
+        {/* Enviar a revisión — empleado en estados editables */}
+        {uiRules?.canSend && (
           <Button
             onClick={handleEnviar}
             disabled={submitting}
@@ -688,33 +779,29 @@ export default function LiquidacionForm() {
           </Button>
         )}
 
-        {/* Aprobar — supervisor */}
-        {canApprove &&
-          ["Enviado", "Pendiente"].includes(liquidacion?.estado) && (
-            <Button
-              onClick={handleAprobar}
-              disabled={submitting}
-              className="rounded-2xl h-11 flex-1 font-bold bg-emerald-600 hover:bg-emerald-700 text-white">
-              <CheckCircle size={16} className="mr-2" /> Aprobar
-            </Button>
-          )}
+        {/* Aprobar — supervisor cuando está Enviado */}
+        {uiRules?.canApprove && (
+          <Button
+            onClick={handleAprobar}
+            disabled={submitting}
+            className="rounded-2xl h-11 flex-1 font-bold bg-emerald-600 hover:bg-emerald-700 text-white">
+            <CheckCircle size={16} className="mr-2" /> Aprobar
+          </Button>
+        )}
 
-        {/* Rechazar — supervisor */}
-        {canApprove &&
-          ["Enviado", "Pendiente", "Borrador"].includes(
-            liquidacion?.estado,
-          ) && (
-            <Button
-              onClick={() => setRechazando(true)}
-              disabled={submitting}
-              variant="outline"
-              className="rounded-2xl h-11 flex-1 font-bold border-rose-300 text-rose-600 hover:bg-rose-50">
-              <XCircle size={16} className="mr-2" /> Rechazar
-            </Button>
-          )}
+        {/* Rechazar — supervisor (Enviado) o finanzas (Aprobado) */}
+        {uiRules?.canReject && (
+          <Button
+            onClick={() => setShowRechazarModal(true)}
+            disabled={submitting}
+            variant="outline"
+            className="rounded-2xl h-11 flex-1 font-bold border-rose-300 text-rose-600 hover:bg-rose-50">
+            <XCircle size={16} className="mr-2" /> Rechazar
+          </Button>
+        )}
 
-        {/* Liquidar final — finanzas */}
-        {canLiquidar && liquidacion?.estado === "Aprobado" && (
+        {/* Liquidar final — finanzas cuando está Aprobado */}
+        {uiRules?.canLiquidate && (
           <Button
             onClick={handleLiquidar}
             disabled={submitting}
@@ -725,10 +812,10 @@ export default function LiquidacionForm() {
       </div>
 
       {/* ── MODAL RECHAZO ─────────────────────────────────────────────────────── */}
-      {rechazandо && (
+      {showRechazarModal && (
         <div
           className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4"
-          onClick={() => !rechazando && setRechazando(false)}>
+          onClick={() => !rechazandoSubmit && setShowRechazarModal(false)}>
           <div
             className="bg-card rounded-3xl shadow-2xl w-full max-w-md p-6 space-y-5 animate-in zoom-in-90 duration-200"
             onClick={(e) => e.stopPropagation()}>
@@ -754,7 +841,7 @@ export default function LiquidacionForm() {
                 rows={3}
                 value={motivoRechazo}
                 onChange={(e) => setMotivoRechazo(e.target.value)}
-                disabled={rechazando}
+                disabled={rechazandoSubmit}
                 placeholder="Ej: Montos inconsistentes, faltan comprobantes..."
                 className="w-full rounded-xl border bg-muted/50 px-4 py-3 text-sm resize-none focus:ring-2 ring-rose-300/50 outline-none transition-all disabled:opacity-60"
               />
@@ -763,22 +850,22 @@ export default function LiquidacionForm() {
             <div className="flex gap-3">
               <Button
                 onClick={handleRechazarConfirm}
-                disabled={rechazando || !motivoRechazo.trim()}
+                disabled={rechazandoSubmit || !motivoRechazo.trim()}
                 className="flex-1 rounded-2xl h-10 bg-rose-600 hover:bg-rose-700 text-white">
-                {rechazando ? (
+                {rechazandoSubmit ? (
                   <Loader2 size={16} className="animate-spin mr-2" />
                 ) : (
                   <XCircle size={16} className="mr-2" />
                 )}
-                {rechazando ? "Rechazando..." : "Confirmar Rechazo"}
+                {rechazandoSubmit ? "Rechazando..." : "Confirmar Rechazo"}
               </Button>
               <Button
                 variant="outline"
                 onClick={() => {
-                  setRechazando(false);
+                  setShowRechazarModal(false);
                   setMotivoRechazo("");
                 }}
-                disabled={rechazando}
+                disabled={rechazandoSubmit}
                 className="flex-1 rounded-2xl h-10">
                 Cancelar
               </Button>

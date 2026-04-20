@@ -241,7 +241,7 @@ export default function Sidebar() {
         icon: <Truck size={20} strokeWidth={1.5} />,
         label: t("sidebar.vehiculos"),
         perm: "gestionar_vehiculos",
-        canView: checkPermission("gestionar_vehiculos"),
+        canView: checkPermission("gestionar_vehiculos") || checkPermission("ver_vehiculos"),
         kind: "vehicle",
         group: "General",
       },
@@ -797,170 +797,170 @@ export default function Sidebar() {
             {(checkPermission("gestionar_rutas") ||
               checkPermission("gestionar_reservas") ||
               checkPermission("gestionar_viaticos")) && (
-              <ListItem nested>
-                <Toggler
-                  renderToggle={({ open, setOpen }) => (
-                    <ListItemButton
-                      onClick={() => setOpen(!open)}
-                      aria-expanded={open}
-                      sx={{
-                        fontWeight: "md",
-                        "&:hover": { backgroundColor: "neutral.softBg" },
-                      }}>
-                      <Briefcase size={20} strokeWidth={1.5} />
-                      <ListItemContent>
-                        <Typography level="title-sm">
-                          Control de Viajes
-                        </Typography>
-                      </ListItemContent>
-                      <KeyboardArrowDownIcon
+                <ListItem nested>
+                  <Toggler
+                    renderToggle={({ open, setOpen }) => (
+                      <ListItemButton
+                        onClick={() => setOpen(!open)}
+                        aria-expanded={open}
                         sx={{
-                          transform: open ? "rotate(180deg)" : "none",
-                          transition: "0.2s",
-                        }}
+                          fontWeight: "md",
+                          "&:hover": { backgroundColor: "neutral.softBg" },
+                        }}>
+                        <Briefcase size={20} strokeWidth={1.5} />
+                        <ListItemContent>
+                          <Typography level="title-sm">
+                            Control de Viajes
+                          </Typography>
+                        </ListItemContent>
+                        <KeyboardArrowDownIcon
+                          sx={{
+                            transform: open ? "rotate(180deg)" : "none",
+                            transition: "0.2s",
+                          }}
+                        />
+                      </ListItemButton>
+                    )}>
+                    {logisticaItems.map((item) => (
+                      <NavItem
+                        key={item.path}
+                        path={item.path}
+                        icon={item.icon}
+                        label={item.label}
+                        currentPath={currentPath}
+                        onNavigate={handleNavigate}
+                        canView={item.canView}
                       />
-                    </ListItemButton>
-                  )}>
-                  {logisticaItems.map((item) => (
-                    <NavItem
-                      key={item.path}
-                      path={item.path}
-                      icon={item.icon}
-                      label={item.label}
-                      currentPath={currentPath}
-                      onNavigate={handleNavigate}
-                      canView={item.canView}
-                    />
-                  ))}
-                </Toggler>
-              </ListItem>
-            )}
+                    ))}
+                  </Toggler>
+                </ListItem>
+              )}
 
             {(checkPermission("gestionar_companias") ||
               checkPermission("gestionar_paises") ||
               checkPermission("gestionar_ciudades") ||
               checkPermission("gestionar_estacionamientos")) && (
-              <ListItem nested>
-                <Toggler
-                  renderToggle={({ open, setOpen }) => (
-                    <ListItemButton
-                      onClick={() => setOpen(!open)}
-                      aria-expanded={open}
-                      sx={{
-                        fontWeight: "md",
-                        "&:hover": { backgroundColor: "neutral.softBg" },
-                      }}>
-                      <Settings2 size={20} strokeWidth={1.5} />
-                      <ListItemContent>
-                        <Typography level="title-sm">
-                          {t("sidebar.gestion")}
-                        </Typography>
-                      </ListItemContent>
-                      <KeyboardArrowDownIcon
+                <ListItem nested>
+                  <Toggler
+                    renderToggle={({ open, setOpen }) => (
+                      <ListItemButton
+                        onClick={() => setOpen(!open)}
+                        aria-expanded={open}
                         sx={{
-                          transform: open ? "rotate(180deg)" : "none",
-                          transition: "0.2s",
-                        }}
+                          fontWeight: "md",
+                          "&:hover": { backgroundColor: "neutral.softBg" },
+                        }}>
+                        <Settings2 size={20} strokeWidth={1.5} />
+                        <ListItemContent>
+                          <Typography level="title-sm">
+                            {t("sidebar.gestion")}
+                          </Typography>
+                        </ListItemContent>
+                        <KeyboardArrowDownIcon
+                          sx={{
+                            transform: open ? "rotate(180deg)" : "none",
+                            transition: "0.2s",
+                          }}
+                        />
+                      </ListItemButton>
+                    )}>
+                    {managementItems.map((item) => (
+                      <NavItem
+                        key={item.path}
+                        path={item.path}
+                        icon={item.icon}
+                        label={item.label}
+                        currentPath={currentPath}
+                        onNavigate={handleNavigate}
+                        canView={item.canView}
                       />
-                    </ListItemButton>
-                  )}>
-                  {managementItems.map((item) => (
-                    <NavItem
-                      key={item.path}
-                      path={item.path}
-                      icon={item.icon}
-                      label={item.label}
-                      currentPath={currentPath}
-                      onNavigate={handleNavigate}
-                      canView={item.canView}
-                    />
-                  ))}
-                </Toggler>
-              </ListItem>
-            )}
+                    ))}
+                  </Toggler>
+                </ListItem>
+              )}
 
             {(checkPermission("gestionar_bodegas") ||
               checkPermission("gestionar_activos")) && (
-              <ListItem nested>
-                <Toggler
-                  renderToggle={({ open, setOpen }) => (
-                    <ListItemButton
-                      onClick={() => setOpen(!open)}
-                      aria-expanded={open}
-                      sx={{
-                        fontWeight: "md",
-                        "&:hover": { backgroundColor: "neutral.softBg" },
-                      }}>
-                      <Boxes size={20} strokeWidth={1.5} />
-                      <ListItemContent>
-                        <Typography level="title-sm">
-                          {t("sidebar.inventario")}
-                        </Typography>
-                      </ListItemContent>
-                      <KeyboardArrowDownIcon
+                <ListItem nested>
+                  <Toggler
+                    renderToggle={({ open, setOpen }) => (
+                      <ListItemButton
+                        onClick={() => setOpen(!open)}
+                        aria-expanded={open}
                         sx={{
-                          transform: open ? "rotate(180deg)" : "none",
-                          transition: "0.2s",
-                        }}
+                          fontWeight: "md",
+                          "&:hover": { backgroundColor: "neutral.softBg" },
+                        }}>
+                        <Boxes size={20} strokeWidth={1.5} />
+                        <ListItemContent>
+                          <Typography level="title-sm">
+                            {t("sidebar.inventario")}
+                          </Typography>
+                        </ListItemContent>
+                        <KeyboardArrowDownIcon
+                          sx={{
+                            transform: open ? "rotate(180deg)" : "none",
+                            transition: "0.2s",
+                          }}
+                        />
+                      </ListItemButton>
+                    )}>
+                    {inventoryItems.map((item) => (
+                      <NavItem
+                        key={item.path}
+                        path={item.path}
+                        icon={item.icon}
+                        label={item.label}
+                        currentPath={currentPath}
+                        onNavigate={handleNavigate}
+                        canView={item.canView}
                       />
-                    </ListItemButton>
-                  )}>
-                  {inventoryItems.map((item) => (
-                    <NavItem
-                      key={item.path}
-                      path={item.path}
-                      icon={item.icon}
-                      label={item.label}
-                      currentPath={currentPath}
-                      onNavigate={handleNavigate}
-                      canView={item.canView}
-                    />
-                  ))}
-                </Toggler>
-              </ListItem>
-            )}
+                    ))}
+                  </Toggler>
+                </ListItem>
+              )}
 
             {(checkPermission("asignar_permisos") ||
               checkPermission("ver_notificaciones") ||
               checkPermission("gestionar_usuarios")) && (
-              <ListItem nested>
-                <Toggler
-                  renderToggle={({ open, setOpen }) => (
-                    <ListItemButton
-                      onClick={() => setOpen(!open)}
-                      aria-expanded={open}
-                      sx={{
-                        fontWeight: "md",
-                        "&:hover": { backgroundColor: "neutral.softBg" },
-                      }}>
-                      <ShieldCheck size={20} strokeWidth={1.5} />
-                      <ListItemContent>
-                        <Typography level="title-sm">
-                          {t("sidebar.sistema")}
-                        </Typography>
-                      </ListItemContent>
-                      <KeyboardArrowDownIcon
+                <ListItem nested>
+                  <Toggler
+                    renderToggle={({ open, setOpen }) => (
+                      <ListItemButton
+                        onClick={() => setOpen(!open)}
+                        aria-expanded={open}
                         sx={{
-                          transform: open ? "rotate(180deg)" : "none",
-                          transition: "0.2s",
-                        }}
+                          fontWeight: "md",
+                          "&:hover": { backgroundColor: "neutral.softBg" },
+                        }}>
+                        <ShieldCheck size={20} strokeWidth={1.5} />
+                        <ListItemContent>
+                          <Typography level="title-sm">
+                            {t("sidebar.sistema")}
+                          </Typography>
+                        </ListItemContent>
+                        <KeyboardArrowDownIcon
+                          sx={{
+                            transform: open ? "rotate(180deg)" : "none",
+                            transition: "0.2s",
+                          }}
+                        />
+                      </ListItemButton>
+                    )}>
+                    {systemItems.map((item) => (
+                      <NavItem
+                        key={item.path}
+                        path={item.path}
+                        icon={item.icon}
+                        label={item.label}
+                        currentPath={currentPath}
+                        onNavigate={handleNavigate}
+                        canView={item.canView}
                       />
-                    </ListItemButton>
-                  )}>
-                  {systemItems.map((item) => (
-                    <NavItem
-                      key={item.path}
-                      path={item.path}
-                      icon={item.icon}
-                      label={item.label}
-                      currentPath={currentPath}
-                      onNavigate={handleNavigate}
-                      canView={item.canView}
-                    />
-                  ))}
-                </Toggler>
-              </ListItem>
-            )}
+                    ))}
+                  </Toggler>
+                </ListItem>
+              )}
 
             {checkPermission("help_manage") && (
               <ListItem nested>

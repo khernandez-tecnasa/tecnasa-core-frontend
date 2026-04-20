@@ -5,9 +5,11 @@ import { fetchConToken } from "../utils/ApiHelper";
 // VIÁTICOS
 //
 
-export async function getViaticos() {
+// tipo: "activos" | "historico" | "todos" — filtra en backend
+export async function getViaticos(tipo = "activos") {
   try {
-    const res = await fetchConToken(endpoints.getViaticos);
+    const url = `${endpoints.getViaticos}?tipo=${tipo}`;
+    const res = await fetchConToken(url);
     if (!res.ok) throw new Error("No se pudieron obtener los viáticos");
     return await res.json();
   } catch (err) {
