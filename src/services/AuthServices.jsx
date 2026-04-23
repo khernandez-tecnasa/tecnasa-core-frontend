@@ -69,15 +69,16 @@ export async function createUserService(newUser) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        nombre: newUser.nombre,
-        email: newUser.email,
-        username: newUser.username,
-        password: newUser.password,
-        rol: newUser.rol,
-        estatus: newUser.estatus,
-        puesto: newUser.puesto,
-        id_ciudad: newUser.id_ciudad,
-        supervisor_id: newUser.supervisor_id,
+        nombre:       newUser.nombre,
+        email:        newUser.email,
+        username:     newUser.username,
+        password:     newUser.password,
+        rol_id:       newUser.rol_id   ?? null,   // nuevo campo (backend v2)
+        rol:          newUser.rol      ?? null,   // legacy — mantener para compatibilidad
+        estatus:      newUser.estatus  ?? "Activo",
+        puesto:       newUser.puesto   ?? null,
+        id_ciudad:    newUser.id_ciudad    ?? null,
+        supervisor_id: newUser.supervisor_id ?? null,
       }),
     });
 

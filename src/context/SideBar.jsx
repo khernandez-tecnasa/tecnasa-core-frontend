@@ -387,6 +387,15 @@ export default function Sidebar() {
         group: "Sistema",
       },
       {
+        path: "/admin/roles",
+        icon: <ShieldCheck size={20} strokeWidth={1.5} />,
+        label: "Roles",
+        perm: "asignar_permisos",
+        canView: checkPermission("asignar_permisos"),
+        kind: "sistema",
+        group: "Sistema",
+      },
+      {
         path: "/admin/notificaciones",
         icon: <BellDot size={20} strokeWidth={1.5} />,
         label: t("sidebar.notificaciones"),

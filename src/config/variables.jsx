@@ -48,6 +48,15 @@ export const endpoints = {
   getUserPermissions: `${API_BASE_URL}/permisos/`,
   updateUserPermissions: `${API_BASE_URL}/permisos/asignar`,
   getUserPermissionsList: `${API_BASE_URL}/permisos/usuarios`,
+  getPermisos: `${API_BASE_URL}/permisos`,
+
+  // Roles
+  getRoles: `${API_BASE_URL}/roles`,
+  getRoleById: `${API_BASE_URL}/roles/`,
+  createRole: `${API_BASE_URL}/roles`,
+  updateRole: `${API_BASE_URL}/roles/`,
+  deleteRole: `${API_BASE_URL}/roles/`,
+  updateRolePermisos: `${API_BASE_URL}/roles/`,
 
   // NOTIFICACIONES
   sendMail: `${API_BASE_URL}/mail/`,

@@ -5,7 +5,9 @@ import SearchResultsPage from "@/pages/Search/SearchResultsPage";
 import EntityPreviewPage from "@/pages/Search/EntityPreviewPage.jsx";
 import Dashboard from "@/pages/Dashboard/Dashboard";
 import Home from "@/pages/Dashboard/Home";
-import Usuarios from "@/pages/Users/Users";
+import Usuarios    from "@/pages/Users/Users";
+import UsersList   from "@/pages/Users/UsersList";
+import UsersForm   from "@/pages/Users/UsersForm";
 import MyAccount from "@/pages/Users/MyAccount/MyAccount";
 import Vehiculos from "@/pages/Vehiculos/Vehiculos";
 import Register from "@/pages/Register/Register";
@@ -69,6 +71,9 @@ import PeajesList from "@/pages/peajes/PeajesList.jsx";
 import PeajesForm from "@/pages/peajes/PeajesForm.jsx";
 import OperacionesPage from "@/pages/operaciones/OperacionesPage";
 
+// Roles
+import RolesList from "@/pages/Administration/Roles/RolesList.jsx";
+
 export default function DashboardRoutes() {
   return (
     <Routes>
@@ -81,7 +86,11 @@ export default function DashboardRoutes() {
         <Route path="notificaciones" element={<Notificaciones />} />
 
         {/* Usuarios / Cuenta */}
-        <Route path="usuarios" element={<Usuarios />} />
+        <Route path="usuarios">
+          <Route index element={<UsersList />} />
+          <Route path="new" element={<UsersForm />} />
+          <Route path="edit/:id" element={<UsersForm />} />
+        </Route>
         <Route path="mi-cuenta" element={<MyAccount />} />
 
         {/* Vehículos / Registro */}
@@ -118,6 +127,9 @@ export default function DashboardRoutes() {
           <Route path="new" element={<PeajesForm />} />
           <Route path="edit/:id" element={<PeajesForm />} />
         </Route>
+
+        {/* Roles */}
+        <Route path="roles" element={<RolesList />} />
 
         {/* Administración */}
         <Route path="countries" element={<Countries />} />

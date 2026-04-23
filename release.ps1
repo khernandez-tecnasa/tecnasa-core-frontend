@@ -100,7 +100,7 @@ if (Get-Command gh -EA SilentlyContinue) {
       Run "gh release create '$newTag' -t '$newTag' -n 'Release $newTag'" "gh release fallo"
     } else {
       $tmp = New-TemporaryFile; $releaseBody | Out-File -Encoding UTF8 $tmp
-      Run "gh release create '$newTag' -t '$newTag' -F $tmp" "gh release fallo"
+      Run "gh release create '$newTag' -t '$newTag' -F '$tmp'" "gh release fallo"
       Remove-Item $tmp -Force
     }
   } catch { Write-Warning "No se pudo crear el Release con gh: $($_.Exception.Message)" }

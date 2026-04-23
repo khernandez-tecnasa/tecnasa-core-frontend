@@ -10,19 +10,14 @@ import { useAuth } from "../context/AuthContext";
  * - canAll(...perms): boolean  → true si tiene todos
  */
 export default function usePermissions() {
-    const { userData, hasPermiso } = useAuth();
-    const isAdmin = (userData?.rol || "").toLowerCase() === "admin";
+  const { isAdmin, can } = useAuth();
 
-    const has = useCallback(
-        (name) => isAdmin || !!hasPermiso(name),
-        [isAdmin, hasPermiso]
-    );
+  const has = useCallback((name) => can(name), [can]);
+  const canAny = useCallback((...names) => names.some((n) => can(n)), [can]);
+  const canAll = useCallback((...names) => names.every((n) => can(n)), [can]);
 
-    const canAny = useCallback((...names) => names.some((n) => has(n)), [has]);
-    const canAll = useCallback((...names) => names.every((n) => has(n)), [has]);
-
-    return useMemo(
-        () => ({ isAdmin, has, canAny, canAll }),
-        [isAdmin, has, canAny, canAll]
-    );
+  return useMemo(
+    () => ({ isAdmin, has, canAny, canAll }),
+    [isAdmin, has, canAny, canAll]
+  );
 }
