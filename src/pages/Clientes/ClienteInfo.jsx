@@ -1,110 +1,103 @@
 // src/pages/Clientes/ClienteInfo.jsx
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
-import { useParams, useNavigate } from "react-router-dom"; // Import navigate
-import { useTranslation } from "react-i18next"; // 👈 i18n
-
+import { useParams } from "react-router-dom";
 import {
-  Box,
-  Card,
-  Typography,
-  Stack,
-  Button,
-  Input,
-  Avatar,
-  Divider,
-  Chip,
-  FormControl,
-  FormLabel,
-  Select,
-  Option,
-  Tooltip,
-  CircularProgress,
-  Grid,
-  IconButton,
-} from "@mui/joy";
+  Edit3,
+  Save,
+  X,
+  Loader2,
+  Building2,
+  ImagePlus,
+  Trash2,
+  MapPin,
+  Monitor,
+  Calendar,
+  AlertTriangle,
+} from "lucide-react";
 
-// Iconos
-import EditIcon from "@mui/icons-material/Edit";
-import SaveIcon from "@mui/icons-material/Save";
-import CloseIcon from "@mui/icons-material/Close";
-import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
-import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded"; // Nuevo
-import CloudUploadRoundedIcon from "@mui/icons-material/CloudUploadRounded"; // Nuevo
-
-import HourglassEmptyRoundedIcon from "@mui/icons-material/HourglassEmptyRounded";
-import LockPersonRoundedIcon from "@mui/icons-material/LockPersonRounded";
-import WifiOffRoundedIcon from "@mui/icons-material/WifiOffRounded";
-import RestartAltRoundedIcon from "@mui/icons-material/RestartAlt";
-import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
-import ErrorOutlineRoundedIcon from "@mui/icons-material/ErrorOutlineRounded";
-
-// Services & Context
-import { getClienteById, updateCliente } from "../../services/ClientesServices";
-import { getSitesByCliente } from "../../services/SitesServices";
-import { getActivosByCliente } from "../../services/ActivosServices";
-import { useToast } from "../../context/ToastContext";
-import { useAuth } from "../../context/AuthContext";
-import StatusCard from "../../components/common/StatusCard";
+import { getClienteById, updateCliente } from "@/services/ClientesServices";
+import { getSitesByCliente }              from "@/services/SitesServices";
+import { getActivosByCliente }            from "@/services/ActivosServices";
+import { useToast }                       from "@/context/ToastContext";
+import { useAuth }                        from "@/context/AuthContext";
+import { Button }                         from "@/components/ui/button";
 
 const ESTATUS = ["Activo", "Inactivo"];
 
+// ── Avatar de cliente ─────────────────────────────────────────────────────────
+function ClienteAvatar({ src, nombre, size = "md" }) {
+  const sz = size === "lg"
+    ? "w-20 h-20 text-2xl rounded-2xl"
+    : "w-12 h-12 text-base rounded-xl";
+  if (src) return <img src={src} alt={nombre} className={`${sz} object-contain bg-muted/40 dark:bg-slate-800`} />;
+  return (
+    <div className={`${sz} bg-primary/10 dark:bg-primary/15 text-primary font-black flex items-center justify-center shrink-0`}>
+      {(nombre || "?")[0].toUpperCase()}
+    </div>
+  );
+}
+
+// ── Badge de estado ───────────────────────────────────────────────────────────
+function StatusBadge({ estatus }) {
+  if (estatus === "Activo")
+    return (
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+        Activo
+      </span>
+    );
+  return (
+    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full bg-muted text-muted-foreground border border-border/60">
+      Inactivo
+    </span>
+  );
+}
+
+// ── Campo de lectura ──────────────────────────────────────────────────────────
+function FieldView({ label, value }) {
+  return (
+    <div className="space-y-1">
+      <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">{label}</p>
+      <p className="text-sm font-semibold text-foreground">{value || <span className="text-muted-foreground/50">—</span>}</p>
+    </div>
+  );
+}
+
+// ── Componente principal ──────────────────────────────────────────────────────
 export default function ClienteInfo() {
-  const { t } = useTranslation();
-  const { id } = useParams();
-  const navigate = useNavigate();
-  const { showToast } = useToast();
+  const { id }         = useParams();
+  const { showToast }  = useToast();
   const { userData, checkingSession, hasPermiso } = useAuth();
 
-  const isAdmin = userData?.rol?.toLowerCase() === "admin";
-  const can = useCallback(
-    (perm) => isAdmin || hasPermiso(perm),
-    [isAdmin, hasPermiso]
+  const isAdmin = useCallback(
+    () => (userData?.rol || userData?.role || "").toLowerCase() === "admin" || Boolean(userData?.isAdmin) || Boolean(userData?.es_admin),
+    [userData]
   );
+  const can = useCallback((p) => isAdmin() || hasPermiso(p), [isAdmin, hasPermiso]);
 
   const canView = can("ver_companias");
   const canEdit = can("editar_companias");
 
-  // Estado
-  const [cliente, setCliente] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState(null);
+  // ── Estado ──────────────────────────────────────────────────────────────────
+  const [cliente, setCliente]   = useState(null);
+  const [loading, setLoading]   = useState(true);
+  const [saving, setSaving]     = useState(false);
+  const [error, setError]       = useState(null);
   const [editMode, setEditMode] = useState(false);
 
-  const [form, setForm] = useState({
-    codigo: "",
-    nombre: "",
-    descripcion: "",
-    estatus: "Activo",
-  });
-
-  const [logoFile, setLogoFile] = useState(null);
+  const [form, setForm] = useState({ codigo: "", nombre: "", descripcion: "", estatus: "Activo" });
+  const [logoFile, setLogoFile]       = useState(null);
   const [logoPreview, setLogoPreview] = useState(null);
-  const prevBlobUrlRef = useRef(null);
+  const prevBlobUrlRef                = useRef(null);
 
   // Resumen
+  const [summary, setSummary]               = useState({ totalSites: 0, activeSites: 0, inactiveSites: 0, totalActivos: 0, activosByStatus: {} });
   const [summaryLoading, setSummaryLoading] = useState(false);
-  const [summaryError, setSummaryError] = useState(null);
-  const [summary, setSummary] = useState({
-    totalSites: 0,
-    activeSites: 0,
-    inactiveSites: 0,
-    totalActivos: 0,
-    activosByStatus: {},
-  });
 
-  // Carga Principal
+  // ── Carga principal ──────────────────────────────────────────────────────────
   const load = useCallback(async () => {
-    if (checkingSession) {
-      setLoading(true);
-      return;
-    }
-    if (!canView) {
-      setLoading(false);
-      setError(null);
-      return;
-    }
-
+    if (checkingSession) { setLoading(true); return; }
+    if (!canView) { setLoading(false); setError(null); return; }
     setLoading(true);
     setError(null);
     try {
@@ -113,94 +106,49 @@ export default function ClienteInfo() {
         setCliente(null);
       } else {
         setCliente(data);
-        setForm({
-          codigo: data.codigo || "",
-          nombre: data.nombre || "",
-          descripcion: data.descripcion || "",
-          estatus: data.estatus || "Activo",
-        });
+        setForm({ codigo: data.codigo || "", nombre: data.nombre || "", descripcion: data.descripcion || "", estatus: data.estatus || "Activo" });
         setLogoPreview(data.logo_url || null);
         setLogoFile(null);
       }
     } catch (err) {
-      const msg = err?.message || t("common.unknown_error");
-      setError(
-        /failed to fetch|network/i.test(msg)
-          ? t("common.network_error")
-          : t("clients.errors.load_failed")
-      );
+      setError(err?.message || "Error al cargar el cliente");
     } finally {
       setLoading(false);
     }
-  }, [id, checkingSession, canView, t]);
+  }, [id, checkingSession, canView]);
 
-  // Carga Resumen
+  // ── Carga resumen ─────────────────────────────────────────────────────────────
   const loadSummary = useCallback(async () => {
     if (!canView) return;
     setSummaryLoading(true);
-    setSummaryError(null);
     try {
-      const [sites, activos] = await Promise.all([
-        getSitesByCliente(id),
-        getActivosByCliente(id),
-      ]);
-
-      const sitesArr = Array.isArray(sites) ? sites : [];
+      const [sites, activos] = await Promise.all([getSitesByCliente(id), getActivosByCliente(id)]);
+      const sitesArr  = Array.isArray(sites)  ? sites  : [];
       const activosArr = Array.isArray(activos) ? activos : [];
-      const isSiteActivo = (v) =>
-        v === 1 || v === "1" || v === true || v === "true";
-
-      const totalSites = sitesArr.length;
+      const isSiteActivo = (v) => v === 1 || v === "1" || v === true || v === "true";
+      const totalSites  = sitesArr.length;
       const activeSites = sitesArr.filter((s) => isSiteActivo(s.activo)).length;
-
       const activosByStatus = {};
-      activosArr.forEach((a) => {
-        const key = a.estatus || "Sin estatus";
-        activosByStatus[key] = (activosByStatus[key] || 0) + 1;
-      });
-
-      setSummary({
-        totalSites,
-        activeSites,
-        inactiveSites: totalSites - activeSites,
-        totalActivos: activosArr.length,
-        activosByStatus,
-      });
-    } catch (err) {
-      // Silent fail for summary is often better UX, just log it
-      console.warn("Summary load error:", err);
-    } finally {
-      setSummaryLoading(false);
-    }
+      activosArr.forEach((a) => { const k = a.estatus || "Sin estatus"; activosByStatus[k] = (activosByStatus[k] || 0) + 1; });
+      setSummary({ totalSites, activeSites, inactiveSites: totalSites - activeSites, totalActivos: activosArr.length, activosByStatus });
+    } catch (e) { console.warn("Summary error:", e); }
+    finally { setSummaryLoading(false); }
   }, [id, canView]);
 
-  useEffect(() => {
-    load();
-    loadSummary();
-  }, [load, loadSummary]);
+  useEffect(() => { load(); loadSummary(); }, [load, loadSummary]);
 
   // Cleanup blobs
   useEffect(() => {
-    return () => {
-      if (prevBlobUrlRef.current) {
-        URL.revokeObjectURL(prevBlobUrlRef.current);
-        prevBlobUrlRef.current = null;
-      }
-    };
+    return () => { if (prevBlobUrlRef.current) { URL.revokeObjectURL(prevBlobUrlRef.current); prevBlobUrlRef.current = null; } };
   }, []);
 
+  // ── Handlers ─────────────────────────────────────────────────────────────────
   function onLogoChange(e) {
     const f = e.target.files?.[0];
     if (!f) return;
-    if (!/^image\//.test(f.type))
-      return showToast(t("clients.errors.image_only"), "warning");
-    if (f.size > 2 * 1024 * 1024)
-      return showToast(t("clients.errors.image_size"), "warning");
-
-    if (prevBlobUrlRef.current) {
-      URL.revokeObjectURL(prevBlobUrlRef.current);
-      prevBlobUrlRef.current = null;
-    }
+    if (!/^image\//.test(f.type)) return showToast("Solo se aceptan imágenes", "warning");
+    if (f.size > 2 * 1024 * 1024) return showToast("La imagen supera 2 MB", "warning");
+    if (prevBlobUrlRef.current) { URL.revokeObjectURL(prevBlobUrlRef.current); prevBlobUrlRef.current = null; }
     const blobUrl = URL.createObjectURL(f);
     prevBlobUrlRef.current = blobUrl;
     setLogoFile(f);
@@ -208,21 +156,18 @@ export default function ClienteInfo() {
   }
 
   async function onSave() {
-    if (!canEdit) return showToast(t("common.no_permission"), "warning");
-    if (!form.codigo.trim())
-      return showToast(t("clients.errors.code_required"), "warning");
-    if (!form.nombre.trim())
-      return showToast(t("clients.errors.name_required"), "warning");
-
+    if (!canEdit) return showToast("Sin permisos", "warning");
+    if (!form.codigo.trim()) return showToast("El código es obligatorio", "warning");
+    if (!form.nombre.trim())  return showToast("El nombre es obligatorio", "warning");
     setSaving(true);
     try {
       await updateCliente(id, form, logoFile);
-      showToast(t("clients.success.updated"), "success");
+      showToast("Cliente actualizado", "success");
       setEditMode(false);
       await load();
       await loadSummary();
     } catch (err) {
-      showToast(err?.message || t("clients.errors.update_failed"), "danger");
+      showToast(err?.message || "Error al actualizar", "danger");
     } finally {
       setSaving(false);
     }
@@ -230,12 +175,7 @@ export default function ClienteInfo() {
 
   function onCancel() {
     if (cliente) {
-      setForm({
-        codigo: cliente.codigo || "",
-        nombre: cliente.nombre || "",
-        descripcion: cliente.descripcion || "",
-        estatus: cliente.estatus || "Activo",
-      });
+      setForm({ codigo: cliente.codigo || "", nombre: cliente.nombre || "", descripcion: cliente.descripcion || "", estatus: cliente.estatus || "Activo" });
       setLogoFile(null);
       setLogoPreview(cliente.logo_url || null);
     }
@@ -248,357 +188,274 @@ export default function ClienteInfo() {
     return isNaN(d.getTime()) ? "—" : d.toLocaleString();
   }, [cliente?.fecha_registro]);
 
-  // View State Logic
-  const viewState = checkingSession
-    ? "checking"
-    : !canView
-    ? "no-permission"
-    : error
-    ? "error"
-    : loading
-    ? "loading"
-    : !cliente
-    ? "empty"
-    : "data";
-
-  // Render Status
-  const renderStatus = () => {
-    if (viewState === "checking")
-      return (
-        <StatusCard
-          icon={<HourglassEmptyRoundedIcon />}
-          title={t("common.verifying_session")}
-          description={<CircularProgress size="sm" />}
-        />
-      );
-    if (viewState === "no-permission")
-      return (
-        <StatusCard
-          color="danger"
-          icon={<LockPersonRoundedIcon />}
-          title={t("common.no_permission")}
-          description={t("common.contact_admin")}
-        />
-      );
-    if (viewState === "error")
-      return (
-        <StatusCard
-          color="danger"
-          icon={<ErrorOutlineRoundedIcon />}
-          title={t("common.error_title")}
-          description={error}
-          actions={
-            <Button
-              startDecorator={<RestartAltRoundedIcon />}
-              onClick={load}
-              variant="soft">
-              {t("common.retry")}
-            </Button>
-          }
-        />
-      );
-    if (viewState === "empty")
-      return (
-        <StatusCard
-          color="neutral"
-          icon={<InfoOutlinedIcon />}
-          title={t("clients.not_found")}
-          description={t("clients.check_url")}
-        />
-      );
-    if (viewState === "loading")
-      return (
-        <Box display="flex" justifyContent="center" py={10}>
-          <CircularProgress />
-        </Box>
-      );
-    return null;
-  };
-
-  if (viewState !== "data") {
+  // ── Estados de carga ─────────────────────────────────────────────────────────
+  if (loading) {
     return (
-      <Box p={4} maxWidth={800} mx="auto">
-        {renderStatus()}
-      </Box>
+      <div className="flex flex-col items-center justify-center gap-4 py-24">
+        <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+          <Loader2 className="animate-spin text-primary" size={22} />
+        </div>
+        <p className="text-sm text-muted-foreground font-medium">Cargando información...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-4 py-24">
+        <div className="w-16 h-16 rounded-3xl bg-rose-500/10 flex items-center justify-center">
+          <AlertTriangle size={28} className="text-rose-500/60" />
+        </div>
+        <div className="text-center">
+          <p className="font-bold text-sm">Error al cargar</p>
+          <p className="text-xs text-muted-foreground mt-1">{error}</p>
+        </div>
+        <Button onClick={load} variant="outline" size="sm" className="rounded-xl">Reintentar</Button>
+      </div>
+    );
+  }
+
+  if (!cliente) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-4 py-24">
+        <Building2 size={40} className="text-muted-foreground/30" />
+        <p className="text-sm font-semibold">Cliente no encontrado</p>
+      </div>
     );
   }
 
   return (
-    <Box
-      component="main"
-      sx={{
-        px: { xs: 2, md: 4 },
-        py: 3,
-        maxWidth: 1200,
-        mx: "auto",
-        minHeight: "100vh",
-      }}>
-      {/* HEADER & NAV */}
-      <Stack direction="row" alignItems="center" spacing={1} mb={3}>
-        {/* <IconButton
-          onClick={() => navigate("/admin/clientes")}
-          variant="plain"
-          color="neutral">
-          <ArrowBackRoundedIcon />
-        </IconButton> */}
-        <Box>
-          <Typography
-            level="body-xs"
-            fontWeight="bold"
-            textColor="text.tertiary"
-            textTransform="uppercase">
-            {t("clients.module_name")} / {t("clients.detail")}
-          </Typography>
-          <Typography level="h2" fontSize="xl2" fontWeight="lg">
-            {cliente?.nombre}
-          </Typography>
-        </Box>
-        <Box flex={1} />
+    <div className="space-y-6 animate-in fade-in duration-300">
 
-        {!editMode ? (
-          canEdit && (
-            <Button
-              startDecorator={<EditIcon />}
-              onClick={() => setEditMode(true)}
-              variant="soft"
-              color="primary">
-              {t("common.actions.edit")}
-            </Button>
-          )
-        ) : (
-          <Stack direction="row" spacing={1}>
-            <Button
-              variant="plain"
-              color="neutral"
-              disabled={saving}
-              onClick={onCancel}
-              startDecorator={<CloseIcon />}>
-              {t("common.actions.cancel")}
-            </Button>
-            <Button
-              variant="solid"
-              color="primary"
-              loading={saving}
-              onClick={onSave}
-              startDecorator={<SaveIcon />}>
-              {t("common.actions.save")}
-            </Button>
-          </Stack>
-        )}
-      </Stack>
+      {/* ── HEADER con botones de edición ── */}
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <ClienteAvatar src={logoPreview} nombre={cliente.nombre} size="lg" />
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">
+              Clientes / Detalle
+            </p>
+            <h2 className="text-xl font-black tracking-tight leading-tight">{cliente.nombre}</h2>
+            <p className="text-xs text-muted-foreground font-mono mt-0.5">{cliente.codigo}</p>
+          </div>
+        </div>
 
-      <Grid container spacing={3}>
-        {/* COLUMNA IZQUIERDA: Info Principal */}
-        <Grid xs={12} md={8}>
-          <Stack spacing={3}>
-            {/* TARJETA PRINCIPAL */}
-            <Card variant="outlined">
-              <Stack
-                direction={{ xs: "column", sm: "row" }}
-                spacing={3}
-                alignItems="flex-start">
-                {/* Logo Section */}
-                <Stack alignItems="center" spacing={2} minWidth={120}>
-                  <Avatar
-                    src={logoPreview}
-                    sx={{
-                      width: 100,
-                      height: 100,
-                      fontSize: "2.5rem",
-                      boxShadow: "sm",
-                    }}
-                    variant="rounded">
-                    {cliente?.nombre?.[0]}
-                  </Avatar>
+        <div className="flex items-center gap-2 shrink-0">
+          {!editMode ? (
+            canEdit && (
+              <Button
+                onClick={() => setEditMode(true)}
+                variant="outline"
+                className="rounded-2xl h-9 px-4 gap-2 font-bold">
+                <Edit3 size={14} /> Editar
+              </Button>
+            )
+          ) : (
+            <>
+              <Button
+                onClick={onCancel}
+                disabled={saving}
+                variant="outline"
+                className="rounded-2xl h-9 px-4 gap-2 font-bold">
+                <X size={14} /> Cancelar
+              </Button>
+              <Button
+                onClick={onSave}
+                disabled={saving}
+                className="rounded-2xl h-9 px-4 gap-2 font-bold shadow-md shadow-primary/15">
+                {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                {saving ? "Guardando..." : "Guardar"}
+              </Button>
+            </>
+          )}
+        </div>
+      </div>
 
-                  {editMode && (
-                    <Stack spacing={1} width="100%">
-                      <Button
-                        component="label"
-                        size="sm"
-                        variant="outlined"
-                        startDecorator={<CloudUploadRoundedIcon />}>
-                        {t("common.actions.upload")}
-                        <input
-                          type="file"
-                          hidden
-                          accept="image/*"
-                          onChange={onLogoChange}
-                        />
-                      </Button>
-                      {logoPreview && (
-                        <Button
-                          size="sm"
-                          variant="plain"
-                          color="danger"
-                          onClick={() => {
-                            setLogoFile(null);
-                            setLogoPreview(null);
-                          }}>
-                          {t("common.actions.remove")}
-                        </Button>
-                      )}
-                    </Stack>
-                  )}
-                </Stack>
+      {/* ── GRID PRINCIPAL ── */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
-                {/* Fields Section */}
-                <Stack spacing={2} flex={1} width="100%">
-                  <Grid container spacing={2}>
-                    <Grid xs={12} sm={6}>
-                      <FormControl>
-                        <FormLabel>{t("clients.form.code")}</FormLabel>
-                        {editMode ? (
-                          <Input
-                            value={form.codigo}
-                            onChange={(e) =>
-                              setForm({ ...form, codigo: e.target.value })
-                            }
-                          />
-                        ) : (
-                          <Typography level="title-lg" fontFamily="monospace">
-                            {cliente.codigo}
-                          </Typography>
-                        )}
-                      </FormControl>
-                    </Grid>
-                    <Grid xs={12} sm={6}>
-                      <FormControl>
-                        <FormLabel>{t("clients.form.name")}</FormLabel>
-                        {editMode ? (
-                          <Input
-                            value={form.nombre}
-                            onChange={(e) =>
-                              setForm({ ...form, nombre: e.target.value })
-                            }
-                          />
-                        ) : (
-                          <Typography level="title-lg">
-                            {cliente.nombre}
-                          </Typography>
-                        )}
-                      </FormControl>
-                    </Grid>
-                    <Grid xs={12}>
-                      <FormControl>
-                        <FormLabel>{t("clients.form.description")}</FormLabel>
-                        {editMode ? (
-                          <Input
-                            value={form.descripcion}
-                            onChange={(e) =>
-                              setForm({ ...form, descripcion: e.target.value })
-                            }
-                          />
-                        ) : (
-                          <Typography
-                            level="body-md"
-                            textColor="text.secondary">
-                            {cliente.descripcion || t("common.no_description")}
-                          </Typography>
-                        )}
-                      </FormControl>
-                    </Grid>
-                    <Grid xs={12} sm={6}>
-                      <FormControl>
-                        <FormLabel>{t("clients.form.status")}</FormLabel>
-                        {editMode ? (
-                          <Select
-                            value={form.estatus}
-                            onChange={(_, v) =>
-                              setForm({ ...form, estatus: v })
-                            }>
-                            <Option value="Activo">
-                              {t("common.status.active")}
-                            </Option>
-                            <Option value="Inactivo">
-                              {t("common.status.inactive")}
-                            </Option>
-                          </Select>
-                        ) : (
-                          <Chip
-                            color={
-                              cliente.estatus === "Activo"
-                                ? "success"
-                                : "neutral"
-                            }
-                            variant="soft">
-                            {cliente.estatus === "Activo"
-                              ? t("common.status.active")
-                              : t("common.status.inactive")}
-                          </Chip>
-                        )}
-                      </FormControl>
-                    </Grid>
-                  </Grid>
-                </Stack>
-              </Stack>
-            </Card>
+        {/* Columna izquierda: Datos */}
+        <div className="md:col-span-2 space-y-5">
+          <div className="bg-card dark:bg-slate-900/40 border border-border/60 rounded-3xl shadow-sm p-6 space-y-5">
 
-            {/* INFO ADICIONAL */}
-            <Typography level="body-xs" textAlign="right" color="neutral">
-              {t("common.created_at")}: {createdAtText}
-            </Typography>
-          </Stack>
-        </Grid>
+            {/* Sección info */}
+            <div className="flex items-center gap-2">
+              <div className="h-px flex-1 bg-border/50" />
+              <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 px-1">Información básica</span>
+              <div className="h-px flex-1 bg-border/50" />
+            </div>
 
-        {/* COLUMNA DERECHA: Resumen / Stats */}
-        <Grid xs={12} md={4}>
-          <Stack spacing={2}>
-            {/* Resumen Activos */}
-            <Card
-              variant="soft"
-              color="primary"
-              invertedColors
-              sx={{ boxShadow: "none" }}>
-              <Typography level="title-md" mb={1}>
-                {t("clients.stats.assets")}
-              </Typography>
-              <Typography level="h2">{summary.totalActivos}</Typography>
-              <Typography level="body-sm">
-                {t("clients.stats.total_registered")}
-              </Typography>
-
-              <Divider sx={{ my: 1.5, opacity: 0.2 }} />
-
-              <Stack direction="row" flexWrap="wrap" gap={1}>
-                {Object.entries(summary.activosByStatus).map(([st, count]) => (
-                  <Chip
-                    key={st}
-                    size="sm"
-                    variant="solid"
-                    color="neutral"
-                    sx={{ bgcolor: "rgba(79, 68, 236, 0.2)" }}>
-                    {st}: {count}
-                  </Chip>
-                ))}
-                {Object.keys(summary.activosByStatus).length === 0 && (
-                  <Typography level="body-xs">{t("common.no_data")}</Typography>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Código */}
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">
+                  Código {editMode && <span className="text-primary">*</span>}
+                </label>
+                {editMode ? (
+                  <input
+                    value={form.codigo}
+                    onChange={(e) => setForm({ ...form, codigo: e.target.value })}
+                    disabled={saving}
+                    className="w-full rounded-xl border border-border bg-background dark:bg-slate-900/60 px-4 py-2.5 text-sm focus:border-primary/60 focus:ring-2 focus:ring-primary/20 outline-none transition-all font-mono disabled:opacity-60"
+                  />
+                ) : (
+                  <p className="text-sm font-semibold font-mono">{cliente.codigo}</p>
                 )}
-              </Stack>
-            </Card>
+              </div>
 
-            {/* Resumen Sites */}
-            <Card variant="outlined">
-              <Typography level="title-md" mb={1}>
-                {t("clients.stats.sites")}
-              </Typography>
-              <Typography level="h2">{summary.totalSites}</Typography>
-              <Typography level="body-sm" color="neutral" mb={2}>
-                {t("clients.stats.total_registered")}
-              </Typography>
+              {/* Nombre */}
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">
+                  Nombre {editMode && <span className="text-primary">*</span>}
+                </label>
+                {editMode ? (
+                  <input
+                    value={form.nombre}
+                    onChange={(e) => setForm({ ...form, nombre: e.target.value })}
+                    disabled={saving}
+                    className="w-full rounded-xl border border-border bg-background dark:bg-slate-900/60 px-4 py-2.5 text-sm focus:border-primary/60 focus:ring-2 focus:ring-primary/20 outline-none transition-all disabled:opacity-60"
+                  />
+                ) : (
+                  <p className="text-sm font-semibold">{cliente.nombre}</p>
+                )}
+              </div>
 
-              <Stack direction="row" spacing={1}>
-                <Chip variant="soft" color="success" size="sm">
-                  {t("common.status.active")}: {summary.activeSites}
-                </Chip>
-                <Chip variant="soft" color="neutral" size="sm">
-                  {t("common.status.inactive")}: {summary.inactiveSites}
-                </Chip>
-              </Stack>
-            </Card>
-          </Stack>
-        </Grid>
-      </Grid>
-    </Box>
+              {/* Descripción */}
+              <div className="sm:col-span-2 space-y-1.5">
+                <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">Descripción</label>
+                {editMode ? (
+                  <textarea
+                    rows={2}
+                    value={form.descripcion}
+                    onChange={(e) => setForm({ ...form, descripcion: e.target.value })}
+                    disabled={saving}
+                    className="w-full rounded-xl border border-border bg-background dark:bg-slate-900/60 px-4 py-2.5 text-sm resize-none focus:border-primary/60 focus:ring-2 focus:ring-primary/20 outline-none transition-all disabled:opacity-60"
+                  />
+                ) : (
+                  <p className="text-sm text-muted-foreground">{cliente.descripcion || "—"}</p>
+                )}
+              </div>
+
+              {/* Estatus */}
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">Estatus</label>
+                {editMode ? (
+                  <div className="flex gap-2">
+                    {ESTATUS.map((s) => (
+                      <button
+                        key={s}
+                        type="button"
+                        disabled={saving}
+                        onClick={() => setForm({ ...form, estatus: s })}
+                        className={[
+                          "flex-1 py-2 rounded-xl text-sm font-semibold border transition-all",
+                          form.estatus === s
+                            ? s === "Activo"
+                              ? "bg-emerald-500/10 border-emerald-500/40 text-emerald-600 dark:text-emerald-400"
+                              : "bg-muted border-border text-foreground"
+                            : "border-border/60 text-muted-foreground hover:border-border",
+                        ].join(" ")}>
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <StatusBadge estatus={cliente.estatus} />
+                )}
+              </div>
+
+              {/* Fecha creación */}
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1">
+                  <Calendar size={9} /> Registrado
+                </label>
+                <p className="text-xs text-muted-foreground">{createdAtText}</p>
+              </div>
+            </div>
+
+            {/* Logo en modo edición */}
+            {editMode && (
+              <>
+                <div className="flex items-center gap-2">
+                  <div className="h-px flex-1 bg-border/50" />
+                  <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 px-1">Logo</span>
+                  <div className="h-px flex-1 bg-border/50" />
+                </div>
+                <div className="flex items-center gap-4 p-4 border border-dashed border-border/60 rounded-2xl bg-muted/20 dark:bg-slate-800/20">
+                  <div className="w-16 h-16 rounded-2xl border border-border/60 bg-muted/40 dark:bg-slate-800 flex items-center justify-center overflow-hidden shrink-0">
+                    {logoPreview
+                      ? <img src={logoPreview} alt="logo" className="w-full h-full object-contain" />
+                      : <Building2 size={20} className="text-muted-foreground/30" />}
+                  </div>
+                  <div className="space-y-2">
+                    <label className="inline-flex items-center gap-1.5 cursor-pointer px-3 py-1.5 rounded-xl border border-border/60 text-xs font-semibold text-muted-foreground hover:text-foreground hover:border-primary/40 transition-all">
+                      <ImagePlus size={13} />
+                      {logoPreview ? "Cambiar imagen" : "Subir logo"}
+                      <input type="file" hidden accept="image/*" onChange={onLogoChange} disabled={saving} />
+                    </label>
+                    {logoPreview && (
+                      <button
+                        type="button"
+                        onClick={() => { setLogoFile(null); setLogoPreview(null); }}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-rose-500 hover:bg-rose-500/10 transition-all">
+                        <Trash2 size={12} /> Quitar
+                      </button>
+                    )}
+                    <p className="text-[10px] text-muted-foreground/60">PNG, JPG. Máx 2 MB</p>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Columna derecha: Stats */}
+        <div className="space-y-4">
+
+          {/* Card: Activos */}
+          <div className="bg-primary/5 dark:bg-primary/10 border border-primary/20 dark:border-primary/25 rounded-3xl p-5 space-y-3">
+            <div className="flex items-center gap-2">
+              <Monitor size={16} className="text-primary" />
+              <p className="text-xs font-black uppercase tracking-widest text-primary/70">Activos</p>
+            </div>
+            <div>
+              <p className="text-3xl font-black text-primary">{summary.totalActivos}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">total registrado{summary.totalActivos !== 1 ? "s" : ""}</p>
+            </div>
+            {Object.keys(summary.activosByStatus).length > 0 && (
+              <div className="flex flex-wrap gap-1.5 pt-1 border-t border-primary/10">
+                {Object.entries(summary.activosByStatus).map(([st, count]) => (
+                  <span key={st} className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-primary/10 dark:bg-primary/15 text-primary border border-primary/20">
+                    {st}: {count}
+                  </span>
+                ))}
+              </div>
+            )}
+            {summaryLoading && <Loader2 size={14} className="animate-spin text-primary/50" />}
+          </div>
+
+          {/* Card: Sites */}
+          <div className="bg-card dark:bg-slate-900/40 border border-border/60 rounded-3xl p-5 space-y-3">
+            <div className="flex items-center gap-2">
+              <MapPin size={16} className="text-muted-foreground" />
+              <p className="text-xs font-black uppercase tracking-widest text-muted-foreground/70">Sites</p>
+            </div>
+            <div>
+              <p className="text-3xl font-black">{summary.totalSites}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">total registrado{summary.totalSites !== 1 ? "s" : ""}</p>
+            </div>
+            <div className="flex gap-2 pt-1 border-t border-border/50">
+              <span className="px-2.5 py-1 text-[10px] font-bold rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                Activos: {summary.activeSites}
+              </span>
+              <span className="px-2.5 py-1 text-[10px] font-bold rounded-full bg-muted text-muted-foreground border border-border/60">
+                Inactivos: {summary.inactiveSites}
+              </span>
+            </div>
+            {summaryLoading && <Loader2 size={14} className="animate-spin text-muted-foreground/50" />}
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

@@ -1,158 +1,143 @@
 // src/pages/Clientes/ClientesList.jsx
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { Link } from "react-router-dom";
-import { useTranslation } from "react-i18next";
-
 import {
-  Box,
-  Typography,
-  Stack,
-  Button,
-  Table,
-  Sheet,
-  Input,
-  Chip,
-  Drawer,
-  FormControl,
-  FormLabel,
-  Select,
-  Option,
-  Divider,
-  Avatar,
-  Tooltip,
-  ModalClose,
-  IconButton,
-  CircularProgress,
-} from "@mui/joy";
+  Plus,
+  Search,
+  X,
+  Building2,
+  Loader2,
+  ChevronUp,
+  ChevronDown,
+  ArrowUpDown,
+  ImagePlus,
+  Trash2,
+  Save,
+  ExternalLink,
+} from "lucide-react";
 
-// Iconos
-import AddRoundedIcon from "@mui/icons-material/AddRounded";
-import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
-import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
-import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
-import ClearIcon from "@mui/icons-material/Clear";
-import BusinessRoundedIcon from "@mui/icons-material/BusinessRounded";
-import MoreHorizRoundedIcon from "@mui/icons-material/MoreHorizRounded"; // Nuevo icono para acciones
+import { useToast } from "@/context/ToastContext";
+import { useAuth } from "@/context/AuthContext";
+import useIsMobile from "@/hooks/useIsMobile";
+import usePermissions from "@/hooks/usePermissions";
+import { Button } from "@/components/ui/button";
 
-// Context & Hooks
-import { useToast } from "../../context/ToastContext";
-import { useAuth } from "../../context/AuthContext";
-import useIsMobile from "../../hooks/useIsMobile";
-import usePermissions from "../../hooks/usePermissions";
-import { getViewState } from "../../utils/viewState";
-import ResourceState from "../../components/common/ResourceState";
-
-// Services
 import {
   getClientes,
   createCliente,
-} from "../../services/ClientesServices.jsx";
+} from "@/services/ClientesServices.jsx";
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
 const ESTATUS = ["Activo", "Inactivo"];
 
+function StatusBadge({ estatus }) {
+  if (estatus === "Activo") {
+    return (
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-semibold rounded-full bg-emerald-500/10 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+        Activo
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-semibold rounded-full bg-muted text-muted-foreground border border-border/60">
+      Inactivo
+    </span>
+  );
+}
+
+function ClienteAvatar({ src, nombre, size = "sm" }) {
+  const sizeClass = size === "lg"
+    ? "w-16 h-16 text-xl rounded-2xl"
+    : "w-9 h-9 text-sm rounded-xl";
+
+  if (src) {
+    return (
+      <img
+        src={src}
+        alt={nombre}
+        className={`${sizeClass} object-contain bg-muted/40 dark:bg-slate-800 shrink-0`}
+      />
+    );
+  }
+  return (
+    <div className={`${sizeClass} shrink-0 bg-primary/10 dark:bg-primary/15 text-primary font-black flex items-center justify-center`}>
+      {(nombre || "?")[0].toUpperCase()}
+    </div>
+  );
+}
+
+// ── Componente principal ──────────────────────────────────────────────────────
+
 export default function ClientesList() {
-  const { t } = useTranslation();
-  const [rows, setRows] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [rows, setRows]           = useState([]);
+  const [loading, setLoading]     = useState(true);
+  const [error, setError]         = useState(null);
 
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("todos");
+  const [search, setSearch]               = useState("");
+  const [statusFilter, setStatusFilter]   = useState("todos");
+  const [sortKey, setSortKey]             = useState("nombre");
+  const [sortDir, setSortDir]             = useState("asc");
 
-  const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({
-    codigo: "",
-    nombre: "",
-    descripcion: "",
-    estatus: "Activo",
-  });
-  const [logoFile, setLogoFile] = useState(null);
+  const [open, setOpen]             = useState(false);
+  const [form, setForm]             = useState({ codigo: "", nombre: "", descripcion: "", estatus: "Activo" });
+  const [logoFile, setLogoFile]     = useState(null);
   const [logoPreview, setLogoPreview] = useState(null);
-  const [saving, setSaving] = useState(false);
+  const [saving, setSaving]         = useState(false);
 
-  const [sortKey, setSortKey] = useState("nombre");
-  const [sortDir, setSortDir] = useState("asc");
-
-  const isMobile = useIsMobile(768);
-  const { showToast } = useToast();
+  const isMobile        = useIsMobile(768);
+  const { showToast }   = useToast();
   const { checkingSession } = useAuth();
-  const searchInputRef = useRef(null);
+  const searchInputRef  = useRef(null);
 
   const { canAny } = usePermissions();
-  const canView = canAny("ver_companias");
+  const canView   = canAny("ver_companias");
   const canCreate = canAny("crear_companias");
 
-  // --- LOGICA DE CARGA (Igual que antes) ---
+  // ── Carga ───────────────────────────────────────────────────────────────────
   const loadClientes = useCallback(async () => {
-    if (checkingSession) {
-      setLoading(true);
-      return;
-    }
-    if (!canView) {
-      setLoading(false);
-      setError(null);
-      return;
-    }
-
+    if (checkingSession) { setLoading(true); return; }
+    if (!canView) { setLoading(false); setError(null); return; }
     setLoading(true);
     setError(null);
     try {
       const data = await getClientes();
       if (data) setRows(data);
-      else setError(t("clients.errors.load_failed"));
+      else setError("Error al cargar los clientes");
     } catch (err) {
-      const msg = err?.message || t("common.unknown_error");
-      setError(msg);
+      setError(err?.message || "Error desconocido");
     } finally {
       setLoading(false);
     }
-  }, [checkingSession, canView, t]);
+  }, [checkingSession, canView]);
 
-  useEffect(() => {
-    loadClientes();
-  }, [loadClientes]);
+  useEffect(() => { loadClientes(); }, [loadClientes]);
 
-  // --- LOGICA FORMULARIO (Igual que antes) ---
+  // Cleanup blobs
   useEffect(() => {
-    return () => {
-      if (logoPreview) URL.revokeObjectURL(logoPreview);
-    };
+    return () => { if (logoPreview && logoPreview.startsWith("blob:")) URL.revokeObjectURL(logoPreview); };
   }, [logoPreview]);
 
-  // Atajos
+  // Atajos de teclado
   useEffect(() => {
-    const handleGlobalKeyDown = (e) => {
+    const handleKey = (e) => {
       const tag = e.target.tagName.toLowerCase();
-      const isTyping =
-        tag === "input" || tag === "textarea" || e.target.isContentEditable;
+      const isTyping = tag === "input" || tag === "textarea" || e.target.isContentEditable;
       const ctrlOrMeta = e.ctrlKey || e.metaKey;
-
-      if (!isTyping && e.key === "/") {
-        e.preventDefault();
-        searchInputRef.current?.focus();
-        return;
-      }
-      if (ctrlOrMeta && e.shiftKey && e.key.toLowerCase() === "f") {
-        e.preventDefault();
-        searchInputRef.current?.focus();
-        return;
-      }
-      if (
-        !isTyping &&
-        ctrlOrMeta &&
-        e.shiftKey &&
-        e.key.toLowerCase() === "n"
-      ) {
+      if (!isTyping && e.key === "/") { e.preventDefault(); searchInputRef.current?.focus(); return; }
+      if (!isTyping && ctrlOrMeta && e.shiftKey && e.key.toLowerCase() === "n") {
         e.preventDefault();
         if (canCreate) newCliente();
       }
     };
-    window.addEventListener("keydown", handleGlobalKeyDown);
-    return () => window.removeEventListener("keydown", handleGlobalKeyDown);
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
   }, [canCreate]);
 
+  // ── Formulario ───────────────────────────────────────────────────────────────
   function newCliente() {
-    if (!canCreate) return showToast(t("common.no_permission"), "warning");
+    if (!canCreate) return showToast("Sin permisos", "warning");
     setForm({ codigo: "", nombre: "", descripcion: "", estatus: "Activo" });
     setLogoFile(null);
     setLogoPreview(null);
@@ -162,46 +147,36 @@ export default function ClientesList() {
   function onLogoChange(e) {
     const f = e.target.files?.[0];
     if (!f) return;
-    if (!/^image\//.test(f.type))
-      return showToast(t("clients.errors.image_only"), "warning");
-    if (f.size > 2 * 1024 * 1024)
-      return showToast(t("clients.errors.image_size"), "warning");
+    if (!/^image\//.test(f.type)) return showToast("Solo se aceptan imágenes", "warning");
+    if (f.size > 2 * 1024 * 1024) return showToast("La imagen supera 2 MB", "warning");
     setLogoFile(f);
     setLogoPreview(URL.createObjectURL(f));
   }
 
   async function onSubmit(e) {
-    e.preventDefault();
-    if (!canCreate) return showToast(t("common.no_permission"), "warning");
-    if (!form.codigo.trim())
-      return showToast(t("clients.errors.code_required"), "warning");
-    if (!form.nombre.trim())
-      return showToast(t("clients.errors.name_required"), "warning");
-
+    e?.preventDefault();
+    if (!canCreate) return showToast("Sin permisos", "warning");
+    if (!form.codigo.trim()) return showToast("El código es obligatorio", "warning");
+    if (!form.nombre.trim()) return showToast("El nombre es obligatorio", "warning");
     setSaving(true);
     try {
       await createCliente(form, logoFile);
-      showToast(t("clients.success.created"), "success");
+      showToast("Cliente creado correctamente", "success");
       setOpen(false);
       loadClientes();
     } catch (err) {
-      showToast(err?.message || t("clients.errors.create_failed"), "danger");
+      showToast(err?.message || "Error al crear el cliente", "danger");
     } finally {
       setSaving(false);
     }
   }
 
-  // --- FILTROS Y ORDEN ---
+  // ── Filtros y ordenamiento ───────────────────────────────────────────────────
   const filtered = useMemo(() => {
-    const src = Array.isArray(rows) ? rows : [];
     const q = (search || "").trim().toLowerCase();
-    return src.filter((r) => {
-      const matchSearch =
-        !q ||
-        (r.codigo || "").toLowerCase().includes(q) ||
-        (r.nombre || "").toLowerCase().includes(q);
-      const matchStatus =
-        statusFilter === "todos" ? true : r.estatus === statusFilter;
+    return (Array.isArray(rows) ? rows : []).filter((r) => {
+      const matchSearch = !q || (r.codigo || "").toLowerCase().includes(q) || (r.nombre || "").toLowerCase().includes(q);
+      const matchStatus = statusFilter === "todos" ? true : r.estatus === statusFilter;
       return matchSearch && matchStatus;
     });
   }, [rows, search, statusFilter]);
@@ -221,524 +196,386 @@ export default function ClientesList() {
   const handleSort = (key) => {
     if (!key) return;
     if (key === sortKey) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
-    else {
-      setSortKey(key);
-      setSortDir("asc");
-    }
+    else { setSortKey(key); setSortDir("asc"); }
   };
 
-  const viewState = getViewState({
-    checkingSession,
-    canView,
-    error,
-    loading,
-    hasData: Array.isArray(sortedRows) && sortedRows.length > 0,
-  });
+  const SortIcon = ({ col }) => {
+    if (sortKey !== col) return <ArrowUpDown size={12} className="text-muted-foreground/40" />;
+    return sortDir === "asc"
+      ? <ChevronUp size={12} className="text-primary" />
+      : <ChevronDown size={12} className="text-primary" />;
+  };
 
-  // --- RENDER ---
+  // ── Guard ────────────────────────────────────────────────────────────────────
+  if (!canView && !checkingSession) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center space-y-3 opacity-40">
+          <Building2 size={40} className="mx-auto" />
+          <p className="font-semibold text-sm">Acceso denegado</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <Box
-      component="main"
-      sx={{
-        px: { xs: 2, md: 4 },
-        pt: 3,
-        pb: 8,
-        maxWidth: 1200,
-        mx: "auto",
-        minHeight: "100vh",
-      }}>
-      {/* HEADER SECTION */}
-      <Stack
-        direction={{ xs: "column", md: "row" }}
-        justifyContent="space-between"
-        alignItems={{ xs: "stretch", md: "center" }}
-        spacing={2}
-        sx={{ mb: 3 }}>
-        <Box>
-          <Typography
-            level="body-sm"
-            sx={{
-              textTransform: "uppercase",
-              letterSpacing: "0.5px",
-              color: "text.tertiary",
-            }}>
-            {t("clients.module_name")}
-          </Typography>
-          <Typography
-            level="h2"
-            sx={{ fontSize: "1.75rem", fontWeight: "xl", mt: 0.5 }}>
-            {t("clients.title")}
-          </Typography>
-          <Typography level="body-sm" color="neutral" sx={{ mt: 0.5 }}>
-            {t("common.showing_results", {
-              count: sortedRows.length,
-              total: rows.length,
-            })}
-          </Typography>
-        </Box>
+    <div className="max-w-7xl mx-auto px-4 md:px-8 py-6 md:py-10 space-y-6 animate-in fade-in duration-500">
 
-        <Stack
-          direction="row"
-          spacing={1.5}
-          alignItems="center"
-          flexWrap="wrap">
-          <Input
-            placeholder={t("clients.search_placeholder")}
+      {/* ── HEADER ── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3.5">
+          <div className="p-2.5 rounded-2xl bg-primary/10 dark:bg-primary/15 ring-1 ring-primary/20 dark:ring-primary/30 shadow-sm shadow-primary/10 shrink-0">
+            <Building2 size={22} className="text-primary" />
+          </div>
+          <div>
+            <h1 className="text-2xl md:text-3xl font-black tracking-tight leading-none">Clientes</h1>
+            <p className="text-muted-foreground text-xs md:text-sm font-medium mt-0.5">
+              Gestiona las compañías y sus sitios asociados
+            </p>
+          </div>
+        </div>
+        {canCreate && (
+          <Button
+            onClick={newCliente}
+            className="rounded-2xl px-5 h-10 font-bold shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all duration-200 gap-2 shrink-0">
+            <Plus size={17} strokeWidth={2.5} />
+            <span className="hidden sm:inline">Nuevo Cliente</span>
+          </Button>
+        )}
+      </div>
+
+      {/* ── TOOLBAR ── */}
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="relative w-full max-w-xs group">
+          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/50 group-focus-within:text-primary transition-colors pointer-events-none" />
+          <input
+            ref={searchInputRef}
+            type="text"
+            placeholder="Buscar por nombre o código..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            startDecorator={<SearchRoundedIcon />}
-            endDecorator={
-              search && (
-                <IconButton
-                  size="sm"
-                  variant="plain"
-                  color="neutral"
-                  onClick={() => setSearch("")}>
-                  <ClearIcon fontSize="small" />
-                </IconButton>
-              )
-            }
-            sx={{ minWidth: { xs: "100%", md: 260 } }}
-            inputRef={searchInputRef}
+            className="w-full bg-card border border-border/60 rounded-xl pl-9 pr-8 py-2 text-sm outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/15 transition-all placeholder:text-muted-foreground/50 shadow-sm"
           />
-
-          <Select
-            value={statusFilter}
-            onChange={(_, v) => setStatusFilter(v || "todos")}
-            sx={{ minWidth: 140 }}>
-            <Option value="todos">{t("common.status.all")}</Option>
-            <Option value="Activo">{t("common.status.active")}</Option>
-            <Option value="Inactivo">{t("common.status.inactive")}</Option>
-          </Select>
-
-          {canCreate && (
-            <Button
-              startDecorator={<AddRoundedIcon />}
-              onClick={newCliente}
-              variant="solid"
-              color="primary">
-              {t("clients.actions.new")}
-            </Button>
+          {search && (
+            <button onClick={() => setSearch("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 hover:bg-muted rounded-md transition-colors text-muted-foreground/60 hover:text-foreground">
+              <X size={13} />
+            </button>
           )}
-        </Stack>
-      </Stack>
+        </div>
 
-      {/* 🟢 TABLA MODERNA */}
-      <Sheet
-        variant="outlined"
-        sx={{
-          borderRadius: "lg",
-          overflow: "hidden", // Recorta bordes
-          bgcolor: "background.surface",
-          minHeight: 400,
-          border: "1px solid",
-          borderColor: "neutral.outlinedBorder",
-          boxShadow: "sm",
-        }}>
-        {viewState !== "data" ? (
-          <Box p={4} display="flex" justifyContent="center">
-            <ResourceState
-              state={viewState}
-              error={error}
-              onRetry={loadClientes}
-              emptyIcon={
-                <BusinessRoundedIcon
-                  sx={{ fontSize: 48, color: "neutral.300" }}
-                />
-              }
-              emptyTitle={t("clients.empty.title")}
-              emptyDescription={t("clients.empty.desc")}
-            />
-          </Box>
-        ) : isMobile ? (
-          // MÓVIL (Cards)
-          <Stack spacing={2} p={2}>
-            {sortedRows.map((r) => (
-              <Card key={r.id} variant="outlined" sx={{ boxShadow: "none" }}>
-                <Stack direction="row" spacing={2} alignItems="center">
-                  <Avatar src={r.logo_url} size="lg" variant="rounded">
-                    {r.nombre?.[0]}
-                  </Avatar>
-                  <Box sx={{ minWidth: 0 }}>
-                    <Typography level="title-md" noWrap>
-                      {r.nombre}
-                    </Typography>
-                    <Typography level="body-xs" color="neutral">
-                      {r.codigo}
-                    </Typography>
-                  </Box>
-                </Stack>
-                <Divider />
-                <Stack
-                  direction="row"
-                  justifyContent="space-between"
-                  alignItems="center">
-                  <Chip
-                    size="sm"
-                    variant="soft"
-                    color={r.estatus === "Activo" ? "success" : "neutral"}>
-                    {r.estatus === "Activo"
-                      ? t("common.status.active")
-                      : t("common.status.inactive")}
-                  </Chip>
-                  <Button
-                    size="sm"
-                    variant="plain"
-                    component={Link}
-                    to={`/admin/clientes/${r.id}/informacion`}>
-                    {t("common.actions.view_details")}
-                  </Button>
-                </Stack>
-              </Card>
-            ))}
-          </Stack>
-        ) : (
-          // ESCRITORIO (Tabla Rediseñada)
-          <Table
-            hoverRow
-            stickyHeader
-            sx={{
-              // 1. Padding amplio para que respire
-              "--TableCell-paddingX": "24px",
-              "--TableCell-paddingY": "16px",
+        {/* Status filter tabs */}
+        <div className="flex items-center gap-1 p-1 bg-muted/50 rounded-xl border border-border/60">
+          {[["todos", "Todos"], ["Activo", "Activos"], ["Inactivo", "Inactivos"]].map(([val, label]) => (
+            <button
+              key={val}
+              onClick={() => setStatusFilter(val)}
+              className={[
+                "px-3 py-1 text-xs font-semibold rounded-lg transition-all",
+                statusFilter === val
+                  ? "bg-card dark:bg-slate-800 text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground",
+              ].join(" ")}>
+              {label}
+            </button>
+          ))}
+        </div>
 
-              // 2. Encabezados sutiles y modernos
-              "& thead th": {
-                bgcolor: "background.surface", // Mismo color de fondo para que se vea limpio
-                color: "text.tertiary",
-                fontWeight: "md",
-                textTransform: "uppercase",
-                fontSize: "xs",
-                letterSpacing: "0.08em",
-                borderBottom: "1px solid",
-                borderColor: "divider",
-              },
-
-              // 3. Filas
-              "& tbody tr": {
-                transition: "background-color 0.2s",
-              },
-              "& tbody tr:hover": {
-                bgcolor: "background.level1", // Hover suave
-                cursor: "pointer",
-              },
-
-              // 4. Quitar bordes verticales para look limpio
-              "& tbody td": {
-                borderBottom: "1px solid",
-                borderColor: "neutral.outlinedBorder",
-              },
-              // Quitar el borde de la última fila
-              "& tbody tr:last-child td": {
-                borderBottom: "none",
-              },
-            }}>
-            <thead>
-              <tr>
-                {/* Columnas definidas manualmente para mejor control */}
-                <th style={{ width: "35%" }}>
-                  <Link
-                    component="button"
-                    underline="none"
-                    color="neutral"
-                    fontWeight="inherit"
-                    onClick={() => handleSort("nombre")}
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 0.5,
-                      "&:hover": { color: "text.primary" },
-                    }}>
-                    {t("clients.columns.name")} / {t("clients.columns.logo")}
-                    <ArrowDropDownIcon
-                      sx={{
-                        opacity: sortKey === "nombre" ? 1 : 0,
-                        transition: "0.2s",
-                        transform:
-                          sortKey === "nombre" && sortDir === "desc"
-                            ? "rotate(180deg)"
-                            : "none",
-                      }}
-                    />
-                  </Link>
-                </th>
-                <th style={{ width: "15%" }}>
-                  <Link
-                    component="button"
-                    underline="none"
-                    color="neutral"
-                    fontWeight="inherit"
-                    onClick={() => handleSort("codigo")}
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 0.5,
-                      "&:hover": { color: "text.primary" },
-                    }}>
-                    {t("clients.columns.code")}
-                    <ArrowDropDownIcon
-                      sx={{
-                        opacity: sortKey === "codigo" ? 1 : 0,
-                        transition: "0.2s",
-                        transform:
-                          sortKey === "codigo" && sortDir === "desc"
-                            ? "rotate(180deg)"
-                            : "none",
-                      }}
-                    />
-                  </Link>
-                </th>
-                <th style={{ width: "30%" }}>
-                  {t("clients.columns.description")}
-                </th>
-                <th style={{ width: "10%" }}>
-                  <Link
-                    component="button"
-                    underline="none"
-                    color="neutral"
-                    fontWeight="inherit"
-                    onClick={() => handleSort("estatus")}
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 0.5,
-                      "&:hover": { color: "text.primary" },
-                    }}>
-                    {t("clients.columns.status")}
-                    <ArrowDropDownIcon
-                      sx={{
-                        opacity: sortKey === "estatus" ? 1 : 0,
-                        transition: "0.2s",
-                        transform:
-                          sortKey === "estatus" && sortDir === "desc"
-                            ? "rotate(180deg)"
-                            : "none",
-                      }}
-                    />
-                  </Link>
-                </th>
-                <th style={{ width: "10%" }}></th> {/* Acciones */}
-              </tr>
-            </thead>
-            <tbody>
-              {sortedRows.map((r) => (
-                <tr
-                  key={r.id}
-                  onClick={(e) => {
-                    // Navegación programática al hacer clic en la fila (excepto si clica un botón interno)
-                    if (!e.target.closest("button") && !e.target.closest("a")) {
-                      // Simulamos click en el link invisible o usamos navigate
-                      // navigate(`/admin/clientes/${r.id}/informacion`) // Si tuvieras navigate importado
-                    }
-                  }}>
-                  {/* Columna 1: Avatar + Nombre (Combinados para diseño moderno) */}
-                  <td>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                      <Avatar
-                        src={r.logo_url}
-                        variant="rounded"
-                        size="sm"
-                        sx={{ borderRadius: "md", boxShadow: "sm" }}>
-                        {r.nombre?.[0]}
-                      </Avatar>
-                      <Box>
-                        <Typography
-                          fontWeight="lg"
-                          level="title-sm"
-                          component={Link}
-                          to={`/admin/clientes/${r.id}/informacion`}
-                          sx={{
-                            textDecoration: "none",
-                            color: "text.primary",
-                            "&:hover": { color: "primary.500" },
-                          }}>
-                          {r.nombre}
-                        </Typography>
-                      </Box>
-                    </Box>
-                  </td>
-
-                  {/* Columna 2: Código */}
-                  <td>
-                    <Typography
-                      level="body-sm"
-                      sx={{ fontFamily: "monospace", color: "text.secondary" }}>
-                      {r.codigo}
-                    </Typography>
-                  </td>
-
-                  {/* Columna 3: Descripción */}
-                  <td>
-                    <Typography
-                      level="body-sm"
-                      color="neutral"
-                      noWrap
-                      sx={{ maxWidth: 300 }}>
-                      {r.descripcion || "—"}
-                    </Typography>
-                  </td>
-
-                  {/* Columna 4: Estatus */}
-                  <td>
-                    <Chip
-                      size="sm"
-                      variant="soft"
-                      color={r.estatus === "Activo" ? "success" : "neutral"}
-                      startDecorator={
-                        r.estatus === "Activo" ? (
-                          <Box
-                            sx={{
-                              width: 6,
-                              height: 6,
-                              borderRadius: "50%",
-                              bgcolor: "success.500",
-                            }}
-                          />
-                        ) : null
-                      }>
-                      {r.estatus === "Activo"
-                        ? t("common.status.active")
-                        : t("common.status.inactive")}
-                    </Chip>
-                  </td>
-
-                  {/* Columna 5: Acciones rápidas */}
-                  <td style={{ textAlign: "right" }}>
-                    <IconButton
-                      size="sm"
-                      variant="plain"
-                      color="neutral"
-                      component={Link}
-                      to={`/admin/clientes/${r.id}/informacion`}>
-                      <MoreHorizRoundedIcon />
-                    </IconButton>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </Table>
+        {!loading && (
+          <span className="text-xs text-muted-foreground/70 font-medium whitespace-nowrap">
+            <span className="font-bold text-foreground">{sortedRows.length}</span>
+            {search || statusFilter !== "todos" ? ` de ${rows.length}` : ` cliente${rows.length !== 1 ? "s" : ""}`}
+          </span>
         )}
-      </Sheet>
+      </div>
 
-      {/* DRAWER DE CREACIÓN */}
-      <Drawer
-        open={open}
-        onClose={() => !saving && setOpen(false)}
-        anchor="right"
-        size="sm"
-        slotProps={{
-          content: {
-            sx: {
-              bgcolor: "background.surface",
-              p: 3,
-              display: "flex",
-              flexDirection: "column",
-              gap: 2,
-              boxShadow: "xl",
-            },
-          },
-        }}>
-        <Stack
-          direction="row"
-          alignItems="center"
-          justifyContent="space-between">
-          <Typography level="h4">{t("clients.create_title")}</Typography>
-          <ModalClose onClick={() => setOpen(false)} />
-        </Stack>
-        <Divider />
+      {/* ── CONTENIDO PRINCIPAL ── */}
+      <div className="bg-card dark:bg-slate-900/40 border border-border/60 rounded-3xl shadow-sm overflow-hidden">
+        {loading ? (
+          <div className="flex flex-col items-center justify-center gap-4 py-24">
+            <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+              <Loader2 className="animate-spin text-primary" size={22} />
+            </div>
+            <p className="text-sm text-muted-foreground font-medium">Cargando clientes...</p>
+          </div>
+        ) : error ? (
+          <div className="flex flex-col items-center justify-center gap-4 py-24">
+            <div className="w-16 h-16 rounded-3xl bg-rose-500/10 dark:bg-rose-500/15 flex items-center justify-center">
+              <Building2 size={28} className="text-rose-500/50" />
+            </div>
+            <div className="text-center">
+              <p className="font-bold text-sm">Error al cargar</p>
+              <p className="text-xs text-muted-foreground mt-1">{error}</p>
+            </div>
+            <Button onClick={loadClientes} variant="outline" size="sm" className="rounded-xl">Reintentar</Button>
+          </div>
+        ) : sortedRows.length === 0 ? (
+          <div className="flex flex-col items-center justify-center gap-4 py-24">
+            <div className="w-16 h-16 rounded-3xl bg-muted/50 dark:bg-slate-800/50 flex items-center justify-center">
+              <Building2 size={28} className="text-muted-foreground/40" />
+            </div>
+            <div className="text-center">
+              <p className="font-bold text-sm">{search ? "Sin resultados" : "Sin clientes"}</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {search ? `No hay coincidencias para "${search}"` : "Crea el primer cliente usando el botón de arriba"}
+              </p>
+            </div>
+          </div>
+        ) : isMobile ? (
 
-        <Stack
-          component="form"
-          onSubmit={onSubmit}
-          spacing={2.5}
-          sx={{ flex: 1, overflowY: "auto", px: 1, pt: 1 }}>
-          <FormControl required>
-            <FormLabel>{t("clients.form.code")}</FormLabel>
-            <Input
-              value={form.codigo}
-              onChange={(e) => setForm({ ...form, codigo: e.target.value })}
-              disabled={saving}
-            />
-          </FormControl>
-          <FormControl required>
-            <FormLabel>{t("clients.form.name")}</FormLabel>
-            <Input
-              value={form.nombre}
-              onChange={(e) => setForm({ ...form, nombre: e.target.value })}
-              disabled={saving}
-            />
-          </FormControl>
-          <FormControl>
-            <FormLabel>{t("clients.form.description")}</FormLabel>
-            <Input
-              value={form.descripcion}
-              onChange={(e) =>
-                setForm({ ...form, descripcion: e.target.value })
-              }
-              disabled={saving}
-            />
-          </FormControl>
-          <FormControl required>
-            <FormLabel>{t("clients.form.status")}</FormLabel>
-            <Select
-              value={form.estatus}
-              onChange={(_, v) => setForm({ ...form, estatus: v })}>
-              <Option value="Activo">{t("common.status.active")}</Option>
-              <Option value="Inactivo">{t("common.status.inactive")}</Option>
-            </Select>
-          </FormControl>
+          /* ── MOBILE: CARDS ── */
+          <div className="divide-y divide-border/50">
+            {sortedRows.map((r) => (
+              <Link
+                key={r.id}
+                to={`/admin/clientes/${r.id}/informacion`}
+                className="flex items-center gap-3 p-4 hover:bg-muted/20 dark:hover:bg-slate-800/30 transition-colors group">
+                <ClienteAvatar src={r.logo_url} nombre={r.nombre} />
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-sm truncate">{r.nombre}</p>
+                  <p className="text-[10px] text-muted-foreground/60 font-mono mt-0.5">{r.codigo}</p>
+                </div>
+                <StatusBadge estatus={r.estatus} />
+              </Link>
+            ))}
+          </div>
 
-          <Box
-            sx={{
-              p: 2,
-              border: "1px dashed",
-              borderColor: "neutral.outlinedBorder",
-              borderRadius: "md",
-            }}>
-            <FormLabel sx={{ mb: 1.5 }}>{t("clients.form.logo")}</FormLabel>
-            <Stack direction="row" spacing={2} alignItems="center">
-              <Avatar src={logoPreview} size="lg" variant="rounded" />
-              <Stack>
-                <Button component="label" variant="soft" size="sm">
-                  {t("common.actions.upload")}
+        ) : (
+
+          /* ── DESKTOP: TABLA ── */
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-border/60 bg-muted/20 dark:bg-slate-800/30">
+                  {[
+                    { key: "nombre", label: "Cliente" },
+                    { key: "codigo", label: "Código" },
+                    { key: null, label: "Descripción" },
+                    { key: "estatus", label: "Estado" },
+                    { key: null, label: "" },
+                  ].map(({ key, label }, i) => (
+                    <th
+                      key={i}
+                      onClick={() => handleSort(key)}
+                      className={`px-6 py-3.5 text-left ${key ? "cursor-pointer select-none" : ""}`}>
+                      <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-muted-foreground/70">
+                        {label}
+                        {key && <SortIcon col={key} />}
+                      </span>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {sortedRows.map((r) => (
+                  <tr
+                    key={r.id}
+                    className="border-b border-border/30 last:border-0 hover:bg-muted/20 dark:hover:bg-slate-800/20 transition-colors group">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <ClienteAvatar src={r.logo_url} nombre={r.nombre} />
+                        <div>
+                          <Link
+                            to={`/admin/clientes/${r.id}/informacion`}
+                            className="font-bold text-sm hover:text-primary transition-colors">
+                            {r.nombre}
+                          </Link>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="text-xs text-muted-foreground font-mono">{r.codigo}</span>
+                    </td>
+                    <td className="px-6 py-4 max-w-xs">
+                      <span className="text-sm text-muted-foreground line-clamp-1">{r.descripcion || "—"}</span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <StatusBadge estatus={r.estatus} />
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex justify-end">
+                        <Link
+                          to={`/admin/clientes/${r.id}/informacion`}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl border border-border/60 text-muted-foreground hover:text-primary hover:border-primary/40 hover:bg-primary/5 transition-all">
+                          <ExternalLink size={12} />
+                          Ver detalle
+                        </Link>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* ── PANEL LATERAL: CREAR CLIENTE ── */}
+      {open && (
+        <div className="fixed inset-0 z-50">
+          <div
+            className="absolute inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
+            onClick={() => !saving && setOpen(false)}
+          />
+          <div className={`${isMobile ? "absolute inset-x-0 bottom-0 h-[92vh] rounded-t-3xl animate-in slide-in-from-bottom duration-300" : "absolute right-0 top-0 h-full w-[440px] animate-in slide-in-from-right duration-300"} bg-card dark:bg-slate-900 shadow-2xl dark:shadow-black/60 flex flex-col border-l border-border/40`}
+            onClick={(e) => e.stopPropagation()}>
+
+            {/* Header */}
+            <div className="flex-none flex items-center gap-3 px-6 py-4 border-b border-border/60">
+              <div className="p-2 bg-primary/10 dark:bg-primary/15 rounded-2xl ring-1 ring-primary/20 dark:ring-primary/25">
+                <Building2 size={18} className="text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h2 className="text-base font-black tracking-tight">Nuevo Cliente</h2>
+                <p className="text-[11px] text-muted-foreground mt-0.5">Completa la información de la compañía</p>
+              </div>
+              <button
+                onClick={() => !saving && setOpen(false)}
+                disabled={saving}
+                className="p-2 hover:bg-muted dark:hover:bg-slate-800 rounded-xl transition-colors disabled:opacity-40 text-muted-foreground hover:text-foreground">
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Cuerpo scrollable */}
+            <div className="flex-1 overflow-y-auto overscroll-contain px-6 py-5 space-y-5">
+
+              {/* Sección: Info básica */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <div className="h-px flex-1 bg-border/50" />
+                  <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 px-1">Información básica</span>
+                  <div className="h-px flex-1 bg-border/50" />
+                </div>
+
+                {/* Código */}
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">
+                    Código <span className="text-primary">*</span>
+                  </label>
                   <input
-                    type="file"
-                    hidden
-                    accept="image/*"
-                    onChange={onLogoChange}
+                    autoFocus
+                    value={form.codigo}
+                    onChange={(e) => setForm({ ...form, codigo: e.target.value })}
+                    disabled={saving}
+                    placeholder="ej: CLI-001, ACME..."
+                    className="w-full rounded-xl border border-border bg-background dark:bg-slate-900/60 px-4 py-2.5 text-sm focus:border-primary/60 focus:ring-2 focus:ring-primary/20 outline-none transition-all placeholder:text-muted-foreground/50 disabled:opacity-60"
                   />
-                </Button>
-                {logoPreview && (
-                  <Button
-                    variant="plain"
-                    color="danger"
-                    size="sm"
-                    onClick={() => {
-                      setLogoFile(null);
-                      setLogoPreview(null);
-                    }}
-                    sx={{ mt: 1 }}>
-                    {t("common.actions.remove")}
-                  </Button>
-                )}
-              </Stack>
-            </Stack>
-          </Box>
-        </Stack>
+                </div>
 
-        <Stack direction="row" justifyContent="flex-end" spacing={1} pt={2}>
-          <Button
-            variant="plain"
-            color="neutral"
-            onClick={() => setOpen(false)}
-            disabled={saving}>
-            {t("common.actions.cancel")}
-          </Button>
-          <Button onClick={onSubmit} loading={saving}>
-            {t("common.actions.save")}
-          </Button>
-        </Stack>
-      </Drawer>
-    </Box>
+                {/* Nombre */}
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">
+                    Nombre <span className="text-primary">*</span>
+                  </label>
+                  <input
+                    value={form.nombre}
+                    onChange={(e) => setForm({ ...form, nombre: e.target.value })}
+                    disabled={saving}
+                    placeholder="Nombre de la compañía..."
+                    className="w-full rounded-xl border border-border bg-background dark:bg-slate-900/60 px-4 py-2.5 text-sm focus:border-primary/60 focus:ring-2 focus:ring-primary/20 outline-none transition-all placeholder:text-muted-foreground/50 disabled:opacity-60"
+                  />
+                </div>
+
+                {/* Descripción */}
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">
+                    Descripción
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={form.descripcion}
+                    onChange={(e) => setForm({ ...form, descripcion: e.target.value })}
+                    disabled={saving}
+                    placeholder="Descripción opcional..."
+                    className="w-full rounded-xl border border-border bg-background dark:bg-slate-900/60 px-4 py-2.5 text-sm resize-none focus:border-primary/60 focus:ring-2 focus:ring-primary/20 outline-none transition-all placeholder:text-muted-foreground/50 disabled:opacity-60"
+                  />
+                </div>
+
+                {/* Estatus */}
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">
+                    Estatus <span className="text-primary">*</span>
+                  </label>
+                  <div className="flex gap-2">
+                    {ESTATUS.map((s) => (
+                      <button
+                        key={s}
+                        type="button"
+                        disabled={saving}
+                        onClick={() => setForm({ ...form, estatus: s })}
+                        className={[
+                          "flex-1 py-2 rounded-xl text-sm font-semibold border transition-all",
+                          form.estatus === s
+                            ? s === "Activo"
+                              ? "bg-emerald-500/10 border-emerald-500/40 text-emerald-600 dark:text-emerald-400"
+                              : "bg-muted border-border text-foreground"
+                            : "border-border/60 text-muted-foreground hover:border-border",
+                        ].join(" ")}>
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Sección: Logo */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <div className="h-px flex-1 bg-border/50" />
+                  <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 px-1">Logo</span>
+                  <div className="h-px flex-1 bg-border/50" />
+                </div>
+
+                <div className="flex items-center gap-4 p-4 border border-dashed border-border/60 rounded-2xl bg-muted/20 dark:bg-slate-800/20">
+                  <div className="w-16 h-16 rounded-2xl border border-border/60 bg-muted/40 dark:bg-slate-800 flex items-center justify-center shrink-0 overflow-hidden">
+                    {logoPreview
+                      ? <img src={logoPreview} alt="logo" className="w-full h-full object-contain" />
+                      : <Building2 size={20} className="text-muted-foreground/30" />}
+                  </div>
+                  <div className="space-y-2">
+                    <label className="inline-flex items-center gap-1.5 cursor-pointer px-3 py-1.5 rounded-xl border border-border/60 text-xs font-semibold text-muted-foreground hover:text-foreground hover:border-primary/40 transition-all">
+                      <ImagePlus size={13} />
+                      {logoPreview ? "Cambiar imagen" : "Subir logo"}
+                      <input type="file" hidden accept="image/*" onChange={onLogoChange} disabled={saving} />
+                    </label>
+                    {logoPreview && (
+                      <button
+                        type="button"
+                        onClick={() => { setLogoFile(null); setLogoPreview(null); }}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-rose-500 hover:bg-rose-500/10 transition-all">
+                        <Trash2 size={12} /> Quitar
+                      </button>
+                    )}
+                    <p className="text-[10px] text-muted-foreground/60">PNG, JPG. Máx 2 MB</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="flex-none px-6 py-4 border-t border-border/50 bg-card/95 dark:bg-slate-900/95 backdrop-blur-sm">
+              <div className="flex gap-2.5">
+                <Button
+                  type="button"
+                  disabled={saving}
+                  onClick={onSubmit}
+                  className="flex-1 rounded-2xl h-10 font-bold shadow-md shadow-primary/15 hover:shadow-primary/25 transition-all gap-2 disabled:opacity-60">
+                  {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
+                  {saving ? "Guardando..." : "Crear Cliente"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setOpen(false)}
+                  disabled={saving}
+                  className="flex-1 rounded-2xl h-10 font-bold">
+                  Cancelar
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

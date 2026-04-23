@@ -41,6 +41,22 @@ export async function getUserPermissions(id) {
   }
 }
 
+export async function getPermisosEfectivos(id) {
+  try {
+    const res = await fetchConToken(
+      `${endpoints.getUserPermissions}${id}/efectivos`,
+      { method: "GET" }
+    );
+    if (!res.ok) throw new Error("No se pudo obtener los permisos efectivos");
+    const data = await res.json();
+    // Acepta tanto string[] como { permisos: string[] }
+    return Array.isArray(data) ? data : (data?.permisos_efectivos ?? []);
+  } catch (err) {
+    console.error("Get effective permissions error:", err);
+    return [];
+  }
+}
+
 export async function updateUserPermissions(id, permisos) {
   try {
     const res = await fetchConToken(endpoints.updateUserPermissions, {
