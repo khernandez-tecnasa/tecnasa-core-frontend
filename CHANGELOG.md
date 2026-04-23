@@ -1,4 +1,15 @@
-﻿## v2.5.0 - 2026-04-20
+﻿## v2.6.0 - 2026-04-23
+
+* chore(release): v2.6.0 (e902568)
+* Merge pull request #3 from khernandez-tecnasa/refactory/rols_module (6110fa4)
+* feat(config): add Roles & Permisos endpoints; fix i18n deactivate labels (445a40e)
+* fix(release): quote temp file path in gh release command (5fcd545)
+* refactor(ui): migrate MUI Joy ÔåÆ Tailwind/shadcn across multiple modules (5fc3123)
+* docs(changelog): v2.5.0 (d96c4dc)
+
+**Comparacion:** https://github.com/khernandez-tecnasa/tecnasa-core-frontend/compare/v2.5.0...v2.6.0
+
+## v2.5.0 - 2026-04-20
 
 * chore(release): v2.5.0 (c83b5c7)
 * refactor: Se modifica el release para que se pueda ejecutar debido a que tenia caracteres especiales (8065f29)
@@ -211,6 +222,7 @@
 - Full changelog: https://github.com/khernan14/AutoLog/compare/prod-2025-11-04...v1.0.0
 
 > Nota: si sigues **Conventional Commits** (`feat:`, `fix:`, `chore:`â€¦), herramientas como `conventional-changelog` te generan estas secciones solitas.
+
 
 
 
