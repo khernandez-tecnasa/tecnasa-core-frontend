@@ -29,9 +29,9 @@
       "export": "Exportar",
       "import": "Importar",
       "shortcuts": "Atajos de teclado",
-      "deactivate": "Inhabilitar",
+      "deactivate": "Eliminar",
       "restore": "Restaurar",
-      "deactivate_selected": "Inhabilitar ({{count}})",
+      "deactivate_selected": "Eliminar ({{count}})",
       "send": "Enviar",
       "save_changes": "Guardar Cambios",
       "confirm": "Confirmar"
