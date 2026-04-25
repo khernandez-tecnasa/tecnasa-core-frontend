@@ -26,7 +26,8 @@ export const ToastProvider = ({ children }) => {
                 color={toast.color}
                 variant="soft"
                 autoHideDuration={toast.duration || 3000}
-                anchorOrigin={{ vertical: "top", horizontal: "center" }} // 👈 siempre arriba
+                anchorOrigin={{ vertical: "top", horizontal: "center" }}
+                sx={{ top: "calc(var(--mobile-header-height, 0px) + 8px) !important" }}
             >
                 {toast.message}
             </Snackbar>

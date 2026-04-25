@@ -2,7 +2,7 @@ import { Activity } from "lucide-react";
 
 export default function OperacionHeader({ operacionActiva }) {
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
+    <div className="bg-card dark:bg-slate-900/40 rounded-3xl border border-border/60 shadow-sm overflow-hidden">
       {/* Accent bar */}
       <div
         className={`h-1 w-full ${
@@ -14,13 +14,15 @@ export default function OperacionHeader({ operacionActiva }) {
 
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-5 md:p-6">
         <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <Activity size={17} className="text-primary shrink-0" />
-            <h1 className="text-base font-black tracking-tight uppercase text-slate-800 dark:text-slate-100">
+          <div className="flex items-center gap-2.5">
+            <div className="p-1.5 bg-muted dark:bg-slate-800 rounded-xl shrink-0">
+              <Activity size={15} className="text-primary" />
+            </div>
+            <h1 className="text-base font-black tracking-tight text-foreground">
               Operaciones de Flota
             </h1>
           </div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400 pl-6">
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground pl-9">
             {operacionActiva
               ? "Módulo de Recepción · Registro de Regreso"
               : "Módulo de Despacho · Registro de Salida"}

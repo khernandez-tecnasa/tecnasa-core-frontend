@@ -1,17 +1,14 @@
 // src/layouts/MainLayout.jsx
-import { useEffect } from "react"; // 👈 importa useEffect
+import { useEffect } from "react";
 import Box from "@mui/joy/Box";
-import Breadcrumbs from "@mui/joy/Breadcrumbs";
-import Link from "@mui/joy/Link";
-import Typography from "@mui/joy/Typography";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 
-import HomeRoundedIcon from "@mui/icons-material/HomeRounded";
-import ChevronRightRoundedIcon from "@mui/icons-material/ChevronRightRounded";
-
 import Sidebar from "../context/SideBar";
-import Header from "../components/Header/Header";
-import { useSoftRefresh } from "@/context/SoftRefreshContext"; // 👈 importa el hook
+import MobileHeader from "../components/navigation/MobileHeader";
+import BottomNav from "../components/navigation/BottomNav";
+import CommandPalette from "../components/navigation/CommandPalette";
+import { CommandPaletteProvider } from "@/context/CommandPaletteContext";
+import { useSoftRefresh } from "@/context/SoftRefreshContext";
 
 function capitalizeNice(s = "") {
   if (!s) return s;
@@ -164,8 +161,9 @@ export default function MainLayout() {
     .filter(Boolean);
 
   return (
+    <CommandPaletteProvider>
     <Box sx={{ display: "flex", minHeight: "100dvh" }}>
-      <Header />
+      <MobileHeader />
       <Sidebar />
       <Box
         component="main"
@@ -173,11 +171,13 @@ export default function MainLayout() {
         sx={{
           px: { xs: 2, md: 6 },
           pt: {
-            xs: "calc(12px + var(--Header-height))",
-            sm: "calc(12px + var(--Header-height))",
+            xs: "calc(var(--mobile-header-height, 52px) + 12px)",
             md: 3,
           },
-          pb: { xs: 2, sm: 2, md: 3 },
+          pb: {
+            xs: "calc(var(--bottom-nav-height, 64px) + env(safe-area-inset-bottom) + 8px)",
+            md: 3,
+          },
           flex: 1,
           display: "flex",
           flexDirection: "column",
@@ -228,6 +228,9 @@ export default function MainLayout() {
           <Outlet />
         </div>
       </Box>
+      <BottomNav />
+      <CommandPalette />
     </Box>
+    </CommandPaletteProvider>
   );
 }

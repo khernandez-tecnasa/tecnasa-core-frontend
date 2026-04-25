@@ -30,7 +30,10 @@ ReactDOM.createRoot(document.getElementById("root")).render(
       <LocalizationProvider dateAdapter={AdapterDateFns}>
         <GlobalStyles />
         <ToastProvider>
-          <Toaster position="top-center" />
+          <Toaster
+            position="top-center"
+            style={{ top: "calc(var(--mobile-header-height, 0px) + 8px)" }}
+          />
           <App />
         </ToastProvider>
         <ToastContainer
@@ -43,6 +46,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
           draggable
           pauseOnHover={false}
           theme="light"
+          style={{ top: "calc(var(--mobile-header-height, 0px) + 8px)" }}
         />
       </LocalizationProvider>
     </AppThemeProvider>

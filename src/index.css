@@ -16,6 +16,40 @@
 html, body { font-family: 'Poppins', sans-serif; overflow: hidden; }
 .btn-brand { background: var(--twc-primary); color: #fff; }
 
+/* ── Layout dimensions ────────────────────────────────────────────── */
+:root {
+  --mobile-header-height: 52px;
+  --bottom-nav-height: 64px;
+  --sidebar-width: 260px;
+  /* z-index scale — use these instead of arbitrary values */
+  --z-bottom-nav: 40;
+  --z-hub: 45;
+  --z-drawer: 50;     /* vaul / bottom-sheets */
+  --z-mobile-header: 60;
+}
+@media (min-width: 768px) {
+  :root {
+    --mobile-header-height: 0px;
+    --bottom-nav-height: 0px;
+  }
+}
+@media (min-width: 1024px) {
+  :root { --sidebar-width: 280px; }
+}
+
+/* ── Toast offset: push all toast stacks below the mobile header ─── */
+/* react-toastify */
+.Toastify__toast-container--top-center,
+.Toastify__toast-container--top-left,
+.Toastify__toast-container--top-right {
+  top: calc(var(--mobile-header-height, 0px) + 8px) !important;
+}
+/* sileo / sonner style toasters */
+[data-sonner-toaster][data-y-position="top"],
+[data-sileo-toaster] {
+  top: calc(var(--mobile-header-height, 0px) + 8px) !important;
+}
+
 html {
   transition: background-color 0.25s ease, color 0.25s ease;
 }

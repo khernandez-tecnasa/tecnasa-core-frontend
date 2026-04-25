@@ -10,7 +10,7 @@ export default function Header() {
   return (
     <Sheet
       sx={{
-        display: { xs: "flex", md: "none" },
+        display: "none",
         alignItems: "center",
         justifyContent: "space-between",
         position: "fixed",
@@ -27,10 +27,7 @@ export default function Header() {
       <GlobalStyles
         styles={(theme) => ({
           ":root": {
-            "--Header-height": "52px",
-            [theme.breakpoints.up("md")]: {
-              "--Header-height": "0px",
-            },
+            "--Header-height": "0px",
           },
         })}
       />

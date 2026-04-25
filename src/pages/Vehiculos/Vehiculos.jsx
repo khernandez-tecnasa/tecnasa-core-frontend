@@ -1,13 +1,19 @@
-import React, {
-  useEffect,
-  useState,
-  useCallback,
-  useMemo,
-  useRef,
-} from "react";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import {
+  Car,
+  Loader2,
+  WifiOff,
+  Lock,
+  AlertTriangle,
+  RotateCcw,
+} from "lucide-react";
+import Swal from "sweetalert2";
+
 import StyledQR from "@/components/QRCode/StyledQR";
-import { getRegistroLinkForVehiculo } from "@/services/VehiculosService";
 import logoTecnasa from "@/assets/newLogoTecnasaBlack.png";
+import { getRegistroLinkForVehiculo } from "@/services/VehiculosService";
 
 import {
   obtenerVehiculos,
@@ -15,68 +21,108 @@ import {
   addVehiculos,
   actualizarVehiculo,
   restoreVehiculo,
+  getUbicaciones,
 } from "../../services/VehiculosService";
-
 import { sendNotificacionSalida } from "../../services/MailServices";
-
 import { obtenerRegistroPendientePorVehiculo } from "../../services/RegistrosService";
-import { useNavigate } from "react-router-dom";
 
 import VehiculosTable from "../../components/VehiculosForm/VehiculosTable";
-import VehiculoModal from "../../components/VehiculosForm/VehiculosModal";
+import VehiculoFormSheet from "../../components/VehiculosForm/VehiculoFormSheet";
 import VehiculosToolBar from "../../components/VehiculosForm/VehiculosToolBar";
-import {
-  Box,
-  Button,
-  Card,
-  Divider,
-  Modal,
-  ModalDialog,
-  Sheet,
-  Stack,
-  Typography,
-} from "@mui/joy";
-import Swal from "sweetalert2";
-import { useAuth } from "../../context/AuthContext";
+import ConfirmModal from "../../components/ui/ConfirmModal";
+import useIsMobile from "../../hooks/useIsMobile";
 
-import ResourceState from "../../components/common/ResourceState";
+import { useAuth } from "../../context/AuthContext";
+import { useToast } from "../../context/ToastContext";
 import usePermissions from "../../hooks/usePermissions";
+import useRowFocusHighlight from "../../hooks/useRowFocusHighlight";
 import { getViewState } from "../../utils/viewState";
 
-import { useToast } from "../../context/ToastContext";
-import useRowFocusHighlight from "../../hooks/useRowFocusHighlight";
+/* ── Inline resource states (no JoyUI) ─────────────────────────────── */
 
-import { useTranslation } from "react-i18next";
+function StatePanel({
+  icon: Icon,
+  title,
+  description,
+  action,
+  color = "neutral",
+}) {
+  const colorMap = {
+    neutral: "text-gray-400 dark:text-gray-500",
+    danger: "text-red-400 dark:text-red-500",
+    warning: "text-amber-400 dark:text-amber-500",
+  };
+  return (
+    <div className="flex flex-col items-center justify-center gap-4 py-20 text-center px-4">
+      <div
+        className={`w-14 h-14 rounded-2xl bg-muted/50 dark:bg-slate-800/50 flex items-center justify-center ${colorMap[color]}`}>
+        <Icon size={26} />
+      </div>
+      <div>
+        <p className="font-bold text-sm text-gray-800 dark:text-gray-200">
+          {title}
+        </p>
+        {description && (
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 max-w-xs">
+            {description}
+          </p>
+        )}
+      </div>
+      {action}
+    </div>
+  );
+}
+
+/* ── Page ───────────────────────────────────────────────────────────── */
 
 export default function Vehiculos() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-
-  const [vehiculos, setVehiculos] = useState([]);
-  const [openQR, setOpenQR] = useState(false);
-  const [vehiculoQR, setVehiculoQR] = useState(null);
-  const [registroLink, setRegistroLink] = useState("");
   const qrRef = useRef(null);
+  const isMobile = useIsMobile(768);
+
   const { hasPermiso, checkingSession, userData } = useAuth();
-  const isAdmin = (userData?.rol || "").toLowerCase() === "admin";
-
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [openModal, setOpenModal] = useState(false);
-  const [editVehiculo, setEditVehiculo] = useState(null);
-  const [showInactive, setShowInactive] = useState(false);
-  const [searchText, setSearchText] = useState("");
-
-  const { canAny } = usePermissions();
   const { showToast } = useToast();
+  const { canAny } = usePermissions();
+  const isAdmin = (userData?.rol || "").toLowerCase() === "admin";
+  const can = useCallback(
+    (p) => isAdmin || hasPermiso(p),
+    [isAdmin, hasPermiso],
+  );
 
-  // permisos normalizados
   const canView = canAny("ver_vehiculos");
   const canCreate = canAny("crear_vehiculo");
   const canEdit = canAny("editar_vehiculo");
   const canDelete = canAny("eliminar_vehiculo");
   const canRestore = canAny("gestionar_vehiculos");
+  const canQR = can("crear_QR");
 
+  /* ── State ── */
+  const [vehiculos, setVehiculos] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [openSheet, setOpenSheet] = useState(false);
+  const [editVehiculo, setEditVehiculo] = useState(null);
+  const [showInactive, setShowInactive] = useState(false);
+  const [searchText, setSearchText] = useState("");
+
+  /* Ubicaciones for mobile sheet */
+  const [ubicaciones, setUbicaciones] = useState([]);
+  const [loadingUbics, setLoadingUbics] = useState(false);
+
+  /* QR */
+  const [openQR, setOpenQR] = useState(false);
+  const [vehiculoQR, setVehiculoQR] = useState(null);
+  const [registroLink, setRegistroLink] = useState("");
+
+  /* Confirm modals */
+  const [deleteConfirm, setDeleteConfirm] = useState({ open: false, id: null });
+  const [restoreConfirm, setRestoreConfirm] = useState({
+    open: false,
+    id: null,
+  });
+
+  /* ── Load ── */
   const loadVehiculos = useCallback(async () => {
     if (checkingSession) {
       setLoading(true);
@@ -87,27 +133,23 @@ export default function Vehiculos() {
       setError(null);
       return;
     }
-
     setLoading(true);
     setError(null);
     try {
       const data = await obtenerVehiculos();
-      if (Array.isArray(data)) {
-        setVehiculos(data);
-      } else {
+      if (Array.isArray(data)) setVehiculos(data);
+      else
         setError(
-          t("vehiculos.load_error") ||
-            "No se pudieron cargar los vehículos. Intenta más tarde.",
+          t("vehiculos.load_error", "No se pudieron cargar los vehículos."),
         );
-      }
     } catch (err) {
       const msg = (err?.message || "").toLowerCase();
       const isNetwork =
         msg.includes("failed to fetch") || msg.includes("networkerror");
       setError(
         isNetwork
-          ? t("vehiculos.no_connection") || "No hay conexión con el servidor."
-          : err?.message || t("vehiculos.unknown_error"),
+          ? t("vehiculos.no_connection", "No hay conexión con el servidor.")
+          : err?.message || t("vehiculos.unknown_error", "Error desconocido."),
       );
     } finally {
       setLoading(false);
@@ -118,283 +160,252 @@ export default function Vehiculos() {
     loadVehiculos();
   }, [loadVehiculos]);
 
-  // ---- handlers CRUD con showToast ----
+  /* Load ubicaciones for the mobile sheet */
+  useEffect(() => {
+    if (!isMobile) return;
+    let cancelled = false;
+    setLoadingUbics(true);
+    getUbicaciones()
+      .then((d) => {
+        if (!cancelled) setUbicaciones(Array.isArray(d) ? d : []);
+      })
+      .catch(() => {
+        if (!cancelled) setUbicaciones([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingUbics(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isMobile]);
+
+  /* ── CRUD handlers ── */
   const handleAddVehiculo = () => {
-    if (!canCreate) {
-      showToast(
-        t("vehiculos.no_permission_create") ||
-          "No tienes permiso para crear vehículos.",
+    if (!canCreate)
+      return showToast(
+        t("vehiculos.no_permission_create", "Sin permiso para crear."),
         "warning",
       );
-      return;
+    if (isMobile) {
+      setEditVehiculo(null);
+      setOpenSheet(true);
+    } else {
+      navigate("/admin/vehiculos/new");
     }
-    setEditVehiculo(null);
-    setOpenModal(true);
   };
 
   const handleEdit = (vehiculo) => {
-    if (!canEdit) {
-      showToast(
-        t("vehiculos.no_permission_edit") ||
-          "No tienes permiso para editar vehículos.",
+    if (!canEdit)
+      return showToast(
+        t("vehiculos.no_permission_edit", "Sin permiso para editar."),
         "warning",
       );
-      return;
-    }
-    const vehiculoTransformado = {
-      ...vehiculo,
-      id_ubicacion_actual: vehiculo.LocationID,
-    };
-    setEditVehiculo(vehiculoTransformado);
-    setOpenModal(true);
-  };
-
-  const handleDelete = async (id) => {
-    if (!canDelete) {
-      showToast(
-        t("vehiculos.no_permission_delete") ||
-          "No tienes permiso para inhabilitar vehículos.",
-        "warning",
-      );
-      return;
-    }
-    const result = await Swal.fire({
-      title: t("vehiculos.confirm_disable_title"),
-      text: t("vehiculos.confirm_disable_text"),
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#d33",
-      cancelButtonColor: "#3085d6",
-      confirmButtonText: t("vehiculos.yes_disable"),
-      cancelButtonText: t("vehiculos.cancel"),
-    });
-    if (result.isConfirmed) {
-      try {
-        const resp = await deleteVehiculo(id);
-        if (resp && !resp.error) {
-          setVehiculos((prev) =>
-            prev.map((v) => (v.id === id ? { ...v, estado: "Inactivo" } : v)),
-          );
-          showToast(
-            t("vehiculos.disabled_success") ||
-              "Vehículo inactivado correctamente",
-            "success",
-          );
-        } else {
-          showToast(
-            t("vehiculos.disabled_error") || "Error al inactivar el vehículo.",
-            "danger",
-          );
-        }
-      } catch (err) {
-        showToast(
-          t("vehiculos.disabled_network_error") ||
-            "Error de conexión al intentar inactivar el vehículo.",
-          "danger",
-        );
-      }
+    if (isMobile) {
+      setEditVehiculo({
+        ...vehiculo,
+        id_ubicacion_actual:
+          vehiculo.id_ubicacion_actual ?? vehiculo.LocationID,
+      });
+      setOpenSheet(true);
+    } else {
+      navigate(`/admin/vehiculos/edit/${vehiculo.id}`, { state: { vehiculo } });
     }
   };
 
-  const handleRestore = async (id) => {
-    if (!canRestore) {
-      showToast(
-        t("vehiculos.no_permission_restore") ||
-          "No tienes permiso para restaurar vehículos.",
+  const handleDelete = (id) => {
+    if (!canDelete)
+      return showToast(
+        t("vehiculos.no_permission_delete", "Sin permiso para inactivar."),
         "warning",
       );
-      return;
-    }
-    const result = await Swal.fire({
-      title: t("vehiculos.confirm_restore_title"),
-      text: t("vehiculos.confirm_restore_text"),
-      icon: "info",
-      showCancelButton: true,
-      confirmButtonColor: "#03624C",
-      cancelButtonColor: "#d33",
-      confirmButtonText: t("vehiculos.yes_restore"),
-      cancelButtonText: t("vehiculos.cancel"),
-    });
-    if (result.isConfirmed) {
-      try {
-        const resp = await restoreVehiculo(id);
-        if (resp && !resp.error) {
-          setVehiculos((prev) =>
-            prev.map((v) => (v.id === id ? { ...v, estado: "Disponible" } : v)),
-          );
-          showToast(
-            t("vehiculos.restored_success") ||
-              "Vehículo restaurado correctamente",
-            "success",
-          );
-        } else {
-          showToast(
-            t("vehiculos.restored_error") || "Error al restaurar el vehículo.",
-            "danger",
-          );
-        }
-      } catch (err) {
+    setDeleteConfirm({ open: true, id });
+  };
+
+  const confirmDelete = async () => {
+    const id = deleteConfirm.id;
+    setDeleteConfirm({ open: false, id: null });
+    try {
+      const resp = await deleteVehiculo(id);
+      if (resp && !resp.error) {
+        setVehiculos((prev) =>
+          prev.map((v) => (v.id === id ? { ...v, estado: "Inactivo" } : v)),
+        );
         showToast(
-          t("vehiculos.restored_network_error") ||
-            "Error de conexión al intentar restaurar el vehículo.",
+          t("vehiculos.disabled_success", "Vehículo inactivado correctamente."),
+          "success",
+        );
+      } else {
+        showToast(
+          t("vehiculos.disabled_error", "Error al inactivar el vehículo."),
           "danger",
         );
       }
+    } catch {
+      showToast(
+        t("vehiculos.disabled_network_error", "Error de conexión."),
+        "danger",
+      );
+    }
+  };
+
+  const handleRestore = (id) => {
+    if (!canRestore)
+      return showToast(
+        t("vehiculos.no_permission_restore", "Sin permiso para restaurar."),
+        "warning",
+      );
+    setRestoreConfirm({ open: true, id });
+  };
+
+  const confirmRestore = async () => {
+    const id = restoreConfirm.id;
+    setRestoreConfirm({ open: false, id: null });
+    try {
+      const resp = await restoreVehiculo(id);
+      if (resp && !resp.error) {
+        setVehiculos((prev) =>
+          prev.map((v) => (v.id === id ? { ...v, estado: "Disponible" } : v)),
+        );
+        showToast(
+          t("vehiculos.restored_success", "Vehículo restaurado correctamente."),
+          "success",
+        );
+      } else {
+        showToast(
+          t("vehiculos.restored_error", "Error al restaurar el vehículo."),
+          "danger",
+        );
+      }
+    } catch {
+      showToast(
+        t("vehiculos.restored_network_error", "Error de conexión."),
+        "danger",
+      );
     }
   };
 
   const handleSubmitVehiculo = async (vehiculo) => {
-    if (!canAny("crear_vehiculo", "editar_vehiculo")) {
-      showToast(
-        t("vehiculos.no_permission_save") ||
-          "No tienes permisos para guardar vehículos.",
+    if (!canAny("crear_vehiculo", "editar_vehiculo"))
+      return showToast(
+        t("vehiculos.no_permission_save", "Sin permisos para guardar."),
         "warning",
       );
-      return;
-    }
     try {
       if (vehiculo.id) {
         const resp = await actualizarVehiculo(vehiculo.id, vehiculo);
-        if (resp && !resp.error)
-          showToast(
-            t("vehiculos.updated_success") ||
-              "Vehículo actualizado correctamente",
-            "success",
-          );
-        else
-          showToast(
-            t("vehiculos.updated_error") || "Error al actualizar el vehículo.",
-            "danger",
-          );
+        showToast(
+          resp && !resp.error
+            ? t(
+                "vehiculos.updated_success",
+                "Vehículo actualizado correctamente.",
+              )
+            : t("vehiculos.updated_error", "Error al actualizar el vehículo."),
+          resp && !resp.error ? "success" : "danger",
+        );
       } else {
         const resp = await addVehiculos(vehiculo);
-        if (resp && !resp.error)
-          showToast(
-            t("vehiculos.added_success") || "Vehículo agregado correctamente",
-            "success",
-          );
-        else
-          showToast(
-            t("vehiculos.added_error") || "Error al agregar el vehículo.",
-            "danger",
-          );
+        showToast(
+          resp && !resp.error
+            ? t("vehiculos.added_success", "Vehículo agregado correctamente.")
+            : t("vehiculos.added_error", "Error al agregar el vehículo."),
+          resp && !resp.error ? "success" : "danger",
+        );
       }
-    } catch (err) {
+    } catch {
       showToast(
-        t("vehiculos.save_network_error") ||
-          "Error de conexión al guardar el vehículo.",
+        t("vehiculos.save_network_error", "Error de conexión al guardar."),
         "danger",
       );
     } finally {
-      setOpenModal(false);
+      setOpenSheet(false);
       setEditVehiculo(null);
       loadVehiculos();
     }
   };
 
-  const can = useCallback(
-    (p) => isAdmin || hasPermiso(p),
-    [isAdmin, hasPermiso],
-  );
-
-  const canQR = can("crear_QR");
-
+  /* ── QR ── */
   async function handleShowQR(vehiculo) {
-    if (!canQR) {
-      showToast(
-        t("vehiculos.no_permission_qr") ||
-          "No tienes permisos para ver el QR de registro.",
+    if (!canQR)
+      return showToast(
+        t("vehiculos.no_permission_qr", "Sin permiso para ver QR."),
         "warning",
       );
-      return;
-    }
-
     setVehiculoQR(vehiculo);
     setRegistroLink("");
     try {
       const { url } = await getRegistroLinkForVehiculo(vehiculo.id);
       setRegistroLink(url);
     } catch (err) {
-      showToast(err?.message || t("vehiculos.qr_link_error_qr"), "danger");
+      showToast(
+        err?.message || t("vehiculos.qr_link_error_qr", "Error al generar QR."),
+        "danger",
+      );
     } finally {
       setOpenQR(true);
     }
   }
 
+  const closeQR = () => {
+    setOpenQR(false);
+    setRegistroLink("");
+    setVehiculoQR(null);
+  };
+
+  function descargarQR() {
+    if (!qrRef.current || !vehiculoQR) return;
+    qrRef.current.download("png", `QR_REGISTRO_${vehiculoQR.placa}`);
+  }
+
+  /* QR in-use — complex multi-step Swal kept intentionally */
   async function handleTestLinkClick(e) {
     e.preventDefault();
-
     if (!vehiculoQR) return;
-
-    // Llamamos al endpoint que devuelve registro pendiente por VEHÍCULO
     const registro = await obtenerRegistroPendientePorVehiculo(vehiculoQR.id);
-
-    // Si no hay registro pendiente -> abrir link normalmente
     if (!registro) {
-      if (registroLink) {
+      if (registroLink)
         window.open(registroLink, "_blank", "noopener,noreferrer");
-      }
       return;
     }
 
-    // CERRAMOS modal del QR (el usuario ya vio el QR; prevenimos confusión)
     try {
-      setOpenQR(false);
-      setVehiculoQR(null);
-      setRegistroLink("");
-    } catch (err) {
-      // noop
+      closeQR();
+    } catch {
+      /* noop */
     }
 
-    // Extraemos datos del registro
     const nombre = registro.nombre_empleado || registro.employeeName || null;
     const email = registro.email_empleado || registro.email || null;
     const fechaISO = registro.fecha_salida || registro.fecha || null;
     const fechaText = fechaISO ? new Date(fechaISO).toLocaleString() : null;
 
-    // Determinar si el current user es el responsable:
-    //  - si userData.email existe y coincide (case-insensitive)
-    //  - o si userData.id_empleado existe y registro incluye id_empleado (si tu endpoint lo devuelve)
     let isOwner = false;
     try {
       if (userData) {
-        if (userData.email && email) {
+        if (userData.email && email)
           isOwner =
             String(userData.email).toLowerCase() ===
             String(email).toLowerCase();
-        }
-        // si tu backend regresa id_empleado en `registro`:
-        if (!isOwner && userData.id_empleado && registro.id_empleado) {
+        if (!isOwner && userData.id_empleado && registro.id_empleado)
           isOwner =
             Number(userData.id_empleado) === Number(registro.id_empleado);
-        }
-        // fallback por nombre (menor fiabilidad)
-        if (!isOwner && userData.nombre && nombre) {
+        if (!isOwner && userData.nombre && nombre)
           isOwner =
             String(userData.nombre).trim().toLowerCase() ===
             String(nombre).trim().toLowerCase();
-        }
       }
-    } catch (err) {
+    } catch {
       isOwner = false;
     }
 
-    // Si es el propietario -> redirigir directo al formulario de regreso con id_registro
     if (isOwner && registro.id_registro) {
-      // navegar al formulario de regreso indicando el registro exacto
       navigate(
         `/admin/panel-vehiculos?mode=regreso&id_registro=${registro.id_registro}`,
       );
       return;
     }
 
-    // Si NO es el propietario -> mostrar Swal informativo con opciones:
-    const infoText = `${t(
-      "vehiculos.qr_in_use_detected",
-      "Este vehículo está en uso por",
-    )} ${nombre ?? t("vehiculos.unknown_user", "un usuario")}${
-      email ? ` (${email})` : ""
-    }${fechaText ? ` — ${t("vehiculos.since", "Salida:")} ${fechaText}` : ""}.`;
+    const infoText = `${t("vehiculos.qr_in_use_detected", "Este vehículo está en uso por")} ${nombre ?? t("vehiculos.unknown_user", "un usuario")}${email ? ` (${email})` : ""}${fechaText ? ` — ${t("vehiculos.since", "Salida:")} ${fechaText}` : ""}.`;
 
     const resp = await Swal.fire({
       title: t("vehiculos.qr_in_use_title", "Vehículo en uso"),
@@ -415,7 +426,6 @@ export default function Vehiculos() {
     });
 
     if (resp.isDenied) {
-      // Intentar notificar al usuario responsable (si tenemos email)
       if (!email) {
         await Swal.fire({
           title: t(
@@ -424,22 +434,19 @@ export default function Vehiculos() {
           ),
           text: t(
             "vehiculos.qr_in_use_no_email_text",
-            "No se encontró el correo del usuario responsable. No se puede enviar notificación automática.",
+            "No se encontró el correo del usuario responsable.",
           ),
           icon: "warning",
         });
         return;
       }
-
       try {
-        // sendNotificacionSalida espera un objeto — ajusta según tu implementación
         await sendNotificacionSalida({
           to: [email],
           employeeName: nombre,
           vehicleName: vehiculoQR?.placa,
           supervisorName: userData?.nombre || null,
         });
-
         await Swal.fire({
           title: t("vehiculos.qr_notify_sent_title", "Notificación enviada"),
           text: t(
@@ -448,53 +455,40 @@ export default function Vehiculos() {
           ),
           icon: "success",
         });
-      } catch (err) {
-        console.error("Error enviando notificación:", err);
+      } catch {
         await Swal.fire({
           title: t("vehiculos.qr_notify_error_title", "Error"),
           text: t(
             "vehiculos.qr_notify_error_text",
-            "No se pudo enviar la notificación. Intenta más tarde.",
+            "No se pudo enviar la notificación.",
           ),
           icon: "error",
         });
       }
     }
-
-    // resp.isConfirmed (OK) o cancel -> simplemente cerramos la alerta (ya cerramos el modal arriba)
-    return;
   }
 
-  function descargarQR() {
-    if (!qrRef.current || !vehiculoQR) return;
-    qrRef.current.download("png", `QR_REGISTRO_${vehiculoQR.placa}`);
-  }
-
-  // ---- filtros/búsqueda ----
+  /* ── Filter ── */
   const filteredVehiculos = useMemo(() => {
     const search = searchText.toLowerCase();
     return (vehiculos || []).filter((u) => {
-      // ahora: si showInactive = true -> mostrar todo; si false -> excluir Inactivo
       const matchesStatus = showInactive
         ? true
         : (u.estado || "").toLowerCase() !== "inactivo";
-      const matchesSearch = `${u.placa} ${u.marca} ${u.modelo} ${
-        u.nombre_ubicacion || ""
-      }`
-        .toLowerCase()
-        .includes(search);
+      const matchesSearch =
+        `${u.placa} ${u.marca} ${u.modelo} ${u.nombre_ubicacion || ""}`
+          .toLowerCase()
+          .includes(search);
       return matchesStatus && matchesSearch;
     });
   }, [vehiculos, showInactive, searchText]);
 
-  // ⭐ Hook de foco/resaltado basado en ?focus= (id del vehículo)
   const { highlightId, focusedRef, highlightStyle } = useRowFocusHighlight({
     items: filteredVehiculos,
     getId: (v) => v.id,
     paramName: "focus",
   });
 
-  // estado de vista reutilizable
   const viewState = getViewState({
     checkingSession,
     canView,
@@ -503,193 +497,270 @@ export default function Vehiculos() {
     hasData: Array.isArray(vehiculos) && vehiculos.length > 0,
   });
 
-  return (
-    <Sheet
-      variant="plain"
-      sx={{
-        flex: 1,
-        width: "100%",
-        pt: { xs: "calc(12px + var(--Header-height))", md: 4 },
-        pb: { xs: 2, sm: 2, md: 4 },
-        px: { xs: 2, md: 4 },
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        overflow: "auto",
-        minHeight: "100dvh",
-        bgcolor: "background.body",
-      }}>
-      <Box sx={{ width: "100%" }}>
-        {/* Header de la página */}
-        <Box sx={{ mb: 1.5 }}>
-          <Typography level="h4">
-            {t("vehiculos.title", "Vehículos")}
-          </Typography>
-          <Typography level="body-sm" color="neutral">
-            {t(
-              "vehiculos.subtitle",
-              "Gestión del catálogo de vehículos de la flota.",
-            )}
-          </Typography>
-          <Typography level="body-xs" sx={{ opacity: 0.7, mt: 0.5 }}>
-            {t("vehiculos.total_registered", "Total registrados: {{count}}", {
-              count: vehiculos.length,
-            })}
-          </Typography>
-        </Box>
-
-        {/* Barra de búsqueda / filtros / agregar */}
-        <VehiculosToolBar
-          t={t}
-          searchText={searchText}
-          onSearch={setSearchText}
-          onAdd={handleAddVehiculo}
-          showInactive={showInactive}
-          setShowInactive={setShowInactive}
-          canAdd={canCreate}
-          addDisabledReason={
-            !canCreate
-              ? t(
-                  "vehiculos.add_disabled_reason",
-                  "No tienes permiso para crear. Solicítalo al administrador.",
-                )
-              : undefined
+  /* ── Inline resource state renderer ── */
+  const renderState = () => {
+    if (viewState === "checking")
+      return (
+        <StatePanel
+          icon={Loader2}
+          title="Verificando sesión…"
+          description="Por favor, espera un momento."
+        />
+      );
+    if (viewState === "no-permission")
+      return (
+        <StatePanel
+          icon={Lock}
+          color="danger"
+          title="Sin permisos"
+          description="Consulta con un administrador para obtener acceso."
+        />
+      );
+    if (viewState === "loading")
+      return (
+        <div className="flex flex-col items-center justify-center gap-4 py-20">
+          <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+            <Loader2 className="animate-spin text-primary" size={22} />
+          </div>
+          <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">
+            {t("vehiculos.loading", "Cargando vehículos…")}
+          </p>
+        </div>
+      );
+    if (viewState === "error") {
+      const low = (error || "").toLowerCase();
+      const isNetwork =
+        low.includes("conexión") || low.includes("failed to fetch");
+      return (
+        <StatePanel
+          icon={isNetwork ? WifiOff : AlertTriangle}
+          color={isNetwork ? "warning" : "neutral"}
+          title={isNetwork ? "Problema de conexión" : "Ocurrió un problema"}
+          description={error}
+          action={
+            isNetwork && (
+              <button
+                onClick={loadVehiculos}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                <RotateCcw size={14} /> Reintentar
+              </button>
+            )
           }
         />
-
-        {/* Contenedor principal (solo tabla / estados) */}
-        <Card
-          variant="outlined"
-          sx={{
-            mt: 1,
-            p: 2,
-            backgroundColor: "background.surface",
-            overflowX: "auto",
-          }}>
-          {viewState !== "data" ? (
-            <ResourceState
-              state={viewState}
-              error={error}
-              onRetry={loadVehiculos}
-              emptyTitle={t("vehiculos.empty_title", "Sin vehículos")}
-              emptyDescription={t(
-                "vehiculos.empty_description",
-                "Aún no hay vehículos registrados.",
-              )}
-            />
-          ) : filteredVehiculos.length === 0 ? (
-            <Box sx={{ p: 2 }}>
-              <ResourceState
-                state="empty"
-                emptyTitle={
-                  vehiculos.length
-                    ? t("vehiculos.no_matches", "Sin coincidencias")
-                    : t("vehiculos.empty_title", "Sin vehículos")
-                }
-                emptyDescription={
-                  vehiculos.length
-                    ? t(
-                        "vehiculos.no_matches_desc",
-                        "No encontramos vehículos con los filtros actuales.",
-                      )
-                    : t(
-                        "vehiculos.empty_description",
-                        "Aún no hay vehículos registrados.",
-                      )
-                }
-              />
-            </Box>
-          ) : (
-            <VehiculosTable
-              t={t}
-              vehiculos={filteredVehiculos}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              onRestore={handleRestore}
-              onShowQR={handleShowQR}
-              canEdit={canEdit}
-              canDelete={canDelete}
-              canRestore={canRestore}
-              canQR={canQR}
-              highlightId={highlightId}
-              focusedRef={focusedRef}
-              highlightStyle={highlightStyle}
-            />
+      );
+    }
+    if (viewState === "empty")
+      return (
+        <StatePanel
+          icon={Car}
+          title={t("vehiculos.empty_title", "Sin vehículos")}
+          description={t(
+            "vehiculos.empty_description",
+            "Aún no hay vehículos registrados.",
           )}
-        </Card>
-      </Box>
+        />
+      );
+    return null;
+  };
 
-      {/* Modal crear/editar */}
-      <VehiculoModal
-        open={openModal}
+  /* ── Render ── */
+  return (
+    <div className="max-w-7xl mx-auto px-4 md:px-8 py-6 md:py-10 space-y-6 animate-in fade-in duration-500">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3.5">
+          <div className="p-2.5 rounded-2xl bg-primary/10 dark:bg-primary/15 ring-1 ring-primary/20 dark:ring-primary/30 shadow-sm shadow-primary/10 shrink-0">
+            <Car size={22} className="text-primary" />
+          </div>
+          <div>
+            <h1 className="text-2xl md:text-3xl font-black tracking-tight leading-none">
+              {t("vehiculos.title", "Vehículos")}
+            </h1>
+            <p className="text-gray-500 dark:text-gray-400 text-xs md:text-sm font-medium mt-0.5">
+              {t(
+                "vehiculos.subtitle",
+                "Gestión del catálogo de vehículos de la flota.",
+              )}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Toolbar */}
+      <VehiculosToolBar
+        t={t}
+        searchText={searchText}
+        onSearch={setSearchText}
+        onAdd={handleAddVehiculo}
+        showInactive={showInactive}
+        setShowInactive={setShowInactive}
+        canAdd={canCreate}
+        addDisabledReason={
+          !canCreate
+            ? t(
+                "vehiculos.add_disabled_reason",
+                "No tienes permiso para crear. Solicítalo al administrador.",
+              )
+            : undefined
+        }
+      />
+
+      {/* Counter */}
+      {viewState === "data" && (
+        <p className="text-xs text-gray-400 dark:text-gray-500 -mt-2">
+          <span className="font-bold text-gray-700 dark:text-gray-300">
+            {filteredVehiculos.length}
+          </span>
+          {searchText
+            ? ` de ${vehiculos.length}`
+            : ` vehículo${vehiculos.length !== 1 ? "s" : ""}`}
+        </p>
+      )}
+
+      {/* Main card */}
+      <div className="bg-card dark:bg-slate-900/40 border border-border/60 rounded-3xl shadow-sm overflow-hidden">
+        {viewState !== "data" ? (
+          renderState()
+        ) : filteredVehiculos.length === 0 ? (
+          <StatePanel
+            icon={Car}
+            title={
+              vehiculos.length
+                ? t("vehiculos.no_matches", "Sin coincidencias")
+                : t("vehiculos.empty_title", "Sin vehículos")
+            }
+            description={
+              vehiculos.length
+                ? t(
+                    "vehiculos.no_matches_desc",
+                    "No encontramos vehículos con los filtros actuales.",
+                  )
+                : t(
+                    "vehiculos.empty_description",
+                    "Aún no hay vehículos registrados.",
+                  )
+            }
+          />
+        ) : (
+          <VehiculosTable
+            t={t}
+            vehiculos={filteredVehiculos}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            onRestore={handleRestore}
+            onShowQR={handleShowQR}
+            canEdit={canEdit}
+            canDelete={canDelete}
+            canRestore={canRestore}
+            canQR={canQR}
+            highlightId={highlightId}
+            focusedRef={focusedRef}
+            highlightStyle={highlightStyle}
+          />
+        )}
+      </div>
+
+      {/* Mobile bottom sheet (desktop uses /vehiculos/new and /vehiculos/edit/:id routes) */}
+      <VehiculoFormSheet
+        open={openSheet}
         onClose={() => {
-          setOpenModal(false);
+          setOpenSheet(false);
           setEditVehiculo(null);
         }}
         initialValues={editVehiculo || undefined}
         onSubmit={handleSubmitVehiculo}
+        ubicOptions={ubicaciones}
+        isLoadingUbics={loadingUbics}
       />
 
-      {/* Modal QR de Registro */}
-      <Modal
-        open={openQR}
-        onClose={() => {
-          setOpenQR(false);
-          setRegistroLink("");
-          setVehiculoQR(null);
-        }}>
-        <ModalDialog
-          sx={{ width: { xs: "100%", sm: 420 }, textAlign: "center" }}>
-          <Typography level="title-lg">
-            {t("vehiculos.qr_title", "QR de registro del vehículo")}
-          </Typography>
-          <Divider sx={{ my: 1 }} />
+      {/* Delete confirm */}
+      <ConfirmModal
+        open={deleteConfirm.open}
+        onCancel={() => setDeleteConfirm({ open: false, id: null })}
+        onConfirm={confirmDelete}
+        variant="danger"
+        title={t("vehiculos.confirm_disable_title", "¿Inactivar vehículo?")}
+        description={t(
+          "vehiculos.confirm_disable_text",
+          "El vehículo quedará inactivo y no estará disponible para operaciones.",
+        )}
+        confirmLabel={t("vehiculos.yes_disable", "Sí, inactivar")}
+        cancelLabel={t("vehiculos.cancel", "Cancelar")}
+      />
 
-          {vehiculoQR && (
-            <Stack alignItems="center" spacing={1}>
-              <Typography level="body-md">
-                {vehiculoQR.placa} · {vehiculoQR.marca} {vehiculoQR.modelo}
-              </Typography>
+      {/* Restore confirm */}
+      <ConfirmModal
+        open={restoreConfirm.open}
+        onCancel={() => setRestoreConfirm({ open: false, id: null })}
+        onConfirm={confirmRestore}
+        variant="primary"
+        title={t("vehiculos.confirm_restore_title", "¿Restaurar vehículo?")}
+        description={t(
+          "vehiculos.confirm_restore_text",
+          "El vehículo volverá a estar disponible en el sistema.",
+        )}
+        confirmLabel={t("vehiculos.yes_restore", "Sí, restaurar")}
+        cancelLabel={t("vehiculos.cancel", "Cancelar")}
+      />
 
-              <StyledQR
-                ref={qrRef}
-                text={registroLink || "about:blank"}
-                logoUrl={logoTecnasa}
-                size={220}
-              />
+      {/* QR modal */}
+      {openQR && (
+        <div
+          className="fixed inset-0 flex items-center justify-center p-4"
+          style={{ zIndex: 600 }}>
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={closeQR}
+          />
+          <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-sm p-6 animate-in zoom-in-95 duration-200">
+            <h3 className="text-base font-semibold text-center text-gray-900 dark:text-gray-100 mb-1">
+              {t("vehiculos.qr_title", "QR de registro del vehículo")}
+            </h3>
 
-              {registroLink && (
-                <Typography level="body-sm" sx={{ mt: 1 }}>
+            <div className="h-px bg-gray-100 dark:bg-gray-800 my-3" />
+
+            {vehiculoQR && (
+              <div className="flex flex-col items-center gap-3">
+                <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
+                  {vehiculoQR.placa} · {vehiculoQR.marca} {vehiculoQR.modelo}
+                </p>
+
+                <StyledQR
+                  ref={qrRef}
+                  text={registroLink || "about:blank"}
+                  logoUrl={logoTecnasa}
+                  size={220}
+                />
+
+                {registroLink && (
                   <a
                     href={registroLink}
                     target="_blank"
                     rel="noreferrer"
-                    onClick={handleTestLinkClick}>
+                    onClick={handleTestLinkClick}
+                    className="text-sm text-primary hover:underline">
                     {t("vehiculos.qr_test_link", "Probar enlace de registro")}
                   </a>
-                </Typography>
-              )}
-            </Stack>
-          )}
+                )}
+              </div>
+            )}
 
-          <Stack direction="row" justifyContent="center" spacing={2} mt={2}>
-            <Button
-              variant="plain"
-              onClick={() => {
-                setOpenQR(false);
-                setRegistroLink("");
-                setVehiculoQR(null);
-              }}>
-              {t("vehiculos.close", "Cerrar")}
-            </Button>
-            <Button
-              onClick={descargarQR}
-              disabled={!vehiculoQR || !registroLink}>
-              {t("vehiculos.download_png", "Descargar PNG")}
-            </Button>
-          </Stack>
-        </ModalDialog>
-      </Modal>
-    </Sheet>
+            <div className="flex items-center justify-center gap-3 mt-5">
+              <button
+                onClick={closeQR}
+                className="px-4 py-2 rounded-xl text-sm font-medium border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                {t("vehiculos.close", "Cerrar")}
+              </button>
+              <button
+                onClick={descargarQR}
+                disabled={!vehiculoQR || !registroLink}
+                className="px-4 py-2 rounded-xl text-sm font-semibold bg-primary hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity">
+                {t("vehiculos.download_png", "Descargar PNG")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

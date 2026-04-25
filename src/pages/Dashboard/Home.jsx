@@ -1,416 +1,360 @@
-import React, { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import {
-  Box,
-  Typography,
-  Card,
-  Grid,
-  Stack,
-  Button,
-  Divider,
-  Chip,
-  Sheet,
-  Skeleton,
-} from "@mui/joy";
+  BarChart3,
+  ChevronRight,
+  Megaphone,
+  Moon,
+  Package,
+  Pin,
+  Search,
+  Sun,
+  Truck,
+} from "lucide-react";
 
-// Iconos
-import WbSunnyIcon from "@mui/icons-material/WbSunny";
-import NightlightIcon from "@mui/icons-material/Nightlight";
-import PushPinRoundedIcon from "@mui/icons-material/PushPinRounded";
-import ChevronRightRoundedIcon from "@mui/icons-material/ChevronRightRounded";
-import NotificationsActiveRoundedIcon from "@mui/icons-material/NotificationsActiveRounded";
-
-// Contextos y Servicios
 import { useAuth } from "@/context/AuthContext";
 import { useSettings } from "@/context/SettingsContext";
+import { useCommandPalette } from "@/context/CommandPaletteContext";
 import { getPinnedChangelogs } from "@/services/help.api";
-import { useNavigate } from "react-router-dom";
 
-// --- RELOJ MANUAL (A PRUEBA DE FALLOS) ---
-// Usamos lógica manual porque Intl a veces ignora 'hour12' dependiendo del locale del navegador
-const LiveClock = ({ timeFormat, dateFormat, locale, timezone }) => {
-  const [time, setTime] = useState(new Date());
+/* ─── Live clock ────────────────────────────────────────────────────── */
+
+function LiveClock({ timeFormat, locale, timezone }) {
+  const [now, setNow] = useState(new Date());
 
   useEffect(() => {
-    const timer = setInterval(() => setTime(new Date()), 1000);
-    return () => clearInterval(timer);
+    const t = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(t);
   }, []);
 
-  const formattedTime = useMemo(() => {
+  const time = useMemo(() => {
     try {
-      // 1. Ajustar fecha a la zona horaria (si existe)
-      let dateInZone = time;
-      if (timezone) {
-        // Truco para cambiar zona horaria manteniendo el objeto Date válido
-        const strTime = time.toLocaleString("en-US", { timeZone: timezone });
-        dateInZone = new Date(strTime);
-      }
+      let d = now;
+      if (timezone) d = new Date(now.toLocaleString("en-US", { timeZone: timezone }));
+      let h = d.getHours();
+      const mm = d.getMinutes().toString().padStart(2, "0");
+      const ss = d.getSeconds().toString().padStart(2, "0");
+      if (timeFormat === "24h") return `${h.toString().padStart(2, "0")}:${mm}:${ss}`;
+      const ampm = h >= 12 ? "PM" : "AM";
+      h = h % 12 || 12;
+      return `${h.toString().padStart(2, "0")}:${mm}:${ss} ${ampm}`;
+    } catch { return "--:--:--"; }
+  }, [now, timeFormat, timezone]);
 
-      let hours = dateInZone.getHours();
-      const minutes = dateInZone.getMinutes().toString().padStart(2, "0");
-      const seconds = dateInZone.getSeconds().toString().padStart(2, "0");
-
-      // 2. Formateo Manual Estricto
-      if (timeFormat === "24h") {
-        // Formato militar directo: 13:00:00
-        const hh = hours.toString().padStart(2, "0");
-        return `${hh}:${minutes}:${seconds}`;
-      } else {
-        // Formato 12h manual: 01:00:00 PM
-        const ampm = hours >= 12 ? "PM" : "AM";
-        hours = hours % 12;
-        hours = hours ? hours : 12; // el 0 se vuelve 12
-        const hh = hours.toString().padStart(2, "0");
-        return `${hh}:${minutes}:${seconds} ${ampm}`;
-      }
-    } catch (e) {
-      console.error("Error reloj:", e);
-      return "--:--:--";
-    }
-  }, [time, timeFormat, timezone]);
-
-  const formattedDate = useMemo(() => {
+  const date = useMemo(() => {
     try {
-      const options = {
+      return new Intl.DateTimeFormat(locale, {
         timeZone: timezone,
         weekday: "long",
         year: "numeric",
         month: "long",
         day: "numeric",
-      };
-      return new Intl.DateTimeFormat(locale, options).format(time);
-    } catch {
-      return "";
-    }
-  }, [time, dateFormat, locale, timezone]);
+      }).format(now);
+    } catch { return ""; }
+  }, [now, locale, timezone]);
 
   return (
-    <Stack spacing={0.5}>
-      <Typography
-        level="h1"
-        sx={{
-          fontSize: { xs: "3rem", md: "4.5rem" },
-          fontWeight: 800,
-          lineHeight: 1,
-          background:
-            "linear-gradient(45deg, var(--joy-palette-primary-400), var(--joy-palette-primary-600))",
+    <div className="space-y-1">
+      <p
+        className="text-5xl md:text-7xl font-extrabold tabular-nums tracking-tight leading-none"
+        style={{
+          background: "linear-gradient(135deg, hsl(var(--primary)/0.75), hsl(var(--primary)))",
           WebkitBackgroundClip: "text",
           WebkitTextFillColor: "transparent",
-          fontVariantNumeric: "tabular-nums", // Evita saltos al cambiar números
-          letterSpacing: "-1px",
-        }}>
-        {formattedTime}
-      </Typography>
-      <Typography
-        level="h4"
-        textColor="text.secondary"
-        sx={{ textTransform: "capitalize", fontWeight: 400 }}>
-        {formattedDate}
-      </Typography>
-    </Stack>
+          backgroundClip: "text",
+        }}
+      >
+        {time}
+      </p>
+      <p className="text-sm md:text-base text-gray-500 dark:text-gray-400 capitalize font-medium">
+        {date}
+      </p>
+    </div>
   );
-};
+}
+
+/* ─── Skeleton ──────────────────────────────────────────────────────── */
+
+function ClockSkeleton() {
+  return (
+    <div className="space-y-2 animate-pulse">
+      <div className="h-16 md:h-20 w-72 bg-gray-200 dark:bg-gray-700 rounded-xl" />
+      <div className="h-4 w-48 bg-gray-200 dark:bg-gray-700 rounded-lg" />
+    </div>
+  );
+}
+
+/* ─── Quick access button ────────────────────────────────────────────── */
+
+function QuickBtn({ icon, label, onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      className="
+        w-full flex items-center justify-between gap-3
+        px-4 py-3.5 rounded-xl
+        bg-gray-50 dark:bg-gray-800
+        hover:bg-primary/5 dark:hover:bg-primary/10
+        border border-transparent hover:border-primary/20
+        text-gray-700 dark:text-gray-300
+        transition-all duration-150 group
+      "
+    >
+      <span className="flex items-center gap-3 text-sm font-medium">
+        <span className="text-primary opacity-80 group-hover:opacity-100 transition-opacity">
+          {icon}
+        </span>
+        {label}
+      </span>
+      <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-primary transition-colors shrink-0" />
+    </button>
+  );
+}
+
+/* ─── Home ───────────────────────────────────────────────────────────── */
 
 export default function Home() {
   const { t, i18n } = useTranslation();
   const { userData } = useAuth();
   const { settings, loading } = useSettings();
+  const { setOpen: openSearch } = useCommandPalette();
   const navigate = useNavigate();
 
   const [weather, setWeather] = useState(null);
   const [pinned, setPinned] = useState([]);
+  const [pinnedLoading, setPinnedLoading] = useState(true);
 
-  const userName = userData?.nombre?.split(" ")[0] || "Usuario";
+  const firstName = userData?.nombre?.split(" ")[0] || "Usuario";
   const weatherKey = import.meta.env.VITE_OWM_KEY;
 
-  // --- LECTURA SEGURA DE SETTINGS ---
-  // Si está cargando, usamos defaults. Si ya cargó, leemos directo.
-  // Nota: "12h" es el default si falla la lectura.
   const configTimeFormat = settings?.timeFormat || "12h";
   const configDateFormat = settings?.dateFormat || "DD/MM/YYYY";
-  const configLanguage = settings?.language || i18n.language || "es-HN";
-  const configTimezone = settings?.timezone;
+  const configLanguage   = settings?.language || i18n.language || "es-HN";
+  const configTimezone   = settings?.timezone;
 
-  // Saludo dinámico
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12)
-      return {
-        text: t("home.greeting.morning"),
-        icon: <WbSunnyIcon sx={{ color: "#FDB813", fontSize: 40 }} />,
-      };
-    if (hour < 18)
-      return {
-        text: t("home.greeting.afternoon"),
-        icon: <WbSunnyIcon sx={{ color: "#F57C00", fontSize: 40 }} />,
-      };
-    return {
-      text: t("home.greeting.evening"),
-      icon: <NightlightIcon sx={{ color: "#5C6BC0", fontSize: 40 }} />,
-    };
-  };
-
-  const greeting = getGreeting();
+  const greeting = useMemo(() => {
+    const h = new Date().getHours();
+    if (h < 12) return { text: t("home.greeting.morning"), Icon: Sun,  color: "text-yellow-500" };
+    if (h < 18) return { text: t("home.greeting.afternoon"), Icon: Sun, color: "text-orange-500" };
+    return       { text: t("home.greeting.evening"),   Icon: Moon, color: "text-indigo-400" };
+  }, [t]);
 
   useEffect(() => {
-    // 1. Cargar Clima
+    // Weather
     if (weatherKey && navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          const { latitude, longitude } = pos.coords;
-          const langCode = configLanguage.split("-")[0];
-
+        ({ coords: { latitude, longitude } }) => {
+          const lang = configLanguage.split("-")[0];
           fetch(
-            `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&units=metric&lang=${langCode}&appid=${weatherKey}`
+            `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&units=metric&lang=${lang}&appid=${weatherKey}`
           )
             .then((r) => r.json())
-            .then((data) => {
-              if (data.main) {
-                setWeather({
-                  temp: Math.round(data.main.temp),
-                  desc: data.weather[0].description,
-                  icon: data.weather[0].icon,
-                  city: data.name,
-                });
-              }
+            .then((d) => {
+              if (d.main) setWeather({ temp: Math.round(d.main.temp), desc: d.weather[0].description, icon: d.weather[0].icon, city: d.name });
             })
             .catch(() => {});
         },
-        () => {}
+        () => {},
       );
     }
 
-    // 2. Cargar Novedades
+    // Pinned changelogs
     getPinnedChangelogs(3)
-      .then((data) => setPinned(Array.isArray(data) ? data : []))
-      .catch(() => {});
+      .then((d) => setPinned(Array.isArray(d) ? d : []))
+      .catch(() => {})
+      .finally(() => setPinnedLoading(false));
   }, [weatherKey, configLanguage]);
 
   return (
-    <Box sx={{ p: { xs: 2, md: 4 }, maxWidth: 1600, mx: "auto" }}>
-      {/* SECCIÓN HERO */}
-      <Grid container spacing={4} sx={{ mb: 4 }} alignItems="center">
-        <Grid xs={12} md={7}>
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6 }}>
-            <Stack direction="row" alignItems="center" spacing={2} mb={2}>
-              {greeting.icon}
-              <Typography level="h2">
-                {greeting.text}, {userName}.
-              </Typography>
-            </Stack>
+    <div className="max-w-6xl mx-auto space-y-6">
 
-            {/* Si está cargando, mostramos Skeleton */}
-            {loading ? (
-              <Stack spacing={1}>
-                <Skeleton variant="text" level="h1" width={300} height={80} />
-                <Skeleton variant="text" level="h4" width={200} />
-              </Stack>
-            ) : (
-              /* KEY IMPORTANTE: Fuerza el re-renderizado si cambia el formato */
-              <LiveClock
-                key={configTimeFormat}
-                timeFormat={configTimeFormat}
-                dateFormat={configDateFormat}
-                locale={configLanguage}
-                timezone={configTimezone}
-              />
-            )}
-          </motion.div>
-        </Grid>
+      {/* ── Search bar — mobile only ────────────────────────────────── */}
+      <button
+        onClick={() => openSearch(true)}
+        className="
+          md:hidden w-full flex items-center gap-3
+          px-4 py-3 rounded-xl
+          bg-white dark:bg-gray-800
+          border border-gray-200 dark:border-gray-700
+          text-gray-400 dark:text-gray-500 text-sm
+          hover:border-primary/40 transition-colors
+        "
+        aria-label="Abrir buscador"
+      >
+        <Search className="w-4 h-4 shrink-0" />
+        <span className="flex-1 text-left">Buscar módulos y datos…</span>
+        <kbd className="hidden sm:inline text-[10px] bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 px-1.5 py-0.5 rounded font-mono">
+          Ctrl+K
+        </kbd>
+      </button>
 
-        <Grid xs={12} md={5}>
-          {/* Widget Clima */}
-          {weather ? (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.2 }}>
-              <Sheet
-                variant="soft"
-                color="primary"
-                sx={{
-                  borderRadius: "xl",
-                  p: 3,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  boxShadow: "md",
-                }}>
-                <Box>
-                  <Typography level="h2" textColor="primary.700">
-                    {weather.temp}°C
-                  </Typography>
-                  <Typography
-                    level="body-md"
-                    fontWeight="lg"
-                    textColor="primary.600"
-                    sx={{ textTransform: "capitalize" }}>
-                    {weather.desc}
-                  </Typography>
-                  <Typography level="body-xs" textColor="primary.500">
-                    {weather.city}
-                  </Typography>
-                </Box>
-                <img
-                  src={`https://openweathermap.org/img/wn/${weather.icon}@4x.png`}
-                  alt="weather"
-                  style={{
-                    width: 100,
-                    height: 100,
-                    filter: "drop-shadow(0 4px 6px rgba(0,0,0,0.2))",
-                  }}
-                />
-              </Sheet>
-            </motion.div>
-          ) : (
-            <Sheet
-              variant="outlined"
-              sx={{
-                borderRadius: "xl",
-                p: 3,
-                height: 140,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                borderStyle: "dashed",
-              }}>
-              <Typography level="body-sm" color="neutral">
-                {t("home.weather_not_available")}
-              </Typography>
-            </Sheet>
+      {/* ── Hero section ────────────────────────────────────────────── */}
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.45 }}
+        className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center"
+      >
+        {/* Greeting + clock */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-3">
+            <greeting.Icon className={`w-7 h-7 ${greeting.color} shrink-0`} />
+            <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">
+              {greeting.text},{" "}
+              <span className="text-gray-900 dark:text-white font-bold">{firstName}.</span>
+            </h2>
+          </div>
+
+          {loading ? <ClockSkeleton /> : (
+            <LiveClock
+              key={configTimeFormat}
+              timeFormat={configTimeFormat}
+              locale={configLanguage}
+              timezone={configTimezone}
+            />
           )}
-        </Grid>
-      </Grid>
+        </div>
 
-      <Divider sx={{ mb: 4 }} />
+        {/* Weather widget */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.15, duration: 0.4 }}
+        >
+          {weather ? (
+            <div className="flex items-center justify-between p-5 rounded-2xl bg-primary/8 dark:bg-primary/12 border border-primary/15">
+              <div className="space-y-0.5">
+                <p className="text-4xl font-bold text-primary">{weather.temp}°C</p>
+                <p className="text-sm font-semibold text-primary/80 capitalize">{weather.desc}</p>
+                <p className="text-xs text-primary/60">{weather.city}</p>
+              </div>
+              <img
+                src={`https://openweathermap.org/img/wn/${weather.icon}@4x.png`}
+                alt="weather"
+                className="w-24 h-24 drop-shadow-lg"
+              />
+            </div>
+          ) : (
+            <div className="flex items-center justify-center p-5 rounded-2xl border border-dashed border-gray-200 dark:border-gray-700 h-28">
+              <p className="text-sm text-gray-400 dark:text-gray-500">
+                {t("home.weather_not_available", "Clima no disponible")}
+              </p>
+            </div>
+          )}
+        </motion.div>
+      </motion.div>
 
-      {/* SECCIÓN NOVEDADES Y ACCESOS */}
-      <Grid container spacing={3}>
-        <Grid xs={12} lg={8}>
-          <Typography
-            level="title-lg"
-            startDecorator={<PushPinRoundedIcon color="warning" />}
-            mb={2}>
-            {t("home.news_title")}
-          </Typography>
+      <div className="h-px bg-gray-200 dark:bg-gray-700" />
 
-          <Stack spacing={2}>
-            {pinned.length > 0 ? (
-              pinned.map((news) => (
-                <Card
-                  key={news.id}
-                  variant="outlined"
-                  sx={{
-                    flexDirection: { xs: "column", sm: "row" },
-                    gap: 2,
-                    transition: "0.2s",
-                    "&:hover": { borderColor: "primary.400", boxShadow: "sm" },
-                  }}>
-                  <Box
-                    sx={{
-                      width: 60,
-                      height: 60,
-                      borderRadius: "md",
-                      bgcolor: "background.level1",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      flexShrink: 0,
-                    }}>
-                    <NotificationsActiveRoundedIcon
-                      sx={{ color: "text.tertiary" }}
-                    />
-                  </Box>
-                  <Box sx={{ flex: 1 }}>
-                    <Stack
-                      direction="row"
-                      justifyContent="space-between"
-                      alignItems="flex-start">
-                      <Typography level="title-md" mb={0.5}>
-                        {news.title}
-                      </Typography>
-                      <Chip
-                        size="sm"
-                        color={news.type === "Important" ? "danger" : "neutral"}
-                        variant="soft">
-                        {news.type || "Update"}
-                      </Chip>
-                    </Stack>
-                    <Typography
-                      level="body-sm"
-                      sx={{
-                        display: "-webkit-box",
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: "vertical",
-                        overflow: "hidden",
-                      }}>
-                      {news.description}
-                    </Typography>
-                  </Box>
-                  <Button
-                    variant="plain"
-                    size="sm"
-                    onClick={() =>
-                      navigate(`/admin/help/changelog/${news.slug}`)
-                    }>
-                    {t("home.read_more")}
-                  </Button>
-                </Card>
-              ))
-            ) : (
-              <Sheet
-                variant="soft"
-                sx={{ p: 4, borderRadius: "md", textAlign: "center" }}>
-                <Typography level="body-md" color="neutral">
-                  {t("home.no_news")}
-                </Typography>
-              </Sheet>
-            )}
-          </Stack>
-        </Grid>
+      {/* ── Bottom grid ─────────────────────────────────────────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-        <Grid xs={12} lg={4}>
-          <Typography level="title-lg" mb={2}>
-            {t("home.quick_access")}
-          </Typography>
-          <Stack spacing={1.5}>
-            <Button
-              variant="soft"
-              color="neutral"
-              fullWidth
-              size="lg"
-              justifyContent="space-between"
-              endDecorator={<ChevronRightRoundedIcon />}
-              onClick={() => navigate("/admin/dashboard")}>
-              📊 {t("menu.dashboard")}
-            </Button>
-            <Button
-              variant="soft"
-              color="neutral"
-              fullWidth
-              size="lg"
-              justifyContent="space-between"
-              endDecorator={<ChevronRightRoundedIcon />}
-              onClick={() => navigate("/admin/inventario/activos")}>
-              📦 {t("menu.inventory")}
-            </Button>
-            <Button
-              variant="soft"
-              color="neutral"
-              fullWidth
-              size="lg"
-              justifyContent="space-between"
-              endDecorator={<ChevronRightRoundedIcon />}
-              onClick={() => navigate("/admin/vehiculos")}>
-              🚗 {t("menu.fleet")}
-            </Button>
-          </Stack>
-        </Grid>
-      </Grid>
-    </Box>
+        {/* Novedades — 2 col */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, duration: 0.4 }}
+          className="lg:col-span-2 space-y-3"
+        >
+          <h3 className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
+            <Pin className="w-4 h-4 text-amber-500" />
+            {t("home.news_title", "Novedades")}
+          </h3>
+
+          {pinnedLoading ? (
+            <div className="space-y-3 animate-pulse">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-20 rounded-xl bg-gray-100 dark:bg-gray-800" />
+              ))}
+            </div>
+          ) : pinned.length > 0 ? (
+            pinned.map((news) => (
+              <motion.div
+                key={news.id}
+                initial={{ opacity: 0, x: -8 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="
+                  flex gap-4 p-4 rounded-xl
+                  border border-gray-200 dark:border-gray-700
+                  hover:border-primary/30 hover:shadow-sm
+                  bg-white dark:bg-gray-900
+                  transition-all duration-150 group
+                "
+              >
+                <div className="w-11 h-11 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center shrink-0">
+                  <Megaphone className="w-5 h-5 text-gray-400" />
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between gap-2 mb-0.5">
+                    <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm leading-tight truncate">
+                      {news.title}
+                    </p>
+                    <span className={`
+                      shrink-0 text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase tracking-wide
+                      ${news.type === "Important"
+                        ? "bg-red-100 dark:bg-red-950 text-red-600 dark:text-red-400"
+                        : "bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400"
+                      }
+                    `}>
+                      {news.type || "Update"}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed">
+                    {news.description}
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => navigate(`/admin/help/changelog/${news.slug}`)}
+                  className="shrink-0 self-center text-xs font-medium text-primary hover:underline"
+                >
+                  {t("home.read_more", "Ver más")}
+                </button>
+              </motion.div>
+            ))
+          ) : (
+            <div className="p-6 rounded-xl bg-gray-50 dark:bg-gray-800 text-center">
+              <p className="text-sm text-gray-400 dark:text-gray-500">
+                {t("home.no_news", "No hay novedades por ahora.")}
+              </p>
+            </div>
+          )}
+        </motion.div>
+
+        {/* Accesos rápidos — 1 col */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 0.4 }}
+          className="space-y-3"
+        >
+          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
+            {t("home.quick_access", "Accesos rápidos")}
+          </h3>
+
+          <div className="space-y-2">
+            <QuickBtn
+              icon={<BarChart3 className="w-4 h-4" />}
+              label={t("menu.dashboard", "Dashboard")}
+              onClick={() => navigate("/admin/dashboard")}
+            />
+            <QuickBtn
+              icon={<Package className="w-4 h-4" />}
+              label={t("menu.inventory", "Inventario")}
+              onClick={() => navigate("/admin/inventario/activos")}
+            />
+            <QuickBtn
+              icon={<Truck className="w-4 h-4" />}
+              label={t("menu.fleet", "Flota")}
+              onClick={() => navigate("/admin/vehiculos")}
+            />
+          </div>
+        </motion.div>
+
+      </div>
+    </div>
   );
 }
