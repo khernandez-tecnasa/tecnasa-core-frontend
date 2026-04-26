@@ -14,6 +14,7 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { ToastProvider } from "./context/ToastContext";
 import { sileo, Toaster } from "sileo";
+import { TooltipProvider } from "./components/ui/tooltip.jsx";
 
 // 🎨 Crea un theme extendido con la fuente Poppins
 // const theme = extendTheme({
@@ -29,13 +30,15 @@ ReactDOM.createRoot(document.getElementById("root")).render(
     <AppThemeProvider>
       <LocalizationProvider dateAdapter={AdapterDateFns}>
         <GlobalStyles />
-        <ToastProvider>
-          <Toaster
-            position="top-center"
-            style={{ top: "calc(var(--mobile-header-height, 0px) + 8px)" }}
-          />
-          <App />
-        </ToastProvider>
+        <TooltipProvider>
+          <ToastProvider>
+            <Toaster
+              position="top-center"
+              style={{ top: "calc(var(--mobile-header-height, 0px) + 8px)" }}
+            />
+            <App />
+          </ToastProvider>
+        </TooltipProvider>
         <ToastContainer
           position="top-center"
           autoClose={3000}
