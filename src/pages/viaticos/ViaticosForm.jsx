@@ -176,7 +176,7 @@ function SearchableSelect({
             setOpen(true);
             setQuery("");
           }}
-          className="w-full bg-background border-2 border-muted rounded-2xl pl-9 pr-8 py-3 text-sm focus:border-primary outline-none transition-all font-medium"
+          className="w-full bg-background dark:bg-slate-900/60 border border-border rounded-xl pl-9 pr-8 py-2.5 text-sm focus:border-primary/60 focus:ring-2 focus:ring-primary/20 outline-none transition-all font-medium"
         />
         {/* {!open && selected && (
           <div className="absolute inset-0 left-9 right-8 flex items-center pointer-events-none">
@@ -557,11 +557,16 @@ export default function ViaticosForm() {
   const getReservaLabel = (r) =>
     r.motivo ? `${r.motivo} — ${r.estado || ""}` : `Reserva #${r.id}`;
 
+  const inputCls =
+    "w-full rounded-xl border px-4 py-2.5 text-sm transition-all outline-none bg-background dark:bg-slate-900/60 placeholder:text-muted-foreground/50 border-border focus:border-primary/60 focus:ring-2 focus:ring-primary/20";
+
   if (dataLoading) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen space-y-4">
-        <Loader2 className="animate-spin text-primary" size={40} />
-        <p className="text-muted-foreground animate-pulse font-medium">
+      <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
+        <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+          <Loader2 className="animate-spin text-primary" size={22} />
+        </div>
+        <p className="text-sm text-muted-foreground font-medium">
           Cargando viático...
         </p>
       </div>
@@ -569,681 +574,692 @@ export default function ViaticosForm() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto p-4 md:p-8 space-y-6 animate-in slide-in-from-bottom-4 duration-500">
-      {/* HEADER BAR */}
-      <div className="flex items-center justify-between bg-card p-4 rounded-2xl border shadow-sm">
+    <div className="max-w-5xl mx-auto px-4 md:px-8 py-6 md:py-10 space-y-8 animate-in fade-in duration-500">
+      {/* HEADER */}
+      <div className="flex items-start gap-4">
         <button
           onClick={() => navigate("/admin/viaticos")}
-          className="flex items-center text-sm font-bold text-muted-foreground hover:text-primary transition-colors">
-          <ChevronLeft size={20} /> VOLVER
+          className="mt-0.5 p-2 hover:bg-muted dark:hover:bg-slate-800 rounded-xl transition-colors text-muted-foreground hover:text-foreground shrink-0">
+          <ChevronLeft size={18} />
         </button>
-        <div className="text-right">
-          <h1 className="text-xl font-black tracking-tighter uppercase">
-            {isEdit ? "Editar Viático" : "Nueva Solicitud de Viáticos"}
-          </h1>
-          <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">
-            AutoLog Logistics Management
-          </p>
+        <div className="flex items-center gap-3.5">
+          <div className="p-2.5 rounded-2xl bg-primary/10 dark:bg-primary/15 ring-1 ring-primary/20 shrink-0">
+            <Receipt size={22} className="text-primary" />
+          </div>
+          <div>
+            <h1 className="text-2xl md:text-3xl font-black tracking-tight leading-none">
+              {isEdit ? "Editar Viático" : "Nueva Solicitud de Viáticos"}
+            </h1>
+            <p className="text-muted-foreground text-xs md:text-sm font-medium mt-0.5">
+              {isEdit
+                ? "Modifica los datos de la solicitud"
+                : "Completa la información para registrar una solicitud de viáticos"}
+            </p>
+          </div>
         </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="bg-card border border-border rounded-3xl shadow-xl overflow-hidden">
-          {/* ── SECCIÓN 1: CONTEXTO ──────────────────────────────────────────── */}
-          <div className="p-6 md:p-8 border-b bg-muted/20 space-y-5">
-            <h3 className="text-xs font-black text-primary uppercase tracking-[0.2em] flex items-center gap-2">
-              <Info size={14} /> Contexto del Viaje
-            </h3>
-
-            <div
-              className={`grid gap-4 ${isMobile ? "grid-cols-1" : "grid-cols-3"}`}>
-              {/* CLIENTE */}
-              <div className="space-y-2">
-                <label className="text-[11px] font-black uppercase ml-1 text-muted-foreground">
-                  Cliente (opcional)
-                </label>
-                <SearchableSelect
-                  options={[{ id: "", nombre: "Sin cliente" }, ...clientes]}
-                  value={form.cliente_id}
-                  onChange={(val) =>
-                    handleFieldChange("cliente_id", val === "" ? "" : val)
-                  }
-                  placeholder="Buscar cliente..."
-                  getLabel={getClienteLabel}
-                  icon={Building2}
-                />
-              </div>
-
-              {/* RUTA */}
-              <div className="space-y-2">
-                <label className="text-[11px] font-black uppercase ml-1 text-muted-foreground">
-                  Ruta (opcional)
-                </label>
-                <SearchableSelect
-                  options={[
-                    { id: "", nombre: "Sin ruta", descripcion: "" },
-                    ...rutas,
-                  ]}
-                  value={form.ruta_id}
-                  onChange={(val) => handleRutaSelect(val === "" ? "" : val)}
-                  placeholder="Buscar ruta..."
-                  getLabel={(r) => r.nombre || "Sin ruta"}
-                  icon={Route}
-                  renderOption={(r) => (
-                    <div>
-                      <p className="text-sm font-bold">
-                        {r.nombre || "Sin ruta"}
-                      </p>
-                      {r.descripcion && (
-                        <p className="text-[11px] text-muted-foreground truncate">
-                          {r.descripcion}
-                        </p>
-                      )}
-                    </div>
-                  )}
-                />
-              </div>
-
-              {/* RESERVA */}
-              <div className="space-y-2">
-                <label className="text-[11px] font-black uppercase ml-1 text-muted-foreground">
-                  Reserva (opcional)
-                </label>
-                <SearchableSelect
-                  options={[
-                    { id: "", motivo: "Sin reserva", estado: "" },
-                    ...reservas.filter((r) => r.estado === "Reservado"),
-                  ]}
-                  value={form.reserva_id}
-                  onChange={(val) => handleReservaChange(val === "" ? "" : val)}
-                  placeholder="Buscar reserva..."
-                  getLabel={getReservaLabel}
-                  icon={CalendarCheck}
-                  renderOption={(r) => (
-                    <div>
-                      <p className="text-sm font-bold">
-                        {r.motivo || "Sin reserva"}
-                      </p>
-                      {r.estado && (
-                        <p className="text-[11px] text-muted-foreground">
-                          {r.estado}
-                        </p>
-                      )}
-                    </div>
-                  )}
-                />
-              </div>
+        {/* ── SECCIÓN 1: CONTEXTO ──────────────────────────────────────────── */}
+        <div className="bg-card dark:bg-slate-900/40 border border-border/60 rounded-3xl shadow-sm p-6 space-y-5">
+          <div className="flex items-center gap-2.5 pb-1">
+            <div className="p-1.5 bg-muted dark:bg-slate-800 rounded-xl">
+              <Info size={15} className="text-muted-foreground" />
             </div>
-
-            {form.ruta_id && (
-              <div className="flex items-start gap-2 text-[11px] bg-blue-50 border border-blue-200 text-blue-700 rounded-xl px-4 py-2.5">
-                <Route size={13} className="mt-0.5 shrink-0" />
-                <span>
-                  Motivo autocompletado desde la ruta seleccionada.
-                  {loadingPeajes
-                    ? " Cargando peajes..."
-                    : peajesRuta.length > 0
-                      ? ` Esta ruta pasa por ${peajesRuta.length} peaje${peajesRuta.length !== 1 ? "s" : ""}: ${peajesRuta.map((p) => p.nombre).join(", ")}.`
-                      : " Esta ruta no tiene peajes registrados."}
-                </span>
-              </div>
-            )}
-            {form.reserva_id && (
-              <div className="flex items-start gap-2 text-[11px] bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl px-4 py-2.5">
-                <CalendarCheck size={13} className="mt-0.5 shrink-0" />
-                <span>
-                  Fechas, empleado y vehículo autocompletados desde la reserva
-                  seleccionada.
-                </span>
-              </div>
-            )}
-
-            {peajesRuta.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {peajesRuta.map((p) => (
-                  <span
-                    key={p.id}
-                    className="inline-flex items-center gap-1 px-3 py-1 text-[10px] font-bold bg-amber-50 border border-amber-200 text-amber-700 rounded-full">
-                    <Milestone size={11} /> {p.nombre}
-                  </span>
-                ))}
-              </div>
-            )}
+            <h2 className="text-xs font-black uppercase tracking-widest text-muted-foreground">
+              Contexto del Viaje
+            </h2>
           </div>
 
-          {/* ── SECCIÓN 2: ASIGNACIÓN ─────────────────────────────────────── */}
-          <div className="p-6 md:p-8 border-b space-y-5">
-            <h3 className="text-xs font-black text-primary uppercase tracking-[0.2em] flex items-center gap-2">
-              <Info size={14} /> Asignación de Personal y Vehículo
-            </h3>
-            <div
-              className={`grid gap-6 ${isMobile ? "grid-cols-1" : "grid-cols-2"}`}>
-              {/* EMPLEADO */}
-              <div className="space-y-2">
-                <label className="text-[11px] font-black uppercase ml-1 text-muted-foreground">
-                  Empleado Responsable
-                </label>
-                <SearchableSelect
-                  options={empleados}
-                  value={form.empleado_id}
-                  onChange={(val) => handleFieldChange("empleado_id", val)}
-                  placeholder="Buscar empleado..."
-                  getLabel={getEmpleadoLabel}
-                  icon={User}
-                  renderOption={(e) => (
-                    <div>
-                      <p className="text-sm font-bold">{e.nombre}</p>
-                      {e.puesto && (
-                        <p className="text-[11px] text-muted-foreground">
-                          {e.puesto}
-                        </p>
-                      )}
-                    </div>
-                  )}
-                />
-              </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* CLIENTE */}
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">
+                Cliente (opcional)
+              </label>
+              <SearchableSelect
+                options={[{ id: "", nombre: "Sin cliente" }, ...clientes]}
+                value={form.cliente_id}
+                onChange={(val) =>
+                  handleFieldChange("cliente_id", val === "" ? "" : val)
+                }
+                placeholder="Buscar cliente..."
+                getLabel={getClienteLabel}
+                icon={Building2}
+              />
+            </div>
 
-              {/* VEHÍCULO */}
-              <div className="space-y-2">
-                <label className="text-[11px] font-black uppercase ml-1 text-muted-foreground">
-                  Vehículo Asignado
-                </label>
-                <SearchableSelect
-                  options={vehiculos}
-                  value={form.vehiculo_id}
-                  onChange={(val) => handleFieldChange("vehiculo_id", val)}
-                  placeholder="Buscar por placa, marca..."
-                  getLabel={getVehiculoLabel}
-                  icon={Car}
-                  renderOption={(v) => (
-                    <div>
-                      <p className="text-sm font-bold">{v.placa}</p>
+            {/* RUTA */}
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">
+                Ruta (opcional)
+              </label>
+              <SearchableSelect
+                options={[
+                  { id: "", nombre: "Sin ruta", descripcion: "" },
+                  ...rutas,
+                ]}
+                value={form.ruta_id}
+                onChange={(val) => handleRutaSelect(val === "" ? "" : val)}
+                placeholder="Buscar ruta..."
+                getLabel={(r) => r.nombre || "Sin ruta"}
+                icon={Route}
+                renderOption={(r) => (
+                  <div>
+                    <p className="text-sm font-bold">
+                      {r.nombre || "Sin ruta"}
+                    </p>
+                    {r.descripcion && (
+                      <p className="text-[11px] text-muted-foreground truncate">
+                        {r.descripcion}
+                      </p>
+                    )}
+                  </div>
+                )}
+              />
+            </div>
+
+            {/* RESERVA */}
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">
+                Reserva (opcional)
+              </label>
+              <SearchableSelect
+                options={[
+                  { id: "", motivo: "Sin reserva", estado: "" },
+                  ...reservas.filter((r) => r.estado === "Reservado"),
+                ]}
+                value={form.reserva_id}
+                onChange={(val) => handleReservaChange(val === "" ? "" : val)}
+                placeholder="Buscar reserva..."
+                getLabel={getReservaLabel}
+                icon={CalendarCheck}
+                renderOption={(r) => (
+                  <div>
+                    <p className="text-sm font-bold">
+                      {r.motivo || "Sin reserva"}
+                    </p>
+                    {r.estado && (
                       <p className="text-[11px] text-muted-foreground">
-                        {[v.marca, v.modelo].filter(Boolean).join(" ")}
+                        {r.estado}
                       </p>
-                    </div>
-                  )}
-                />
-              </div>
+                    )}
+                  </div>
+                )}
+              />
             </div>
           </div>
 
-          {/* ── SECCIÓN 3: SITIOS Y FECHAS ────────────────────────────────── */}
-          <div className="p-6 md:p-8 border-b space-y-6">
-            <h3 className="text-xs font-black text-primary uppercase tracking-[0.2em] flex items-center gap-2">
-              <MapPin size={14} /> Ruta y Período de Viaje
-            </h3>
+          {form.ruta_id && (
+            <div className="flex items-start gap-2 text-[11px] bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 text-blue-700 dark:text-blue-400 rounded-xl px-4 py-2.5">
+              <Route size={13} className="mt-0.5 shrink-0" />
+              <span>
+                Motivo autocompletado desde la ruta seleccionada.
+                {loadingPeajes
+                  ? " Cargando peajes..."
+                  : peajesRuta.length > 0
+                    ? ` Esta ruta pasa por ${peajesRuta.length} peaje${peajesRuta.length !== 1 ? "s" : ""}: ${peajesRuta.map((p) => p.nombre).join(", ")}.`
+                    : " Esta ruta no tiene peajes registrados."}
+              </span>
+            </div>
+          )}
+          {form.reserva_id && (
+            <div className="flex items-start gap-2 text-[11px] bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 text-emerald-700 dark:text-emerald-400 rounded-xl px-4 py-2.5">
+              <CalendarCheck size={13} className="mt-0.5 shrink-0" />
+              <span>
+                Fechas, empleado y vehículo autocompletados desde la reserva
+                seleccionada.
+              </span>
+            </div>
+          )}
+          {peajesRuta.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {peajesRuta.map((p) => (
+                <span
+                  key={p.id}
+                  className="inline-flex items-center gap-1 px-3 py-1 text-[10px] font-bold bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 text-amber-700 dark:text-amber-400 rounded-full">
+                  <Milestone size={11} /> {p.nombre}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
 
-            <div
-              className={`grid gap-6 ${isMobile ? "grid-cols-1" : "grid-cols-2"}`}>
-              <div className="space-y-2">
-                <label className="text-[11px] font-black uppercase ml-1 text-muted-foreground">
-                  Sitio de Origen (opcional)
-                </label>
-                <SearchableSelect
-                  options={[
-                    {
-                      id: "",
-                      nombre: "Sin origen",
-                      descripcion: "",
-                      cliente: "",
-                    },
-                    ...sites,
-                  ]}
-                  value={form.origen_site_id}
-                  onChange={(val) =>
-                    handleFieldChange("origen_site_id", val === "" ? "" : val)
-                  }
-                  placeholder="Buscar sitio de origen..."
-                  getLabel={getSiteLabel}
-                  icon={MapPin}
-                  renderOption={(s) => (
-                    <div>
-                      <p className="text-sm font-bold">
-                        {s.nombre || "Sin origen"}
-                      </p>
-                      {(s.descripcion || s.cliente) && (
-                        <p className="text-[11px] text-muted-foreground truncate">
-                          {[s.descripcion, s.cliente]
-                            .filter(Boolean)
-                            .join(" · ")}
-                        </p>
-                      )}
-                    </div>
-                  )}
-                />
-              </div>
+        {/* ── SECCIÓN 2: ASIGNACIÓN ─────────────────────────────────────────── */}
+        <div className="bg-card dark:bg-slate-900/40 border border-border/60 rounded-3xl shadow-sm p-6 space-y-5">
+          <div className="flex items-center gap-2.5 pb-1">
+            <div className="p-1.5 bg-muted dark:bg-slate-800 rounded-xl">
+              <User size={15} className="text-muted-foreground" />
+            </div>
+            <h2 className="text-xs font-black uppercase tracking-widest text-muted-foreground">
+              Asignación de Personal y Vehículo
+            </h2>
+          </div>
 
-              <div className="space-y-2">
-                <label className="text-[11px] font-black uppercase ml-1 text-muted-foreground">
-                  Sitio de Destino (opcional)
-                </label>
-                <SearchableSelect
-                  options={[
-                    {
-                      id: "",
-                      nombre: "Sin destino",
-                      descripcion: "",
-                      cliente: "",
-                    },
-                    ...sites,
-                  ]}
-                  value={form.destino_site_id}
-                  onChange={(val) =>
-                    handleFieldChange("destino_site_id", val === "" ? "" : val)
-                  }
-                  placeholder="Buscar sitio de destino..."
-                  getLabel={getSiteLabel}
-                  icon={MapPin}
-                  renderOption={(s) => (
-                    <div>
-                      <p className="text-sm font-bold">
-                        {s.nombre || "Sin destino"}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* EMPLEADO */}
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">
+                Empleado Responsable
+              </label>
+              <SearchableSelect
+                options={empleados}
+                value={form.empleado_id}
+                onChange={(val) => handleFieldChange("empleado_id", val)}
+                placeholder="Buscar empleado..."
+                getLabel={getEmpleadoLabel}
+                icon={User}
+                renderOption={(e) => (
+                  <div>
+                    <p className="text-sm font-bold">{e.nombre}</p>
+                    {e.puesto && (
+                      <p className="text-[11px] text-muted-foreground">
+                        {e.puesto}
                       </p>
-                      {(s.descripcion || s.cliente) && (
-                        <p className="text-[11px] text-muted-foreground truncate">
-                          {[s.descripcion, s.cliente]
-                            .filter(Boolean)
-                            .join(" · ")}
-                        </p>
-                      )}
-                    </div>
-                  )}
-                />
-              </div>
+                    )}
+                  </div>
+                )}
+              />
             </div>
 
-            <div
-              className={`grid gap-6 ${isMobile ? "grid-cols-1" : "grid-cols-2"}`}>
-              <div className="space-y-2">
-                <label className="text-[11px] font-black uppercase ml-1 text-muted-foreground">
-                  Fecha de Salida
-                </label>
-                <div className="relative">
-                  <Calendar
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-                    size={18}
-                  />
-                  <input
-                    type="date"
-                    name="fecha_salida"
-                    value={form.fecha_salida}
-                    onChange={handleChange}
-                    className="w-full bg-background border-2 border-muted rounded-2xl pl-10 pr-4 py-3 text-sm focus:border-primary outline-none transition-all"
-                  />
-                </div>
-              </div>
+            {/* VEHÍCULO */}
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">
+                Vehículo Asignado
+              </label>
+              <SearchableSelect
+                options={vehiculos}
+                value={form.vehiculo_id}
+                onChange={(val) => handleFieldChange("vehiculo_id", val)}
+                placeholder="Buscar por placa, marca..."
+                getLabel={getVehiculoLabel}
+                icon={Car}
+                renderOption={(v) => (
+                  <div>
+                    <p className="text-sm font-bold">{v.placa}</p>
+                    <p className="text-[11px] text-muted-foreground">
+                      {[v.marca, v.modelo].filter(Boolean).join(" ")}
+                    </p>
+                  </div>
+                )}
+              />
+            </div>
+          </div>
+        </div>
 
-              <div className="space-y-2">
-                <label className="text-[11px] font-black uppercase ml-1 text-muted-foreground">
-                  Fecha de Regreso
-                </label>
-                <div className="relative">
-                  <Calendar
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-                    size={18}
-                  />
-                  <input
-                    type="date"
-                    name="fecha_regreso"
-                    value={form.fecha_regreso}
-                    onChange={handleChange}
-                    className="w-full bg-background border-2 border-muted rounded-2xl pl-10 pr-4 py-3 text-sm focus:border-primary outline-none transition-all"
-                  />
-                </div>
-              </div>
+        {/* ── SECCIÓN 3: SITIOS Y FECHAS ────────────────────────────────────── */}
+        <div className="bg-card dark:bg-slate-900/40 border border-border/60 rounded-3xl shadow-sm p-6 space-y-5">
+          <div className="flex items-center gap-2.5 pb-1">
+            <div className="p-1.5 bg-muted dark:bg-slate-800 rounded-xl">
+              <MapPin size={15} className="text-muted-foreground" />
+            </div>
+            <h2 className="text-xs font-black uppercase tracking-widest text-muted-foreground">
+              Ruta y Período de Viaje
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">
+                Sitio de Origen (opcional)
+              </label>
+              <SearchableSelect
+                options={[
+                  {
+                    id: "",
+                    nombre: "Sin origen",
+                    descripcion: "",
+                    cliente: "",
+                  },
+                  ...sites,
+                ]}
+                value={form.origen_site_id}
+                onChange={(val) =>
+                  handleFieldChange("origen_site_id", val === "" ? "" : val)
+                }
+                placeholder="Buscar sitio de origen..."
+                getLabel={getSiteLabel}
+                icon={MapPin}
+                renderOption={(s) => (
+                  <div>
+                    <p className="text-sm font-bold">
+                      {s.nombre || "Sin origen"}
+                    </p>
+                    {(s.descripcion || s.cliente) && (
+                      <p className="text-[11px] text-muted-foreground truncate">
+                        {[s.descripcion, s.cliente].filter(Boolean).join(" · ")}
+                      </p>
+                    )}
+                  </div>
+                )}
+              />
             </div>
 
-            <div className="space-y-2">
-              <label className="text-[11px] font-black uppercase ml-1 text-muted-foreground">
-                Motivo del Viaje (opcional)
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">
+                Sitio de Destino (opcional)
+              </label>
+              <SearchableSelect
+                options={[
+                  {
+                    id: "",
+                    nombre: "Sin destino",
+                    descripcion: "",
+                    cliente: "",
+                  },
+                  ...sites,
+                ]}
+                value={form.destino_site_id}
+                onChange={(val) =>
+                  handleFieldChange("destino_site_id", val === "" ? "" : val)
+                }
+                placeholder="Buscar sitio de destino..."
+                getLabel={getSiteLabel}
+                icon={MapPin}
+                renderOption={(s) => (
+                  <div>
+                    <p className="text-sm font-bold">
+                      {s.nombre || "Sin destino"}
+                    </p>
+                    {(s.descripcion || s.cliente) && (
+                      <p className="text-[11px] text-muted-foreground truncate">
+                        {[s.descripcion, s.cliente].filter(Boolean).join(" · ")}
+                      </p>
+                    )}
+                  </div>
+                )}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">
+                Fecha de Salida
               </label>
               <div className="relative">
-                <FileText
-                  className="absolute left-3 top-4 text-muted-foreground"
-                  size={18}
+                <Calendar
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
+                  size={15}
                 />
-                <textarea
-                  name="motivo_viaje"
-                  placeholder="Ej: Visita técnica a cliente en Choluteca..."
-                  value={form.motivo_viaje}
+                <input
+                  type="date"
+                  name="fecha_salida"
+                  value={form.fecha_salida}
                   onChange={handleChange}
-                  rows={3}
-                  className="w-full bg-background border-2 border-muted rounded-2xl pl-10 pr-4 py-3 text-sm focus:border-primary outline-none transition-all resize-none"
+                  className={`${inputCls} pl-9`}
                 />
               </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">
+                Fecha de Regreso
+              </label>
+              <div className="relative">
+                <Calendar
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
+                  size={15}
+                />
+                <input
+                  type="date"
+                  name="fecha_regreso"
+                  value={form.fecha_regreso}
+                  onChange={handleChange}
+                  className={`${inputCls} pl-9`}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1.5 md:col-span-2">
+              <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">
+                Motivo del Viaje (opcional)
+              </label>
+              <textarea
+                name="motivo_viaje"
+                placeholder="Ej: Visita técnica a cliente en Choluteca..."
+                value={form.motivo_viaje}
+                onChange={handleChange}
+                rows={3}
+                className={`${inputCls} resize-none`}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* ── SECCIÓN 4: DETALLES DE GASTOS ──────────────────────────────────── */}
+        <div className="bg-card dark:bg-slate-900/40 border border-border/60 rounded-3xl shadow-sm p-6 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <div className="p-1.5 bg-muted dark:bg-slate-800 rounded-xl">
+                <Receipt size={15} className="text-muted-foreground" />
+              </div>
+              <h2 className="text-xs font-black uppercase tracking-widest text-muted-foreground">
+                Detalles de Gastos
+              </h2>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={handleAutoGenerar}
+                className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20 hover:bg-amber-100 dark:hover:bg-amber-500/20 transition-colors">
+                <Wand2 size={13} /> Auto-generar
+              </button>
+              <button
+                type="button"
+                onClick={agregarPeajesADetalles}
+                className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20 hover:bg-amber-100 dark:hover:bg-amber-500/20 transition-colors">
+                <Milestone size={13} /> Agregar peajes
+              </button>
+              <button
+                type="button"
+                onClick={agregarDetalle}
+                className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors">
+                <Plus size={13} /> Agregar fila
+              </button>
             </div>
           </div>
 
-          {/* ── SECCIÓN 4: DETALLES DE GASTOS ──────────────────────────────── */}
-          <div className="p-6 md:p-8 space-y-4">
-            <div
-              className={`flex ${isMobile ? "flex-col gap-3" : "items-center justify-between"}`}>
-              <h3 className="text-xs font-black text-primary uppercase tracking-[0.2em] flex items-center gap-2">
-                <Receipt size={14} /> Detalles de Gastos
-              </h3>
-              <div
-                className={`flex gap-2 ${isMobile ? "flex-col" : "flex-row"}`}>
-                <button
-                  type="button"
-                  onClick={handleAutoGenerar}
-                  className={`flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold rounded-xl bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 transition-colors ${isMobile ? "h-10" : "py-1.5"}`}>
-                  <Wand2 size={14} /> Auto-generar
-                </button>
-                <button
-                  type="button"
-                  onClick={agregarPeajesADetalles}
-                  className={`flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold rounded-xl bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 transition-colors ${isMobile ? "h-10" : "py-1.5"}`}>
-                  <Milestone size={14} /> Agregar peajes
-                </button>
-                <button
-                  type="button"
-                  onClick={agregarDetalle}
-                  className={`flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold rounded-xl bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors ${isMobile ? "h-10" : "py-1.5"}`}>
-                  <Plus size={14} /> Agregar fila
-                </button>
-              </div>
-            </div>
+          <p className="text-[11px] text-muted-foreground bg-muted/40 dark:bg-slate-800/40 rounded-xl px-4 py-2.5 border border-border/60">
+            <strong>Auto-generar</strong> calcula Desayuno, Almuerzo, Cena y
+            Hospedaje por cada día del viaje.
+          </p>
 
-            <p className="text-[11px] text-muted-foreground bg-muted/40 rounded-xl px-4 py-2.5 border">
-              <strong>Auto-generar</strong> calcula Desayuno, Almuerzo, Cena y
-              Hospedaje por cada día del viaje.
-            </p>
-
-            {/* TABLA DE DETALLES — desktop */}
-            {!isMobile ? (
-              <div className="border rounded-2xl overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="bg-muted/40 border-b">
-                        <th className="px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-muted-foreground w-36">
-                          Tipo
-                        </th>
-                        <th className="px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                          Descripción
-                        </th>
-                        <th className="px-4 py-3 text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground w-24">
-                          Cant.
-                        </th>
-                        <th className="px-4 py-3 text-right text-[10px] font-black uppercase tracking-widest text-muted-foreground w-32">
-                          Precio Unit.
-                        </th>
-                        <th className="px-4 py-3 text-right text-[10px] font-black uppercase tracking-widest text-muted-foreground w-28">
-                          Total
-                        </th>
-                        <th className="px-4 py-3 text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground w-32">
-                          Fecha
-                        </th>
-                        <th className="px-4 py-3 w-10" />
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border">
-                      {detalles.map((d, idx) => (
-                        <tr
-                          key={idx}
-                          className="hover:bg-muted/5 transition-colors">
-                          <td className="px-4 py-2">
-                            <select
-                              value={d.tipo}
-                              onChange={(e) =>
-                                handleDetalleChange(idx, "tipo", e.target.value)
-                              }
-                              className="w-full bg-muted/50 border border-muted rounded-xl px-2 py-1.5 text-xs font-bold focus:border-primary outline-none transition-all appearance-none cursor-pointer">
-                              {TIPOS_GASTO.map((t) => (
-                                <option key={t} value={t}>
-                                  {t}
-                                </option>
-                              ))}
-                            </select>
-                          </td>
-                          <td className="px-4 py-2">
-                            <input
-                              type="text"
-                              placeholder="Opcional..."
-                              value={d.descripcion}
-                              onChange={(e) =>
-                                handleDetalleChange(
-                                  idx,
-                                  "descripcion",
-                                  e.target.value,
-                                )
-                              }
-                              className="w-full bg-muted/50 border border-muted rounded-xl px-3 py-1.5 text-xs focus:border-primary outline-none transition-all"
-                            />
-                          </td>
-                          <td className="px-4 py-2">
-                            <input
-                              type="number"
-                              min={1}
-                              value={d.cantidad}
-                              onChange={(e) =>
-                                handleDetalleChange(
-                                  idx,
-                                  "cantidad",
-                                  e.target.value,
-                                )
-                              }
-                              className="w-full bg-muted/50 border border-muted rounded-xl px-3 py-1.5 text-xs text-center font-bold focus:border-primary outline-none transition-all"
-                            />
-                          </td>
-                          <td className="px-4 py-2">
-                            <div className="relative">
-                              <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] font-black text-muted-foreground">
-                                L
-                              </span>
-                              <input
-                                type="number"
-                                min={0}
-                                step="0.01"
-                                value={d.precio_unitario}
-                                onChange={(e) =>
-                                  handleDetalleChange(
-                                    idx,
-                                    "precio_unitario",
-                                    e.target.value,
-                                  )
-                                }
-                                className="w-full bg-muted/50 border border-muted rounded-xl pl-6 pr-3 py-1.5 text-xs text-right font-bold focus:border-primary outline-none transition-all"
-                              />
-                            </div>
-                          </td>
-                          <td className="px-4 py-2 text-right">
-                            <span className="text-xs font-black">
-                              {formatLps(
-                                (Number(d.cantidad) || 0) *
-                                  (Number(d.precio_unitario) || 0),
-                              )}
-                            </span>
-                          </td>
-                          <td className="px-4 py-2">
-                            <input
-                              type="date"
-                              value={d.fecha}
-                              onChange={(e) =>
-                                handleDetalleChange(
-                                  idx,
-                                  "fecha",
-                                  e.target.value,
-                                )
-                              }
-                              className="w-full bg-muted/50 border border-muted rounded-xl px-2 py-1.5 text-xs focus:border-primary outline-none transition-all"
-                            />
-                          </td>
-                          <td className="px-2 py-2 text-center">
-                            <button
-                              type="button"
-                              onClick={() => eliminarDetalle(idx)}
-                              className="p-1.5 text-muted-foreground hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all">
-                              <Trash2 size={14} />
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-                <div className="bg-muted/30 border-t px-6 py-4 flex justify-between items-center">
-                  <span className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">
-                    Total Estimado ({detalles.length} ítems)
-                  </span>
-                  <span className="text-xl font-black text-primary">
-                    {formatLps(totalPreview)}
-                  </span>
-                </div>
-              </div>
-            ) : (
-              /* DETALLES — mobile cards */
-              <div className="space-y-3">
-                {detalles.map((d, idx) => (
-                  <div
-                    key={idx}
-                    className="border rounded-2xl p-4 space-y-3 bg-muted/10">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-black uppercase text-muted-foreground">
-                        Ítem #{idx + 1}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => eliminarDetalle(idx)}
-                        className="p-1.5 text-muted-foreground hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all">
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-black uppercase text-muted-foreground">
-                          Tipo
-                        </label>
-                        <select
-                          value={d.tipo}
-                          onChange={(e) =>
-                            handleDetalleChange(idx, "tipo", e.target.value)
-                          }
-                          className="w-full bg-background border-2 border-muted rounded-xl px-3 py-2 text-sm font-bold focus:border-primary outline-none appearance-none cursor-pointer">
-                          {TIPOS_GASTO.map((t) => (
-                            <option key={t} value={t}>
-                              {t}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-black uppercase text-muted-foreground">
-                          Fecha
-                        </label>
-                        <input
-                          type="date"
-                          value={d.fecha}
-                          onChange={(e) =>
-                            handleDetalleChange(idx, "fecha", e.target.value)
-                          }
-                          className="w-full bg-background border-2 border-muted rounded-xl px-3 py-2 text-sm focus:border-primary outline-none"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-black uppercase text-muted-foreground">
+          {/* TABLA DE DETALLES — desktop */}
+          {!isMobile ? (
+            <div className="border border-border/60 rounded-2xl overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border/60 bg-muted/20 dark:bg-slate-800/30">
+                      <th className="px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-muted-foreground/70 w-36">
+                        Tipo
+                      </th>
+                      <th className="px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-muted-foreground/70">
                         Descripción
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="Opcional..."
-                        value={d.descripcion}
-                        onChange={(e) =>
-                          handleDetalleChange(
-                            idx,
-                            "descripcion",
-                            e.target.value,
-                          )
-                        }
-                        className="w-full bg-background border-2 border-muted rounded-xl px-3 py-2 text-sm focus:border-primary outline-none"
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-black uppercase text-muted-foreground">
-                          Cantidad
-                        </label>
-                        <input
-                          type="number"
-                          min={1}
-                          value={d.cantidad}
-                          onChange={(e) =>
-                            handleDetalleChange(idx, "cantidad", e.target.value)
-                          }
-                          className="w-full bg-background border-2 border-muted rounded-xl px-3 py-2 text-sm text-center font-bold focus:border-primary outline-none"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-black uppercase text-muted-foreground">
-                          Precio Unit.
-                        </label>
-                        <div className="relative">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[11px] font-black text-muted-foreground">
-                            L
-                          </span>
+                      </th>
+                      <th className="px-4 py-3 text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground/70 w-24">
+                        Cant.
+                      </th>
+                      <th className="px-4 py-3 text-right text-[10px] font-black uppercase tracking-widest text-muted-foreground/70 w-32">
+                        Precio Unit.
+                      </th>
+                      <th className="px-4 py-3 text-right text-[10px] font-black uppercase tracking-widest text-muted-foreground/70 w-28">
+                        Total
+                      </th>
+                      <th className="px-4 py-3 text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground/70 w-32">
+                        Fecha
+                      </th>
+                      <th className="px-4 py-3 w-10" />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {detalles.map((d, idx) => (
+                      <tr
+                        key={idx}
+                        className="border-b border-border/30 last:border-0 hover:bg-muted/20 dark:hover:bg-slate-800/20 transition-colors">
+                        <td className="px-4 py-2">
+                          <select
+                            value={d.tipo}
+                            onChange={(e) =>
+                              handleDetalleChange(idx, "tipo", e.target.value)
+                            }
+                            className="w-full bg-background dark:bg-slate-900/60 border border-border rounded-xl px-2 py-1.5 text-xs font-bold focus:border-primary/60 outline-none transition-all appearance-none cursor-pointer">
+                            {TIPOS_GASTO.map((t) => (
+                              <option key={t} value={t}>
+                                {t}
+                              </option>
+                            ))}
+                          </select>
+                        </td>
+                        <td className="px-4 py-2">
                           <input
-                            type="number"
-                            min={0}
-                            step="0.01"
-                            value={d.precio_unitario}
+                            type="text"
+                            placeholder="Opcional..."
+                            value={d.descripcion}
                             onChange={(e) =>
                               handleDetalleChange(
                                 idx,
-                                "precio_unitario",
+                                "descripcion",
                                 e.target.value,
                               )
                             }
-                            className="w-full bg-background border-2 border-muted rounded-xl pl-7 pr-3 py-2 text-sm text-right font-bold focus:border-primary outline-none"
+                            className="w-full bg-background dark:bg-slate-900/60 border border-border rounded-xl px-3 py-1.5 text-xs focus:border-primary/60 outline-none transition-all"
                           />
-                        </div>
-                      </div>
-                    </div>
+                        </td>
+                        <td className="px-4 py-2">
+                          <input
+                            type="number"
+                            min={1}
+                            value={d.cantidad}
+                            onChange={(e) =>
+                              handleDetalleChange(
+                                idx,
+                                "cantidad",
+                                e.target.value,
+                              )
+                            }
+                            className="w-full bg-background dark:bg-slate-900/60 border border-border rounded-xl px-3 py-1.5 text-xs text-center font-bold focus:border-primary/60 outline-none transition-all"
+                          />
+                        </td>
+                        <td className="px-4 py-2">
+                          <div className="relative">
+                            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] font-black text-muted-foreground">
+                              L
+                            </span>
+                            <input
+                              type="number"
+                              min={0}
+                              step="0.01"
+                              value={d.precio_unitario}
+                              onChange={(e) =>
+                                handleDetalleChange(
+                                  idx,
+                                  "precio_unitario",
+                                  e.target.value,
+                                )
+                              }
+                              className="w-full bg-background dark:bg-slate-900/60 border border-border rounded-xl pl-6 pr-3 py-1.5 text-xs text-right font-bold focus:border-primary/60 outline-none transition-all"
+                            />
+                          </div>
+                        </td>
+                        <td className="px-4 py-2 text-right">
+                          <span className="text-xs font-black">
+                            {formatLps(
+                              (Number(d.cantidad) || 0) *
+                                (Number(d.precio_unitario) || 0),
+                            )}
+                          </span>
+                        </td>
+                        <td className="px-4 py-2">
+                          <input
+                            type="date"
+                            value={d.fecha}
+                            onChange={(e) =>
+                              handleDetalleChange(idx, "fecha", e.target.value)
+                            }
+                            className="w-full bg-background dark:bg-slate-900/60 border border-border rounded-xl px-2 py-1.5 text-xs focus:border-primary/60 outline-none transition-all"
+                          />
+                        </td>
+                        <td className="px-2 py-2 text-center">
+                          <button
+                            type="button"
+                            onClick={() => eliminarDetalle(idx)}
+                            className="p-1.5 text-muted-foreground hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg transition-all">
+                            <Trash2 size={14} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="bg-muted/20 dark:bg-slate-800/30 border-t border-border/60 px-6 py-4 flex justify-between items-center">
+                <span className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">
+                  Total Estimado ({detalles.length} ítems)
+                </span>
+                <span className="text-xl font-black text-primary">
+                  {formatLps(totalPreview)}
+                </span>
+              </div>
+            </div>
+          ) : (
+            /* DETALLES — mobile cards */
+            <div className="space-y-3">
+              {detalles.map((d, idx) => (
+                <div
+                  key={idx}
+                  className="border border-border/60 rounded-2xl p-4 space-y-3 bg-muted/10 dark:bg-slate-800/20">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                      Ítem #{idx + 1}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => eliminarDetalle(idx)}
+                      className="p-1.5 text-muted-foreground hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg transition-all">
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
 
-                    <div className="flex justify-between items-center pt-1 border-t">
-                      <span className="text-[10px] text-muted-foreground font-semibold uppercase">
-                        Subtotal
-                      </span>
-                      <span className="font-black text-sm text-primary">
-                        {formatLps(
-                          (Number(d.cantidad) || 0) *
-                            (Number(d.precio_unitario) || 0),
-                        )}
-                      </span>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                        Tipo
+                      </label>
+                      <select
+                        value={d.tipo}
+                        onChange={(e) =>
+                          handleDetalleChange(idx, "tipo", e.target.value)
+                        }
+                        className="w-full bg-background dark:bg-slate-900/60 border border-border rounded-xl px-3 py-2 text-sm font-bold focus:border-primary/60 outline-none appearance-none cursor-pointer">
+                        {TIPOS_GASTO.map((t) => (
+                          <option key={t} value={t}>
+                            {t}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                        Fecha
+                      </label>
+                      <input
+                        type="date"
+                        value={d.fecha}
+                        onChange={(e) =>
+                          handleDetalleChange(idx, "fecha", e.target.value)
+                        }
+                        className="w-full bg-background dark:bg-slate-900/60 border border-border rounded-xl px-3 py-2 text-sm focus:border-primary/60 outline-none"
+                      />
                     </div>
                   </div>
-                ))}
 
-                <div className="bg-muted/30 border rounded-2xl px-5 py-4 flex justify-between items-center">
-                  <span className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">
-                    Total ({detalles.length} ítems)
-                  </span>
-                  <span className="text-xl font-black text-primary">
-                    {formatLps(totalPreview)}
-                  </span>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                      Descripción
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Opcional..."
+                      value={d.descripcion}
+                      onChange={(e) =>
+                        handleDetalleChange(idx, "descripcion", e.target.value)
+                      }
+                      className="w-full bg-background dark:bg-slate-900/60 border border-border rounded-xl px-3 py-2 text-sm focus:border-primary/60 outline-none"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                        Cantidad
+                      </label>
+                      <input
+                        type="number"
+                        min={1}
+                        value={d.cantidad}
+                        onChange={(e) =>
+                          handleDetalleChange(idx, "cantidad", e.target.value)
+                        }
+                        className="w-full bg-background dark:bg-slate-900/60 border border-border rounded-xl px-3 py-2 text-sm text-center font-bold focus:border-primary/60 outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                        Precio Unit.
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[11px] font-black text-muted-foreground">
+                          L
+                        </span>
+                        <input
+                          type="number"
+                          min={0}
+                          step="0.01"
+                          value={d.precio_unitario}
+                          onChange={(e) =>
+                            handleDetalleChange(
+                              idx,
+                              "precio_unitario",
+                              e.target.value,
+                            )
+                          }
+                          className="w-full bg-background dark:bg-slate-900/60 border border-border rounded-xl pl-7 pr-3 py-2 text-sm text-right font-bold focus:border-primary/60 outline-none"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between items-center pt-1 border-t border-border/60">
+                    <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-widest">
+                      Subtotal
+                    </span>
+                    <span className="font-black text-sm text-primary">
+                      {formatLps(
+                        (Number(d.cantidad) || 0) *
+                          (Number(d.precio_unitario) || 0),
+                      )}
+                    </span>
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
+              ))}
 
-          {/* ── SUBMIT ──────────────────────────────────────────────────────── */}
-          <div className="p-6 bg-muted/10 flex flex-col gap-3 border-t">
-            <Button
-              type="submit"
-              disabled={loading}
-              className="w-full h-12 font-black rounded-2xl shadow-lg shadow-primary/20 hover:opacity-90">
-              {loading ? (
-                <Loader2 className="mr-2 animate-spin" size={18} />
-              ) : (
-                <Save size={18} className="mr-2" />
-              )}
-              {isEdit ? "CONFIRMAR CAMBIOS" : "CREAR SOLICITUD"}
-            </Button>
-          </div>
+              <div className="bg-muted/20 dark:bg-slate-800/30 border border-border/60 rounded-2xl px-5 py-4 flex justify-between items-center">
+                <span className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">
+                  Total ({detalles.length} ítems)
+                </span>
+                <span className="text-xl font-black text-primary">
+                  {formatLps(totalPreview)}
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* ── BOTONES ──────────────────────────────────────────────────────────── */}
+        <div className="flex flex-col sm:flex-row gap-3 pt-1 justify-end">
+          <Button
+            type="submit"
+            disabled={loading}
+            className="flex-1 sm:flex-none sm:min-w-[200px] rounded-2xl h-11 font-bold shadow-md shadow-primary/15 hover:shadow-primary/25 transition-all gap-2 disabled:opacity-60">
+            {loading ? (
+              <Loader2 size={16} className="animate-spin" />
+            ) : (
+              <Save size={16} />
+            )}
+            {loading
+              ? "Guardando..."
+              : isEdit
+                ? "Guardar Cambios"
+                : "Crear Solicitud"}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => navigate("/admin/viaticos")}
+            disabled={loading}
+            className="flex-1 sm:flex-none sm:min-w-[140px] rounded-2xl h-11 font-bold">
+            Cancelar
+          </Button>
         </div>
       </form>
     </div>
