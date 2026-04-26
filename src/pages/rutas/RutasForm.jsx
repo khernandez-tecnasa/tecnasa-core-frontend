@@ -4,7 +4,6 @@ import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 
 import {
   Save,
-  X,
   ArrowLeft,
   GripVertical,
   Trash2,
@@ -192,6 +191,12 @@ export default function RutasForm() {
     }
   };
 
+  const inputCls = [
+    "w-full rounded-xl border px-4 py-2.5 text-sm transition-all outline-none",
+    "bg-background dark:bg-slate-900/60 placeholder:text-muted-foreground/50",
+    "border-border focus:border-primary/60 focus:ring-2 focus:ring-primary/20",
+  ].join(" ");
+
   // Label enriquecido para el autocomplete de sitios
   const getSiteLabel = (s) =>
     s
@@ -201,55 +206,48 @@ export default function RutasForm() {
       : "";
 
   return (
-    <div className="max-w-7xl mx-auto p-4 md:p-8 space-y-6 animate-in fade-in duration-500">
-      {/* HEADER DINÁMICO */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-background/95 backdrop-blur sticky top-0 z-20 py-4 border-b">
-        <div>
-          <button
-            onClick={() => navigate("/admin/rutas")}
-            className="flex items-center text-xs font-bold text-muted-foreground hover:text-primary transition-colors mb-1">
-            <ArrowLeft size={14} className="mr-1" /> VOLVER A LISTADO
-          </button>
-          <h1 className="text-2xl font-black tracking-tight flex items-center gap-2">
-            <Route className="text-primary" />
-            {isEdit ? "EDITAR RUTA" : "NUEVA RUTA LOGÍSTICA"}
-          </h1>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            onClick={() => navigate("/admin/rutas")}
-            className="text-muted-foreground">
-            <X size={18} className="mr-2" /> Cancelar
-          </Button>
-          <Button
-            onClick={handleSubmit}
-            disabled={loading}
-            className="bg-primary hover:bg-primary/90 px-6 shadow-lg shadow-primary/20">
-            {loading ? (
-              "Procesando..."
-            ) : (
-              <span className="flex items-center">
-                <Save size={18} className="mr-2" />
-                {isEdit ? "Guardar Cambios" : "Crear Ruta"}
-              </span>
-            )}
-          </Button>
+    <div className="max-w-7xl mx-auto px-4 md:px-8 py-6 md:py-10 space-y-8 animate-in fade-in duration-500">
+      {/* ── HEADER ── */}
+      <div className="flex items-start gap-4">
+        <button
+          onClick={() => navigate("/admin/rutas")}
+          className="mt-0.5 p-2 hover:bg-muted dark:hover:bg-slate-800 rounded-xl transition-colors text-muted-foreground hover:text-foreground shrink-0">
+          <ArrowLeft size={18} />
+        </button>
+        <div className="flex items-center gap-3.5">
+          <div className="p-2.5 rounded-2xl bg-primary/10 dark:bg-primary/15 ring-1 ring-primary/20 dark:ring-primary/30 shadow-sm shadow-primary/10 shrink-0">
+            <Route size={22} className="text-primary" />
+          </div>
+          <div>
+            <h1 className="text-2xl md:text-3xl font-black tracking-tight leading-none">
+              {isEdit ? "Editar Ruta" : "Nueva Ruta Logística"}
+            </h1>
+            <p className="text-muted-foreground text-xs md:text-sm font-medium mt-0.5">
+              {isEdit
+                ? "Modifica los datos y el itinerario de la ruta"
+                : "Completa la información y marca los puntos en el mapa"}
+            </p>
+          </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* PANEL DE CONFIGURACIÓN (LADO IZQUIERDO) */}
+        {/* ── PANEL IZQUIERDO: CONFIGURACIÓN ── */}
         <div className="lg:col-span-5 space-y-6">
           {/* CARD: DATOS GENERALES */}
-          <section className="bg-card border rounded-2xl p-6 shadow-sm space-y-4">
-            <h3 className="text-sm font-bold flex items-center gap-2 text-primary uppercase tracking-wider">
-              <Info size={16} /> Información Base
-            </h3>
-            <div className="grid gap-4">
-              <div className="space-y-1">
-                <label className="text-[10px] font-black text-muted-foreground uppercase">
+          <div className="bg-card dark:bg-slate-900/40 border border-border/60 rounded-3xl shadow-sm p-6 space-y-5">
+            <div className="flex items-center gap-2.5 pb-1">
+              <div className="p-1.5 bg-muted dark:bg-slate-800 rounded-xl">
+                <Info size={15} className="text-muted-foreground" />
+              </div>
+              <h2 className="text-xs font-black uppercase tracking-widest text-muted-foreground">
+                Información base
+              </h2>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">
                   Nombre descriptivo
                 </label>
                 <input
@@ -257,12 +255,12 @@ export default function RutasForm() {
                   value={form.nombre}
                   onChange={handleChange}
                   placeholder="Ej: Sula - San Lorenzo - Distribución"
-                  className="w-full bg-muted/30 border border-transparent focus:border-primary/50 focus:bg-background rounded-xl px-4 py-2.5 transition-all outline-none"
+                  className={inputCls}
                 />
               </div>
 
-              <div className="space-y-1">
-                <label className="text-[10px] font-black text-muted-foreground uppercase">
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">
                   Descripción
                 </label>
                 <input
@@ -270,13 +268,13 @@ export default function RutasForm() {
                   value={form.descripcion}
                   onChange={handleChange}
                   placeholder="Ej: Ruta de distribución zona norte"
-                  className="w-full bg-muted/30 border border-transparent focus:border-primary/50 focus:bg-background rounded-xl px-4 py-2.5 transition-all outline-none"
+                  className={inputCls}
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-[10px] font-black text-muted-foreground uppercase">
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">
                     Fecha Inicio
                   </label>
                   <input
@@ -284,11 +282,11 @@ export default function RutasForm() {
                     name="fecha_inicio"
                     value={form.fecha_inicio}
                     onChange={handleChange}
-                    className="w-full bg-muted/30 border-transparent rounded-xl px-3 py-2 text-sm focus:ring-1 ring-primary outline-none"
+                    className={inputCls}
                   />
                 </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] font-black text-muted-foreground uppercase">
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">
                     Fecha Fin
                   </label>
                   <input
@@ -296,30 +294,35 @@ export default function RutasForm() {
                     name="fecha_fin"
                     value={form.fecha_fin}
                     onChange={handleChange}
-                    className="w-full bg-muted/30 border-transparent rounded-xl px-3 py-2 text-sm focus:ring-1 ring-primary outline-none"
+                    className={inputCls}
                   />
                 </div>
               </div>
             </div>
-          </section>
+          </div>
 
-          {/* CARD: PUNTOS DE PARADA (DRAGGABLE) */}
-          <section className="bg-card border rounded-2xl p-6 shadow-sm">
-            <div className="flex justify-between items-center mb-6">
-              <div>
-                <h3 className="text-sm font-bold uppercase text-primary tracking-wider">
-                  Itinerario
-                </h3>
-                <p className="text-[10px] text-muted-foreground">
-                  Arrastra para reordenar las paradas
-                </p>
+          {/* CARD: PUNTOS DE PARADA */}
+          <div className="bg-card dark:bg-slate-900/40 border border-border/60 rounded-3xl shadow-sm p-6 space-y-5">
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between pb-1">
+              <div className="flex items-center gap-2.5">
+                <div className="p-1.5 bg-muted dark:bg-slate-800 rounded-xl">
+                  <MapPin size={15} className="text-muted-foreground" />
+                </div>
+                <div>
+                  <h2 className="text-xs font-black uppercase tracking-widest text-muted-foreground">
+                    Itinerario
+                  </h2>
+                  <p className="text-[10px] text-muted-foreground/70 mt-0.5">
+                    Arrastra para reordenar las paradas
+                  </p>
+                </div>
               </div>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => addPuntoDesdeMapa({ lat: "", lng: "" })}
-                className="h-8 text-xs">
-                <Plus size={14} className="mr-1" /> Parada Manual
+                className="h-8 text-xs rounded-xl">
+                <Plus size={12} className="mr-1" /> Parada Manual
               </Button>
             </div>
 
@@ -339,10 +342,10 @@ export default function RutasForm() {
                           <div
                             ref={provided.innerRef}
                             {...provided.draggableProps}
-                            className={`flex items-start gap-3 p-3 rounded-xl border transition-all ${
+                            className={`flex items-start gap-3 p-3 rounded-2xl border transition-all ${
                               snapshot.isDragging
                                 ? "bg-background border-primary shadow-2xl scale-105 z-50"
-                                : "bg-muted/20 border-transparent hover:border-border"
+                                : "bg-muted/20 dark:bg-slate-800/30 border-border/40 hover:border-border"
                             }`}>
                             <div
                               {...provided.dragHandleProps}
@@ -351,7 +354,6 @@ export default function RutasForm() {
                             </div>
 
                             <div className="flex-1 space-y-2 min-w-0">
-                              {/* Selector de sitio con label enriquecido */}
                               <SiteAutocomplete
                                 options={sites}
                                 value={p.cliente_site_id}
@@ -361,15 +363,13 @@ export default function RutasForm() {
                                 }
                               />
 
-                              {/* Badge de orden */}
-                              <span className="text-[9px] font-mono font-bold bg-primary/10 text-primary px-2 py-0.5 rounded">
+                              <span className="text-[9px] font-mono font-bold bg-primary/10 text-primary px-2 py-0.5 rounded-lg">
                                 ORDEN: {p.orden}
                               </span>
 
-                              {/* Coordenadas editables */}
                               <div className="grid grid-cols-2 gap-2 mt-1">
                                 <div className="flex items-center gap-1.5">
-                                  <span className="text-[8px] font-black uppercase text-muted-foreground shrink-0">
+                                  <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground shrink-0">
                                     Lat
                                   </span>
                                   <input
@@ -380,11 +380,11 @@ export default function RutasForm() {
                                       updatePunto(i, "latitud", e.target.value)
                                     }
                                     placeholder="0.0000"
-                                    className="flex-1 min-w-0 bg-muted/30 border border-transparent focus:border-primary/50 rounded-lg px-2 py-1 text-[10px] font-mono outline-none transition-colors"
+                                    className="flex-1 min-w-0 bg-background dark:bg-slate-900/60 border border-border focus:border-primary/60 focus:ring-2 focus:ring-primary/20 rounded-lg px-2 py-1 text-[10px] font-mono outline-none transition-all"
                                   />
                                 </div>
                                 <div className="flex items-center gap-1.5">
-                                  <span className="text-[8px] font-black uppercase text-muted-foreground shrink-0">
+                                  <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground shrink-0">
                                     Lng
                                   </span>
                                   <input
@@ -395,7 +395,7 @@ export default function RutasForm() {
                                       updatePunto(i, "longitud", e.target.value)
                                     }
                                     placeholder="0.0000"
-                                    className="flex-1 min-w-0 bg-muted/30 border border-transparent focus:border-primary/50 rounded-lg px-2 py-1 text-[10px] font-mono outline-none transition-colors"
+                                    className="flex-1 min-w-0 bg-background dark:bg-slate-900/60 border border-border focus:border-primary/60 focus:ring-2 focus:ring-primary/20 rounded-lg px-2 py-1 text-[10px] font-mono outline-none transition-all"
                                   />
                                 </div>
                               </div>
@@ -404,7 +404,7 @@ export default function RutasForm() {
                             <button
                               type="button"
                               onClick={() => removePunto(i)}
-                              className="mt-1 p-2 text-muted-foreground hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                              className="mt-1 p-2 text-muted-foreground hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-xl transition-colors">
                               <Trash2 size={16} />
                             </button>
                           </div>
@@ -418,7 +418,7 @@ export default function RutasForm() {
             </DragDropContext>
 
             {form.puntos.length === 0 && (
-              <div className="text-center py-10 border-2 border-dashed rounded-2xl">
+              <div className="text-center py-10 border-2 border-dashed border-border/50 rounded-2xl">
                 <MapPin
                   className="mx-auto text-muted-foreground/20 mb-2"
                   size={40}
@@ -428,12 +428,37 @@ export default function RutasForm() {
                 </p>
               </div>
             )}
-          </section>
+          </div>
+
+          {/* ── BOTONES DE ACCIÓN ── */}
+          <div className="flex flex-col sm:flex-row gap-3 pt-1">
+            <Button
+              onClick={handleSubmit}
+              disabled={loading}
+              className="flex-1 sm:flex-none sm:min-w-[180px] rounded-2xl h-11 font-bold shadow-md shadow-primary/15 hover:shadow-primary/25 transition-all gap-2 disabled:opacity-60">
+              {loading ? (
+                "Procesando..."
+              ) : (
+                <>
+                  <Save size={16} />
+                  {isEdit ? "Guardar Cambios" : "Crear Ruta"}
+                </>
+              )}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => navigate("/admin/rutas")}
+              disabled={loading}
+              className="flex-1 sm:flex-none sm:min-w-[140px] rounded-2xl h-11 font-bold">
+              Cancelar
+            </Button>
+          </div>
         </div>
 
-        {/* PANEL DEL MAPA (LADO DERECHO) */}
+        {/* ── PANEL DERECHO: MAPA ── */}
         <div className="lg:col-span-7 h-[calc(100vh-200px)] min-h-[500px] sticky top-[100px]">
-          <div className="bg-card border rounded-3xl overflow-hidden shadow-2xl h-full relative group">
+          <div className="bg-card dark:bg-slate-900/40 border border-border/60 rounded-3xl overflow-hidden shadow-sm h-full">
             <MapSelector
               puntos={form.puntos}
               onAdd={addPuntoDesdeMapa}
