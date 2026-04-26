@@ -156,7 +156,7 @@ export default function MapSelector({ puntos = [], onAdd, onRouteChange }) {
           <div className="h-10 w-[1px] bg-border mx-2 hidden sm:block" />
 
           <div className="flex items-center gap-3">
-            <div className="bg-[var(--joy-palette-primary-main)] text-white p-3 rounded-xl shadow-lg shadow-orange-500/30">
+            <div className="bg-[var(--joy-palette-primary-main)] text-white p-3 rounded-xl shadow-lg shadow-[var(--joy-palette-primary-main)]/30">
               <Clock size={24} />
             </div>
             <div>
