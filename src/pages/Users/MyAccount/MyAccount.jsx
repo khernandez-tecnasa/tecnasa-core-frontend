@@ -1,95 +1,110 @@
-// src/pages/Users/MyAccount.jsx
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  Box,
-  Typography,
-  Snackbar,
-  Card,
-  Avatar,
-  Divider,
-  Skeleton,
-  useTheme,
-  Grid,
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemContent,
-  Sheet,
-  Alert,
-  ListItemDecorator,
-} from "@mui/joy";
-
-import PersonRoundedIcon from "@mui/icons-material/PersonRounded";
-import SecurityRoundedIcon from "@mui/icons-material/SecurityRounded";
-import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
-import ErrorOutlineRoundedIcon from "@mui/icons-material/ErrorOutlineRounded";
-import HistoryRoundedIcon from "@mui/icons-material/HistoryRounded"; // Nuevo Icono
+import { User, Shield, History } from "lucide-react";
 
 import MyAccountForm from "../../../components/Users/MyAccount/MyAccountForm";
 import SecuritySettingsForm from "../../../components/Users/MyAccount/SecuritySettingsForm";
 
 import { getUsersById } from "../../../services/AuthServices";
 import { useAuth } from "../../../context/AuthContext";
+import { useToast } from "../../../context/ToastContext";
 
+/* ── Skeleton ── */
+function PageSkeleton() {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-[280px_1fr] gap-6 animate-pulse">
+      <div className="rounded-2xl border border-gray-200 dark:border-gray-700 p-6 space-y-4">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-24 h-24 rounded-full bg-gray-200 dark:bg-gray-700" />
+          <div className="h-5 w-32 rounded-lg bg-gray-200 dark:bg-gray-700" />
+          <div className="h-3.5 w-24 rounded-lg bg-gray-200 dark:bg-gray-700" />
+        </div>
+        <div className="space-y-2 pt-2">
+          <div className="h-9 rounded-xl bg-gray-200 dark:bg-gray-700" />
+          <div className="h-9 rounded-xl bg-gray-200 dark:bg-gray-700" />
+        </div>
+      </div>
+      <div className="rounded-2xl border border-gray-200 dark:border-gray-700 p-6 space-y-4">
+        <div className="h-6 w-40 rounded-lg bg-gray-200 dark:bg-gray-700" />
+        <div className="h-48 rounded-xl bg-gray-200 dark:bg-gray-700" />
+      </div>
+    </div>
+  );
+}
+
+/* ── Initials helper ── */
+function getInitials(name = "") {
+  const parts = name.trim().split(" ");
+  if (parts.length === 1) return parts[0][0]?.toUpperCase() ?? "?";
+  return (parts[0][0] + (parts[1]?.[0] ?? "")).toUpperCase();
+}
+
+/* ── Nav button ── */
+function NavBtn({ icon: Icon, label, active, onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`
+        w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors
+        ${
+          active
+            ? "bg-primary/10 text-primary"
+            : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
+        }
+      `}>
+      <Icon className="w-4 h-4 shrink-0" />
+      {label}
+    </button>
+  );
+}
+
+/* ── Main ── */
 export default function MyAccount() {
-  const { t, i18n } = useTranslation(); // Agregamos i18n para el idioma de la fecha
+  const { t, i18n } = useTranslation();
   const { userData } = useAuth();
-  const theme = useTheme();
+  const { showToast } = useToast();
 
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [selectedSection, setSelectedSection] = useState("profile");
-
-  const [snackbar, setSnackbar] = useState({
-    open: false,
-    message: "",
-    color: "neutral",
-  });
-
-  const showSnackbar = (message, color = "neutral") => {
-    setSnackbar({ open: true, message, color });
-  };
+  const [section, setSection] = useState("profile");
 
   const loadUserData = useCallback(async () => {
     setLoading(true);
     try {
       const id = userData?.id_usuario || userData?.id;
       if (!id) {
-        showSnackbar(t("account.errors.no_id"), "danger");
+        showToast(t("account.errors.no_id"), "danger");
+        return;
+      }
+      const data = await getUsersById(id);
+
+      if (!data) {
+        setUser(null);
         return;
       }
 
-      const data = await getUsersById(id);
-      if (Array.isArray(data) && data.length > 0) {
-        setUser(data[0]);
+      if (Array.isArray(data)) {
+        setUser(data[0] || null);
       } else {
-        showSnackbar(t("account.errors.not_found"), "warning");
-        setUser(null);
+        setUser(data);
       }
-    } catch (error) {
-      console.error("Error al cargar usuario:", error);
-      showSnackbar(t("account.errors.load_failed"), "danger");
+    } catch {
+      showToast(t("account.errors.load_failed"), "danger");
     } finally {
       setLoading(false);
     }
-  }, [userData, t]);
+  }, [userData, t, showToast]);
 
   useEffect(() => {
-    loadUserData();
-  }, [loadUserData]);
+    if (userData) {
+      loadUserData();
+    }
+  }, [userData, loadUserData]);
 
-  const getInitials = (name = "") => {
-    const parts = name.trim().split(" ");
-    if (parts.length === 1) return parts[0][0]?.toUpperCase();
-    return (parts[0][0] + (parts[1]?.[0] || "")).toUpperCase();
-  };
-
-  // --- Helper para formatear fecha ---
-  const formatLastReset = (dateString) => {
-    if (!dateString) return null;
+  const formattedLastReset = useMemo(() => {
+    if (!user?.last_password_change) return null;
     try {
-      return new Date(dateString).toLocaleString(i18n.language, {
+      return new Date(user.last_password_change).toLocaleString(i18n.language, {
         year: "numeric",
         month: "short",
         day: "numeric",
@@ -98,256 +113,114 @@ export default function MyAccount() {
         timeZone: "UTC",
         hour12: true,
       });
-    } catch (e) {
+    } catch {
       return null;
     }
-  };
+  }, [user?.last_password_change, i18n.language]);
 
-  // --- Skeleton Loading ---
   if (loading) {
     return (
-      <Box
-        sx={{ p: { xs: 2, md: 4 }, maxWidth: 1200, mx: "auto", width: "100%" }}>
-        <Grid container spacing={3}>
-          <Grid xs={12} md={4}>
-            <Card variant="outlined" sx={{ p: 3, borderRadius: 16 }}>
-              <Box
-                sx={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  mb: 3,
-                }}>
-                <Skeleton
-                  variant="circular"
-                  width={100}
-                  height={100}
-                  sx={{ mb: 2 }}
-                />
-                <Skeleton variant="text" level="h3" width="60%" />
-                <Skeleton variant="text" level="body-sm" width="40%" />
-              </Box>
-              <Divider />
-              <List sx={{ mt: 2 }}>
-                <Skeleton
-                  variant="rectangular"
-                  height={40}
-                  sx={{ borderRadius: "md", mb: 1 }}
-                />
-                <Skeleton
-                  variant="rectangular"
-                  height={40}
-                  sx={{ borderRadius: "md" }}
-                />
-              </List>
-            </Card>
-          </Grid>
-          <Grid xs={12} md={8}>
-            <Card
-              variant="outlined"
-              sx={{ p: 3, borderRadius: 16, height: "100%" }}>
-              <Skeleton variant="text" level="h3" width="40%" sx={{ mb: 3 }} />
-              <Skeleton variant="rectangular" height={200} />
-            </Card>
-          </Grid>
-        </Grid>
-      </Box>
+      <div className="max-w-5xl mx-auto p-4 md:p-6">
+        <PageSkeleton />
+      </div>
     );
   }
 
   if (!user) {
     return (
-      <Box sx={{ p: 4, display: "flex", justifyContent: "center" }}>
-        <Alert
-          color="warning"
-          variant="soft"
-          startDecorator={<ErrorOutlineRoundedIcon />}>
+      <div className="flex justify-center p-8">
+        <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400 text-sm">
           {t("account.errors.load_failed")}
-        </Alert>
-      </Box>
+        </div>
+      </div>
     );
   }
 
   return (
-    <Sheet
-      variant="plain"
-      sx={{
-        flex: 1,
-        width: "100%",
-        pt: { xs: "calc(12px + var(--Header-height))", md: 4 },
-        pb: 4,
-        px: { xs: 2, md: 4 },
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        minHeight: "100dvh",
-        bgcolor: "background.body",
-      }}>
-      <Box sx={{ width: "100%", maxWidth: 1200 }}>
-        <Typography level="h2" mb={3} sx={{ px: { xs: 0, md: 1 } }}>
-          {t("account.page_title")}
-        </Typography>
+    <div className="max-w-5xl mx-auto p-4 md:p-6 space-y-4">
+      <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+        {t("account.page_title")}
+      </h1>
 
-        <Grid container spacing={3}>
-          {/* PANEL IZQUIERDO (MENU) */}
-          <Grid xs={12} md={3.5}>
-            <Card
-              variant="outlined"
-              sx={{
-                p: 3,
-                borderRadius: 16,
-                boxShadow: "sm",
-                position: { md: "sticky" },
-                top: { md: 24 },
+      <div className="grid grid-cols-1 md:grid-cols-[280px_1fr] gap-6 items-start">
+        {/* ── Left panel ── */}
+        <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-5 space-y-5 md:sticky md:top-6">
+          {/* Avatar */}
+          <div className="flex flex-col items-center text-center gap-2">
+            <div
+              className="w-20 h-20 rounded-full flex items-center justify-center text-2xl font-bold text-white shadow-md"
+              style={{
+                background:
+                  "linear-gradient(135deg, hsl(var(--primary)/0.7), hsl(var(--primary)))",
               }}>
-              <Box textAlign="center" mb={2}>
-                <Avatar
-                  size="lg"
-                  sx={{
-                    width: 100,
-                    height: 100,
-                    mx: "auto",
-                    mb: 2,
-                    fontSize: "2rem",
-                    bgcolor: "primary.softBg",
-                    color: "primary.softColor",
-                    boxShadow: "md",
-                  }}>
-                  {getInitials(user.nombre)}
-                </Avatar>
+              {getInitials(user?.nombre)}
+            </div>
+            <div>
+              <p className="font-semibold text-gray-900 dark:text-gray-100">
+                {user?.nombre}
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                {user?.puesto || t("account.no_position")}
+              </p>
+            </div>
+          </div>
 
-                <Typography level="h4" fontWeight="lg">
-                  {user.nombre} {user.apellido}
-                </Typography>
-                <Typography level="body-sm" color="neutral">
-                  {user.puesto || t("account.no_position")}
-                </Typography>
-              </Box>
+          <div className="h-px bg-gray-100 dark:bg-gray-800" />
 
-              <Divider sx={{ my: 2 }} />
+          {/* Nav */}
+          <nav className="space-y-1">
+            <NavBtn
+              icon={User}
+              label={t("account.menu.profile")}
+              active={section === "profile"}
+              onClick={() => setSection("profile")}
+            />
+            <NavBtn
+              icon={Shield}
+              label={t("account.menu.security")}
+              active={section === "security"}
+              onClick={() => setSection("security")}
+            />
+          </nav>
+        </div>
 
-              <List size="sm" sx={{ "--ListItem-radius": "8px", gap: 0.5 }}>
-                <ListItem>
-                  <ListItemButton
-                    selected={selectedSection === "profile"}
-                    onClick={() => setSelectedSection("profile")}
-                    variant={selectedSection === "profile" ? "soft" : "plain"}
-                    color={
-                      selectedSection === "profile" ? "primary" : "neutral"
-                    }>
-                    <ListItemDecorator>
-                      <PersonRoundedIcon />
-                    </ListItemDecorator>
-                    <ListItemContent>
-                      {t("account.menu.profile")}
-                    </ListItemContent>
-                  </ListItemButton>
-                </ListItem>
+        {/* ── Right panel ── */}
+        <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-5 md:p-7 min-h-[400px]">
+          {section === "profile" && (
+            <>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-0.5">
+                {t("account.profile.title")}
+              </h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-5">
+                {t("account.profile.subtitle")}
+              </p>
+              <div className="h-px bg-gray-100 dark:bg-gray-800 mb-5" />
+              <MyAccountForm user={user} />
+            </>
+          )}
 
-                <ListItem>
-                  <ListItemButton
-                    selected={selectedSection === "security"}
-                    onClick={() => setSelectedSection("security")}
-                    variant={selectedSection === "security" ? "soft" : "plain"}
-                    color={
-                      selectedSection === "security" ? "primary" : "neutral"
-                    }>
-                    <ListItemDecorator>
-                      <SecurityRoundedIcon />
-                    </ListItemDecorator>
-                    <ListItemContent>
-                      {t("account.menu.security")}
-                    </ListItemContent>
-                  </ListItemButton>
-                </ListItem>
-              </List>
-            </Card>
-          </Grid>
-
-          {/* PANEL DERECHO (CONTENIDO) */}
-          <Grid xs={12} md={8.5}>
-            <Card
-              variant="outlined"
-              sx={{
-                p: { xs: 2, md: 4 },
-                borderRadius: 16,
-                boxShadow: "sm",
-                minHeight: 400,
-              }}>
-              {selectedSection === "profile" && (
-                <>
-                  <Typography level="h3" mb={1}>
-                    {t("account.profile.title")}
-                  </Typography>
-                  <Typography level="body-sm" mb={3} color="neutral">
-                    {t("account.profile.subtitle")}
-                  </Typography>
-                  <Divider sx={{ mb: 3 }} />
-                  <MyAccountForm user={user} showSnackbar={showSnackbar} />
-                </>
-              )}
-
-              {selectedSection === "security" && (
-                <>
-                  <Typography level="h3" mb={1}>
-                    {t("account.security.title")}
-                  </Typography>
-
-                  {/* --- AQUÍ ESTÁ EL CAMBIO --- */}
-                  <Box mb={3}>
-                    <Typography level="body-sm" color="neutral">
-                      {t("account.security.subtitle")}
-                    </Typography>
-
-                    {/* Solo mostramos si user.last_password_change tiene valor */}
-                    {user.last_password_change && (
-                      <Typography
-                        level="body-xs"
-                        color="success"
-                        sx={{
-                          mt: 0.5,
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 0.5,
-                          fontWeight: "md",
-                        }}>
-                        <HistoryRoundedIcon style={{ fontSize: 16 }} />
-                        {t("account.security.last_reset")}:{" "}
-                        {formatLastReset(user.last_password_change)}
-                      </Typography>
-                    )}
-                  </Box>
-                  {/* --------------------------- */}
-
-                  <Divider sx={{ mb: 3 }} />
-                  <SecuritySettingsForm
-                    user={user}
-                    showSnackbar={showSnackbar}
-                  />
-                </>
-              )}
-            </Card>
-          </Grid>
-        </Grid>
-      </Box>
-
-      {/* Snackbar Global */}
-      <Snackbar
-        open={snackbar.open}
-        onClose={() => setSnackbar({ ...snackbar, open: false })}
-        color={snackbar.color}
-        variant="soft"
-        startDecorator={
-          snackbar.color === "success" ? (
-            <CheckCircleRoundedIcon />
-          ) : (
-            <ErrorOutlineRoundedIcon />
-          )
-        }
-        autoHideDuration={4000}
-        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}>
-        {snackbar.message}
-      </Snackbar>
-    </Sheet>
+          {section === "security" && (
+            <>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-0.5">
+                {t("account.security.title")}
+              </h2>
+              <div className="mb-4">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  {t("account.security.subtitle")}
+                </p>
+                {formattedLastReset && (
+                  <p className="mt-1 flex items-center gap-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                    <History className="w-3.5 h-3.5" />
+                    {t("account.security.last_reset")}: {formattedLastReset}
+                  </p>
+                )}
+              </div>
+              <div className="h-px bg-gray-100 dark:bg-gray-800 mb-5" />
+              <SecuritySettingsForm user={user} />
+            </>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }

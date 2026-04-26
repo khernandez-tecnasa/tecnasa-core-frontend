@@ -7,52 +7,32 @@ import React, {
 } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  Card,
-  Stack,
-  Typography,
-  Divider,
-  Box,
-  Select,
-  Option,
-  RadioGroup,
-  Sheet,
-  Radio,
-  FormControl,
-  FormLabel,
-  Snackbar,
-  Alert,
-  Chip,
-  Button,
-} from "@mui/joy";
-import {
   Clock,
   Calendar,
   Check,
   MapPin,
   Languages,
   ChevronRight,
-  ChevronLeft,
+  Globe,
+  Loader2,
 } from "lucide-react";
-import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
-import RestartAltRoundedIcon from "@mui/icons-material/RestartAltRounded";
-import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 
-import { SectionHeader } from "./_shared/SectionHeader.jsx";
 import useIsMobile from "@/hooks/useIsMobile";
+import { Button } from "@/components/ui/button";
 
-/* ----- Constantes ----- */
+/* ─── Constantes ─── */
 const LANGUAGES = [
-  { code: "es-HN", label: "Español (Honduras)", flag: "🇭🇳" },
+  { code: "es-HN", label: "Español (Honduras)",      flag: "🇭🇳" },
   { code: "es-MX", label: "Español (Latinoamérica)", flag: "🇲🇽" },
-  { code: "en-US", label: "English (United States)", flag: "🇺🇸" },
+  { code: "en-US", label: "English (United States)",  flag: "🇺🇸" },
 ];
 
 const TIMEZONES = [
-  { value: "America/Tegucigalpa", label: "(GMT-06:00) Tegucigalpa" },
-  { value: "America/Mexico_City", label: "(GMT-06:00) Ciudad de México" },
-  { value: "America/Bogota", label: "(GMT-05:00) Bogotá, Lima, Quito" },
-  { value: "America/New_York", label: "(GMT-05:00) Nueva York" },
-  { value: "UTC", label: "(GMT+00:00) UTC" },
+  { value: "America/Tegucigalpa", label: "(GMT-06:00) Tegucigalpa"        },
+  { value: "America/Mexico_City", label: "(GMT-06:00) Ciudad de México"   },
+  { value: "America/Bogota",      label: "(GMT-05:00) Bogotá, Lima, Quito" },
+  { value: "America/New_York",    label: "(GMT-05:00) Nueva York"          },
+  { value: "UTC",                 label: "(GMT+00:00) UTC"                 },
 ];
 
 const DATE_FORMATS = [
@@ -61,7 +41,7 @@ const DATE_FORMATS = [
   { value: "YYYY-MM-DD", label: "2025-12-31" },
 ];
 
-/* ----- Helper: Intl Preview ----- */
+/* ─── Helper: preview de fecha/hora ─── */
 const formatPreview = (dateFormat, timeFormat, locale, timezone) => {
   const now = new Date();
   const timeOptions = {
@@ -76,85 +56,42 @@ const formatPreview = (dateFormat, timeFormat, locale, timezone) => {
     month: "2-digit",
     year: "numeric",
   };
-
   try {
     const timeStr = new Intl.DateTimeFormat(locale, timeOptions).format(now);
-    const parts = new Intl.DateTimeFormat(
-      locale,
-      datePartsOptions,
-    ).formatToParts(now);
+    const parts = new Intl.DateTimeFormat(locale, datePartsOptions).formatToParts(now);
     const map = Object.fromEntries(parts.map((p) => [p.type, p.value]));
     const { day = "31", month = "12", year = "2025" } = map;
-
     let dateStr = `${day}/${month}/${year}`;
     if (dateFormat === "MM/DD/YYYY") dateStr = `${month}/${day}/${year}`;
     else if (dateFormat === "YYYY-MM-DD") dateStr = `${year}-${month}-${day}`;
-
     return { dateStr, timeStr };
-  } catch (err) {
+  } catch {
     return { dateStr: "--/--/----", timeStr: "--:--" };
   }
 };
 
-/* ----- Subcomponente: TimeOption ----- */
-function TimeOption({ value, checked, example, label, onSelect }) {
-  return (
-    <Sheet
-      component="button"
-      type="button"
-      onClick={() => onSelect(value)}
-      variant={checked ? "soft" : "outlined"}
-      sx={{
-        p: 1.5,
-        borderRadius: "md",
-        cursor: "pointer",
-        display: "flex",
-        alignItems: "center",
-        gap: 1.5,
-        flex: 1,
-        border: checked ? "2px solid" : "1px solid",
-        borderColor: checked ? "primary.500" : "divider",
-        transition: "transform .12s",
-        "&:hover": { transform: "translateY(-2px)" },
-        position: "relative",
-        textAlign: "left",
-      }}>
-      <Clock size={20} />
-      <Box>
-        <Typography level="title-sm">{label}</Typography>
-        <Typography level="body-xs">{example}</Typography>
-      </Box>
-      {checked && <Check size={16} style={{ marginLeft: "auto" }} />}
-    </Sheet>
-  );
-}
-
-/* ----- Componente Principal ----- */
+/* ─── Componente principal ─── */
 export default function IdiomaRegion({ initialData = {}, onSave }) {
   const { t } = useTranslation();
   const isMobile = useIsMobile();
   const saveTimersRef = useRef({});
 
   const [form, setForm] = useState({
-    language: "es-HN",
-    timezone: "America/Tegucigalpa",
+    language:   "es-HN",
+    timezone:   "America/Tegucigalpa",
     dateFormat: "DD/MM/YYYY",
     timeFormat: "12h",
   });
 
   const [selectedLanguage, setSelectedLanguage] = useState("es-HN");
   const [savingLanguage, setSavingLanguage] = useState(false);
-  const [snack, setSnack] = useState({
-    open: false,
-    severity: "success",
-    message: "",
-  });
+  const [snack, setSnack] = useState({ open: false, severity: "success", message: "" });
 
   useEffect(() => {
     if (initialData && Object.keys(initialData).length > 0) {
       const newData = {
-        language: initialData.language || "es-HN",
-        timezone: initialData.timezone || "America/Tegucigalpa",
+        language:   initialData.language   || "es-HN",
+        timezone:   initialData.timezone   || "America/Tegucigalpa",
         dateFormat: initialData.dateFormat || "DD/MM/YYYY",
         timeFormat: initialData.timeFormat || "12h",
       };
@@ -167,16 +104,11 @@ export default function IdiomaRegion({ initialData = {}, onSave }) {
     (key, value) => {
       setForm((prev) => ({ ...prev, [key]: value }));
       if (saveTimersRef.current[key]) clearTimeout(saveTimersRef.current[key]);
-
       saveTimersRef.current[key] = setTimeout(async () => {
         try {
           if (onSave) await onSave({ [key]: value });
-        } catch (error) {
-          setSnack({
-            open: true,
-            severity: "error",
-            message: t("settings.region.error_save"),
-          });
+        } catch {
+          setSnack({ open: true, severity: "error", message: t("settings.region.error_save") });
         }
       }, 450);
     },
@@ -187,26 +119,15 @@ export default function IdiomaRegion({ initialData = {}, onSave }) {
     setSavingLanguage(true);
     try {
       if (onSave) await onSave({ language: selectedLanguage });
-      // Aquí podrías disparar i18n.changeLanguage o window.location.reload()
       window.location.reload();
-    } catch (error) {
-      setSnack({
-        open: true,
-        severity: "error",
-        message: t("settings.region.language.error"),
-      });
+    } catch {
+      setSnack({ open: true, severity: "error", message: t("settings.region.language.error") });
       setSavingLanguage(false);
     }
   };
 
   const preview = useMemo(
-    () =>
-      formatPreview(
-        form.dateFormat,
-        form.timeFormat,
-        selectedLanguage,
-        form.timezone,
-      ),
+    () => formatPreview(form.dateFormat, form.timeFormat, selectedLanguage, form.timezone),
     [form.dateFormat, form.timeFormat, form.timezone, selectedLanguage],
   );
 
@@ -224,84 +145,96 @@ export default function IdiomaRegion({ initialData = {}, onSave }) {
     hasPendingLangChange: selectedLanguage !== form.language,
   };
 
-  return isMobile ? (
-    <MobileRegion {...propsCalculados} />
-  ) : (
-    <DesktopRegion {...propsCalculados} />
-  );
+  return isMobile
+    ? <MobileRegion {...propsCalculados} />
+    : <DesktopRegion {...propsCalculados} />;
 }
 
-/* ----- DESKTOP ----- */
+/* ─── DESKTOP ─── */
 function DesktopRegion({
-  t,
-  form,
-  selectedLanguage,
-  setSelectedLanguage,
-  handleChange,
-  handleApplyLanguage,
-  savingLanguage,
-  hasPendingLangChange,
-  preview,
+  t, form, selectedLanguage, setSelectedLanguage,
+  handleChange, handleApplyLanguage, savingLanguage,
+  hasPendingLangChange, preview,
 }) {
+  const selectCls =
+    "w-full rounded-xl border border-border dark:border-slate-700 px-4 py-2.5 text-sm bg-background dark:bg-slate-900/60 dark:text-slate-100 text-foreground outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/20 transition-all";
+
   return (
-    <div className="max-w-5xl mx-auto space-y-8 text-[var(--foreground)]">
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
       {/* HEADER */}
-      <div>
-        <h2 className="text-xl font-semibold">{t("settings.region.title")}</h2>
-        <p className="text-sm text-[var(--muted-foreground)]">
-          {t("settings.region.subtitle")}
-        </p>
+      <div className="flex items-center gap-3">
+        <div className="p-2.5 rounded-2xl bg-primary/10 dark:bg-primary/20 ring-1 ring-primary/20 dark:ring-primary/40 shrink-0">
+          <Globe size={20} className="text-primary" />
+        </div>
+        <div>
+          <h1 className="text-xl font-black tracking-tight leading-none dark:text-slate-100">
+            {t("settings.region.title")}
+          </h1>
+          <p className="text-xs text-muted-foreground dark:text-slate-400 mt-0.5 font-medium">
+            {t("settings.region.subtitle")}
+          </p>
+        </div>
       </div>
 
-      {/* GRID */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* LEFT */}
+        {/* ─── Columna izquierda ─── */}
         <div className="lg:col-span-2 space-y-6">
-          {/* 🌍 IDIOMA + ZONA */}
-          <div className="rounded-2xl border bg-[var(--background)] bg-[var(--popover)] p-5 space-y-5">
-            <h3 className="text-sm font-medium">Idioma y región</h3>
+
+          {/* IDIOMA Y ZONA HORARIA */}
+          <div className="bg-card dark:bg-slate-800/60 border border-border/60 dark:border-slate-700/60 rounded-3xl shadow-sm p-5 space-y-5">
+            <div className="flex items-center gap-2.5 pb-1">
+              <div className="p-1.5 bg-muted dark:bg-slate-700 rounded-xl">
+                <Languages size={14} className="text-muted-foreground dark:text-slate-400" />
+              </div>
+              <h2 className="text-xs font-black uppercase tracking-widest text-muted-foreground dark:text-slate-400">
+                Idioma y Región
+              </h2>
+            </div>
 
             {/* Idioma */}
             <div className="space-y-2">
-              <label className="text-xs text-[var(--muted-foreground)]">
+              <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground dark:text-slate-400">
                 Idioma
               </label>
-
               <select
                 value={selectedLanguage}
                 onChange={(e) => setSelectedLanguage(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border dark:bg-[var(--secondary)] text-sm focus:ring-2 focus:ring-[hsl(var(--primary))]">
+                className={selectCls}>
                 {LANGUAGES.map((l) => (
                   <option key={l.code} value={l.code}>
-                    {l.label}
+                    {l.flag} {l.label}
                   </option>
                 ))}
               </select>
 
-              {/* ALERT */}
               {hasPendingLangChange && (
-                <div className="p-4 rounded-xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-between">
-                  <p className="text-sm">Necesitas aplicar el idioma</p>
-
-                  <button
+                <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-2xl border border-amber-500/30 bg-amber-500/5 dark:bg-amber-500/10">
+                  <p className="text-sm font-medium text-amber-600 dark:text-amber-400">
+                    Cambios pendientes de aplicar
+                  </p>
+                  <Button
                     onClick={handleApplyLanguage}
-                    className="px-4 py-2 rounded-lg bg-yellow-500 text-white text-sm">
+                    disabled={savingLanguage}
+                    size="sm"
+                    className="rounded-xl h-8 px-4 font-bold gap-1.5 shrink-0 disabled:opacity-60">
+                    {savingLanguage && <Loader2 size={12} className="animate-spin" />}
                     {savingLanguage ? "Aplicando..." : "Aplicar"}
-                  </button>
+                  </Button>
                 </div>
               )}
             </div>
 
-            {/* Timezone */}
-            <div className="space-y-2">
-              <label className="text-xs text-[var(--muted-foreground)]">
-                Zona horaria
-              </label>
+            <div className="h-px bg-border/40 dark:bg-slate-700/50" />
 
+            {/* Zona horaria */}
+            <div className="space-y-2">
+              <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground dark:text-slate-400">
+                Zona Horaria
+              </label>
               <select
                 value={form.timezone}
                 onChange={(e) => handleChange("timezone", e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border dark:bg-[var(--secondary)] text-sm">
+                className={selectCls}>
                 {TIMEZONES.map((tz) => (
                   <option key={tz.value} value={tz.value}>
                     {tz.label}
@@ -311,50 +244,54 @@ function DesktopRegion({
             </div>
           </div>
 
-          {/* 📅 FORMATOS */}
-          <div className="rounded-2xl border bg-[var(--background)] bg-[var(--popover)] p-5 space-y-5">
-            <h3 className="text-sm font-medium">Formatos</h3>
+          {/* FORMATOS */}
+          <div className="bg-card dark:bg-slate-800/60 border border-border/60 dark:border-slate-700/60 rounded-3xl shadow-sm p-5 space-y-5">
+            <div className="flex items-center gap-2.5 pb-1">
+              <div className="p-1.5 bg-muted dark:bg-slate-700 rounded-xl">
+                <Calendar size={14} className="text-muted-foreground dark:text-slate-400" />
+              </div>
+              <h2 className="text-xs font-black uppercase tracking-widest text-muted-foreground dark:text-slate-400">
+                Formatos
+              </h2>
+            </div>
 
-            {/* Fecha */}
+            {/* Formato de fecha */}
             <div className="space-y-2">
-              <label className="text-xs text-[var(--muted-foreground)]">
-                Formato de fecha
+              <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground dark:text-slate-400">
+                Formato de Fecha
               </label>
-
               <select
                 value={form.dateFormat}
                 onChange={(e) => handleChange("dateFormat", e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border dark:bg-[var(--secondary)] text-sm">
+                className={selectCls}>
                 {DATE_FORMATS.map((f) => (
                   <option key={f.value} value={f.value}>
-                    {f.value}
+                    {f.value} — {f.label}
                   </option>
                 ))}
               </select>
             </div>
 
-            {/* Hora (botones tipo pill) */}
-            <div className="space-y-2">
-              <label className="text-xs text-[var(--muted-foreground)]">
-                Formato de hora
-              </label>
+            <div className="h-px bg-border/40 dark:bg-slate-700/50" />
 
-              <div className="flex gap-3">
+            {/* Formato de hora */}
+            <div className="space-y-2">
+              <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground dark:text-slate-400">
+                Formato de Hora
+              </label>
+              <div className="flex gap-2">
                 {["12h", "24h"].map((fmt) => {
                   const active = form.timeFormat === fmt;
-
                   return (
                     <button
                       key={fmt}
                       onClick={() => handleChange("timeFormat", fmt)}
-                      className={`
-                        px-4 py-2 rounded-xl text-sm transition
-                        ${
-                          active
-                            ? "bg-[hsl(var(--primary))] text-white"
-                            : "border hover:bg-[var(--muted)]"
-                        }
-                      `}>
+                      className={[
+                        "flex-1 py-2.5 rounded-xl text-sm font-bold transition-all duration-150 border",
+                        active
+                          ? "bg-primary text-white border-primary shadow-md shadow-primary/20"
+                          : "border-border/60 dark:border-slate-700/60 text-muted-foreground dark:text-slate-400 hover:bg-muted/60 dark:hover:bg-slate-700/40",
+                      ].join(" ")}>
                       {fmt === "12h" ? "12 horas" : "24 horas"}
                     </button>
                   );
@@ -364,131 +301,141 @@ function DesktopRegion({
           </div>
         </div>
 
-        {/* RIGHT → PREVIEW */}
+        {/* ─── Preview ─── */}
         <div className="space-y-4">
-          <div className="rounded-2xl border dark:bg-[var(--popover)] p-6 text-center">
-            <p className="text-xs text-[var(--foreground)] uppercase tracking-wide">
-              Vista previa
+          <div className="bg-card dark:bg-slate-800/60 border border-border/60 dark:border-slate-700/60 rounded-3xl shadow-sm p-6 text-center">
+            <div className="flex items-center gap-2 justify-center mb-4">
+              <div className="p-1.5 bg-muted dark:bg-slate-700 rounded-xl">
+                <Clock size={13} className="text-muted-foreground dark:text-slate-400" />
+              </div>
+              <span className="text-xs font-black uppercase tracking-widest text-muted-foreground dark:text-slate-400">
+                Vista Previa
+              </span>
+            </div>
+            <p className="text-4xl font-black tabular-nums tracking-tight dark:text-slate-100">
+              {preview.timeStr}
             </p>
-
-            <p className="text-3xl font-semibold mt-3">{preview.timeStr}</p>
-
-            <p className="text-sm text-[var(--muted-foreground)] mt-1">
+            <p className="text-sm text-muted-foreground dark:text-slate-400 mt-2 font-mono">
               {preview.dateStr}
             </p>
-
-            <div className="mt-4 h-2 bg-[var(--muted)] rounded-full overflow-hidden">
-              <div className="h-full w-1/2 bg-[hsl(var(--primary))]" />
+            <div className="mt-5 h-1.5 rounded-full bg-muted dark:bg-slate-700 overflow-hidden">
+              <div className="h-full w-1/2 rounded-full bg-primary transition-all duration-300" />
             </div>
           </div>
-
-          {/* Info extra */}
-          <div className="text-xs text-[var(--muted-foreground)] px-2">
-            Los cambios se aplican automáticamente.
-          </div>
+          <p className="text-xs text-muted-foreground/60 dark:text-slate-500 px-1 leading-relaxed">
+            Los cambios de zona horaria y formato se aplican automáticamente.
+          </p>
         </div>
       </div>
     </div>
   );
 }
 
-/* ----- MOBILE ----- */
-// function MobileRegion(props) {
-//   const [stack, setStack] = useState(["main"]);
-
-//   const current = stack[stack.length - 1];
-
-//   const push = (screen) => setStack((s) => [...s, screen]);
-//   const pop = () => setStack((s) => s.slice(0, -1));
-
-//   return (
-//     <div className="relative bg-[var(--background)] min-h-screen overflow-hidden">
-//       {stack.map((screen, i) => {
-//         const isTop = i === stack.length - 1;
-
-//         return (
-//           <div
-//             key={i}
-//             className={`
-//               absolute inset-0
-//               transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]
-//               ${isTop ? "translate-x-0" : "-translate-x-1/3"}
-//             `}
-//             style={{
-//               zIndex: i,
-//             }}>
-//             {screen === "main" && <MainMobile {...props} push={push} />}
-
-//             {screen === "language" && (
-//               <LanguageMobile {...props} onBack={pop} />
-//             )}
-
-//             {screen === "timezone" && (
-//               <TimezoneMobile {...props} onBack={pop} />
-//             )}
-
-//             {screen === "date" && <DateMobile {...props} onBack={pop} />}
-
-//             {screen === "time" && <TimeMobile {...props} onBack={pop} />}
-//           </div>
-//         );
-//       })}
-//     </div>
-//   );
-// }
-
-function MobileRegion(props) {
-  const {
-    t,
-    form,
-    preview,
-    handleChange,
-    selectedLanguage,
-    setSelectedLanguage,
-    handleApplyLanguage,
-    hasPendingLangChange,
-  } = props;
-
-  const [openLang, setOpenLang] = useState(false);
+/* ─── MOBILE ─── */
+function MobileRegion({
+  t, form, preview, handleChange,
+  selectedLanguage, setSelectedLanguage,
+  handleApplyLanguage, savingLanguage, hasPendingLangChange,
+}) {
+  const [openLang,     setOpenLang]     = useState(false);
   const [openTimezone, setOpenTimezone] = useState(false);
-  const [openDate, setOpenDate] = useState(false);
-  const [openTime, setOpenTime] = useState(false);
+  const [openDate,     setOpenDate]     = useState(false);
+  const [openTime,     setOpenTime]     = useState(false);
+
+  const currentLang = LANGUAGES.find((l) => l.code === selectedLanguage);
+  const currentTz   = TIMEZONES.find((tz) => tz.value === form.timezone);
 
   return (
-    <div className="space-y-6">
-      <SectionHeader
-        title={t("settings.region.title")}
-        subtitle={t("settings.region.subtitle")}
-      />
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+      {/* HEADER */}
+      <div className="flex items-center gap-3">
+        <div className="p-2.5 rounded-2xl bg-primary/10 dark:bg-primary/20 ring-1 ring-primary/20 dark:ring-primary/40 shrink-0">
+          <Globe size={20} className="text-primary" />
+        </div>
+        <div>
+          <h1 className="text-xl font-black tracking-tight leading-none dark:text-slate-100">
+            {t("settings.region.title")}
+          </h1>
+          <p className="text-xs text-muted-foreground dark:text-slate-400 mt-0.5 font-medium">
+            {t("settings.region.subtitle")}
+          </p>
+        </div>
+      </div>
 
-      {/* 🔥 LISTA iOS */}
-      <MobileSection title="Configuración">
-        <IOSRow label="Idioma" onClick={() => setOpenLang(true)} />
-        <IOSRow label="Zona horaria" onClick={() => setOpenTimezone(true)} />
-      </MobileSection>
-      <MobileSection title="Formatos">
-        <IOSRow label="Formato de fecha" onClick={() => setOpenDate(true)} />
-        <IOSRow label="Formato de hora" onClick={() => setOpenTime(true)} />
-      </MobileSection>
+      {/* CONFIGURACIÓN */}
+      <div className="bg-card dark:bg-slate-800/60 border border-border/60 dark:border-slate-700/60 rounded-3xl shadow-sm overflow-hidden">
+        <div className="flex items-center gap-2.5 px-5 py-3.5 border-b border-border/60 dark:border-slate-700/50">
+          <div className="p-1.5 bg-muted dark:bg-slate-700 rounded-xl">
+            <Languages size={14} className="text-muted-foreground dark:text-slate-400" />
+          </div>
+          <h2 className="text-xs font-black uppercase tracking-widest text-muted-foreground dark:text-slate-400">
+            Idioma y Región
+          </h2>
+        </div>
+        <div className="divide-y divide-border/40 dark:divide-slate-700/50">
+          <MobileRow
+            icon={Languages}
+            label="Idioma"
+            value={currentLang ? `${currentLang.flag} ${currentLang.label}` : selectedLanguage}
+            onClick={() => setOpenLang(true)}
+          />
+          <MobileRow
+            icon={MapPin}
+            label="Zona horaria"
+            value={currentTz?.label.replace(/^\(GMT[^)]+\)\s*/, "") || form.timezone}
+            onClick={() => setOpenTimezone(true)}
+          />
+        </div>
+      </div>
 
-      {/* 📊 PREVIEW */}
-      <div className="rounded-2xl border p-5 text-center bg-[var(--popover)]">
-        <p className="text-xs uppercase text-[var(--muted-foreground)]">
-          Vista previa
+      {/* FORMATOS */}
+      <div className="bg-card dark:bg-slate-800/60 border border-border/60 dark:border-slate-700/60 rounded-3xl shadow-sm overflow-hidden">
+        <div className="flex items-center gap-2.5 px-5 py-3.5 border-b border-border/60 dark:border-slate-700/50">
+          <div className="p-1.5 bg-muted dark:bg-slate-700 rounded-xl">
+            <Calendar size={14} className="text-muted-foreground dark:text-slate-400" />
+          </div>
+          <h2 className="text-xs font-black uppercase tracking-widest text-muted-foreground dark:text-slate-400">
+            Formatos
+          </h2>
+        </div>
+        <div className="divide-y divide-border/40 dark:divide-slate-700/50">
+          <MobileRow
+            icon={Calendar}
+            label="Formato de fecha"
+            value={form.dateFormat}
+            onClick={() => setOpenDate(true)}
+          />
+          <MobileRow
+            icon={Clock}
+            label="Formato de hora"
+            value={form.timeFormat === "12h" ? "12 horas" : "24 horas"}
+            onClick={() => setOpenTime(true)}
+          />
+        </div>
+      </div>
+
+      {/* PREVIEW */}
+      <div className="bg-card dark:bg-slate-800/60 border border-border/60 dark:border-slate-700/60 rounded-3xl shadow-sm p-5 text-center">
+        <div className="flex items-center gap-2 justify-center mb-3">
+          <div className="p-1.5 bg-muted dark:bg-slate-700 rounded-xl">
+            <Clock size={13} className="text-muted-foreground dark:text-slate-400" />
+          </div>
+          <span className="text-xs font-black uppercase tracking-widest text-muted-foreground dark:text-slate-400">
+            Vista Previa
+          </span>
+        </div>
+        <p className="text-4xl font-black tabular-nums tracking-tight dark:text-slate-100">
+          {preview.timeStr}
         </p>
-        <p className="text-3xl font-semibold mt-2">{preview.timeStr}</p>
-        <p className="text-sm text-[var(--muted-foreground)]">
+        <p className="text-sm text-muted-foreground dark:text-slate-400 mt-1.5 font-mono">
           {preview.dateStr}
         </p>
       </div>
 
-      {/* 🔥 MODALES */}
+      {/* ── MODALES ── */}
 
-      {/* 🌍 IDIOMA */}
-      <IOSModal
-        open={openLang}
-        onClose={() => setOpenLang(false)}
-        title="Idioma">
+      {/* IDIOMA */}
+      <IOSModal open={openLang} onClose={() => setOpenLang(false)} title="Idioma">
         {LANGUAGES.map((l) => (
           <IOSOption
             key={l.code}
@@ -497,21 +444,21 @@ function MobileRegion(props) {
             onClick={() => setSelectedLanguage(l.code)}
           />
         ))}
-
         {hasPendingLangChange && (
-          <button
-            onClick={handleApplyLanguage}
-            className="w-full py-3 text-center text-white bg-[hsl(var(--primary))]">
-            Aplicar cambios
-          </button>
+          <div className="p-4 border-t border-border/40 dark:border-slate-700/50">
+            <Button
+              onClick={handleApplyLanguage}
+              disabled={savingLanguage}
+              className="w-full rounded-2xl h-10 font-bold gap-2 disabled:opacity-60">
+              {savingLanguage && <Loader2 size={14} className="animate-spin" />}
+              {savingLanguage ? "Aplicando..." : "Aplicar cambios"}
+            </Button>
+          </div>
         )}
       </IOSModal>
 
-      {/* 🕓 TIMEZONE */}
-      <IOSModal
-        open={openTimezone}
-        onClose={() => setOpenTimezone(false)}
-        title="Zona horaria">
+      {/* ZONA HORARIA */}
+      <IOSModal open={openTimezone} onClose={() => setOpenTimezone(false)} title="Zona horaria">
         {TIMEZONES.map((tz) => (
           <IOSOption
             key={tz.value}
@@ -525,15 +472,13 @@ function MobileRegion(props) {
         ))}
       </IOSModal>
 
-      {/* 📅 DATE */}
-      <IOSModal
-        open={openDate}
-        onClose={() => setOpenDate(false)}
-        title="Formato de fecha">
+      {/* FORMATO DE FECHA */}
+      <IOSModal open={openDate} onClose={() => setOpenDate(false)} title="Formato de fecha">
         {DATE_FORMATS.map((f) => (
           <IOSOption
             key={f.value}
             label={f.value}
+            desc={f.label}
             active={form.dateFormat === f.value}
             onClick={() => {
               handleChange("dateFormat", f.value);
@@ -543,15 +488,13 @@ function MobileRegion(props) {
         ))}
       </IOSModal>
 
-      {/* ⏰ TIME */}
-      <IOSModal
-        open={openTime}
-        onClose={() => setOpenTime(false)}
-        title="Formato de hora">
+      {/* FORMATO DE HORA */}
+      <IOSModal open={openTime} onClose={() => setOpenTime(false)} title="Formato de hora">
         {["12h", "24h"].map((f) => (
           <IOSOption
             key={f}
             label={f === "12h" ? "12 horas" : "24 horas"}
+            desc={f === "12h" ? "Ej: 2:30 PM" : "Ej: 14:30"}
             active={form.timeFormat === f}
             onClick={() => {
               handleChange("timeFormat", f);
@@ -564,43 +507,34 @@ function MobileRegion(props) {
   );
 }
 
-function IOSRow({ label, onClick }) {
+/* ─── Fila de opción móvil ─── */
+function MobileRow({ icon: Icon, label, value, onClick }) {
   return (
     <button
       onClick={onClick}
-      className="
-        w-full flex justify-between px-4 py-4 text-[15px]
-        active:bg-[var(--muted)]
-        bg-[var(--background)]
-        dark:bg-[var(--popover)]
-      ">
-      {label}
-      <ChevronRight size={18} className="text-[var(--muted-foreground)]" />
+      className="w-full flex items-center gap-3 px-5 py-3.5 text-left hover:bg-muted/30 dark:hover:bg-slate-700/30 active:scale-[0.99] transition-all duration-150 group">
+      <div className="p-1.5 bg-muted/60 dark:bg-slate-700/60 rounded-xl shrink-0">
+        <Icon size={13} className="text-muted-foreground dark:text-slate-400" />
+      </div>
+      <span className="flex-1 text-sm font-semibold text-foreground dark:text-slate-100">
+        {label}
+      </span>
+      <span className="text-xs text-muted-foreground dark:text-slate-400 font-medium truncate max-w-[140px] text-right shrink-0">
+        {value}
+      </span>
+      <ChevronRight
+        size={14}
+        className="text-muted-foreground/40 dark:text-slate-600 group-hover:text-muted-foreground dark:group-hover:text-slate-400 transition-colors shrink-0"
+      />
     </button>
   );
 }
 
-function IOSOption({ label, active, onClick }) {
-  return (
-    <button
-      onClick={onClick}
-      className="
-        w-full flex justify-between px-4 py-4 text-sm
-        hover:bg-[var(--muted)]
-      ">
-      <span>{label}</span>
-
-      {active && <Check size={18} className="text-[hsl(var(--primary))]" />}
-    </button>
-  );
-}
-
+/* ─── Bottom-sheet con drag-to-close ─── */
 function IOSModal({ open, onClose, title, children }) {
   const [dragY, setDragY] = useState(0);
   const [isClosing, setIsClosing] = useState(false);
-
   const startY = useRef(0);
-  const currentY = useRef(0);
 
   useEffect(() => {
     if (!open) {
@@ -611,24 +545,16 @@ function IOSModal({ open, onClose, title, children }) {
 
   if (!open) return null;
 
-  // 🖐 START
   const handleStart = (e) => {
     startY.current = e.touches ? e.touches[0].clientY : e.clientY;
   };
 
-  // 🖐 MOVE
   const handleMove = (e) => {
     const y = e.touches ? e.touches[0].clientY : e.clientY;
-    currentY.current = y;
-
     const diff = y - startY.current;
-
-    if (diff > 0) {
-      setDragY(diff);
-    }
+    if (diff > 0) setDragY(diff);
   };
 
-  // 🖐 END
   const handleEnd = () => {
     if (dragY > 120) {
       setIsClosing(true);
@@ -640,25 +566,17 @@ function IOSModal({ open, onClose, title, children }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-end">
-      {/* 🔥 BACKDROP (BLUR REAL) */}
       <div
         onClick={onClose}
-        className="
-          absolute inset-0
-          bg-black/30
-          backdrop-blur-sm
-          transition-opacity
-        "
+        className="absolute inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-sm"
       />
-
-      {/* 🔥 MODAL */}
       <div
         style={{
           transform: `translateY(${dragY}px)`,
           transition: isClosing
             ? "transform 0.2s ease"
             : dragY === 0
-              ? "transform 0.35s cubic-bezier(0.22, 1, 0.36, 1)"
+              ? "transform 0.35s cubic-bezier(0.22,1,0.36,1)"
               : "none",
         }}
         onMouseDown={handleStart}
@@ -667,25 +585,12 @@ function IOSModal({ open, onClose, title, children }) {
         onTouchStart={handleStart}
         onTouchMove={handleMove}
         onTouchEnd={handleEnd}
-        className="
-          relative z-10 w-full
-          rounded-t-3xl
-          bg-[var(--background)]
-          dark:bg-[var(--popover)]
-          border-t border-[var(--border)]
-          p-5
-          shadow-2xl
-        ">
-        {/* HANDLE */}
-        <div className="w-10 h-1.5 bg-[var(--muted)] rounded-full mx-auto mb-4" />
-
-        {/* TITLE */}
-        <p className="text-center font-semibold mb-4 text-[var(--foreground)]">
+        className="relative z-10 w-full bg-card dark:bg-slate-900 rounded-t-3xl border-t border-border/40 dark:border-slate-700/50 shadow-2xl dark:shadow-black/50 p-5 pb-8">
+        <div className="w-10 h-1 bg-muted dark:bg-slate-700 rounded-full mx-auto mb-4" />
+        <p className="text-center font-black text-sm tracking-tight mb-4 dark:text-slate-100">
           {title}
         </p>
-
-        {/* CONTENT */}
-        <div className="rounded-2xl overflow-hidden bg-[var(--popover)]">
+        <div className="rounded-2xl overflow-hidden border border-border/60 dark:border-slate-700/50 divide-y divide-border/40 dark:divide-slate-700/40 bg-background dark:bg-slate-800/60">
           {children}
         </div>
       </div>
@@ -693,196 +598,23 @@ function IOSModal({ open, onClose, title, children }) {
   );
 }
 
-const Screen = ({ children }) => (
-  <div className="w-1/5 shrink-0">{children}</div>
-);
-
-function MainMobile({ push, preview }) {
-  const { t } = useTranslation();
-  return (
-    <div className="p-4 space-y-6 shrink-0 px-1">
-      <div className="mb-6">
-        <SectionHeader
-          title={t("settings.region.title")}
-          subtitle={t("settings.region.subtitle")}
-        />
-      </div>
-      <MobileSection title="Configuración">
-        <MobileItem label="Idioma" onClick={() => push("language")} />
-        <MobileItem label="Zona horaria" onClick={() => push("timezone")} />
-      </MobileSection>
-      <MobileSection title="Formatos">
-        <MobileItem label="Fecha" onClick={() => push("date")} />
-        <MobileItem label="Hora" onClick={() => push("time")} />
-      </MobileSection>
-      <div className="bg-[var(--background)] dark:bg-[var(--popover)] rounded-2xl p-5 text-center shadow-sm border">
-        <p className="text-xs mb-2 uppercase tracking-wider text-[var(--muted-foreground)]">
-          Vista previa
-        </p>
-        <p className="text-3xl font-semibold">{preview.timeStr}</p>
-        <p className="text-sm text-gray-500">{preview.dateStr}</p>
-      </div>
-    </div>
-  );
-}
-
-function MobileSection({ title, children }) {
-  return (
-    <div>
-      <p className="text-xs text-[var(--muted-foreground)] px-2 mb-2 pt-4 uppercase">
-        {title}
-      </p>
-      <div
-        className="
-        overflow-hidden
-        bg-[var(--background)]
-        dark:bg-[var(--popover)]
-        divide-y
-        rounded-2xl
-        border
-        border-[var(--border)]
-        mt-2">
-        {children}
-      </div>
-    </div>
-  );
-}
-
-function MobileItem({ label, onClick }) {
+/* ─── Opción dentro del modal ─── */
+function IOSOption({ label, desc, active, onClick }) {
   return (
     <button
       onClick={onClick}
-      className="w-full flex justify-between px-4 py-4 text-[15px] active:bg-gray-100">
-      {label}{" "}
-      <span className="text-gray-400">
-        <ChevronRight size={18} />
-      </span>
-    </button>
-  );
-}
-
-function MobileHeader({ title, onBack }) {
-  return (
-    <div className="sticky top-0 px-4 py-3 flex items-center border-b-2 mb-6">
-      <button onClick={onBack} className="text-blue-500 text-lg">
-        <ChevronLeft size={26} />
-      </button>
-      <h3 className="absolute left-1/2 -translate-x-1/2 text-sm font-semibold">
-        {title}
-      </h3>
-    </div>
-  );
-}
-
-/* Sub-pantallas móviles */
-function LanguageMobile({
-  onBack,
-  selectedLanguage,
-  setSelectedLanguage,
-  handleApplyLanguage,
-  hasPendingLangChange,
-}) {
-  return (
-    <div className="bg-[var(--background)] min-h-screen">
-      <MobileHeader title="Idioma" onBack={onBack} />
-      <div className="">
-        <div className="rounded-2xl border bg-[var(--background)] dark:bg-[var(--popover)] overflow-hidden divide-y">
-          {LANGUAGES.map((l) => (
-            <button
-              key={l.code}
-              onClick={() => setSelectedLanguage(l.code)}
-              className="w-full flex justify-between px-4 py-4 text-[15px]">
-              <span>
-                {l.flag} {l.label}
-              </span>
-              {selectedLanguage === l.code && (
-                <Check size={18} className="text-blue-500" />
-              )}
-            </button>
-          ))}
-        </div>
-        {hasPendingLangChange && (
-          <Button fullWidth color="warning" onClick={handleApplyLanguage}>
-            Aplicar cambios y reiniciar
-          </Button>
+      className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-muted/30 dark:hover:bg-slate-700/30 transition-colors text-left">
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-semibold text-foreground dark:text-slate-100">
+          {label}
+        </p>
+        {desc && (
+          <p className="text-xs text-muted-foreground dark:text-slate-400 mt-0.5 font-mono">
+            {desc}
+          </p>
         )}
       </div>
-    </div>
-  );
-}
-
-function TimezoneMobile({ form, handleChange, onBack }) {
-  return (
-    <div className="bg-[var(--background)] min-h-screen">
-      <MobileHeader title="Zona horaria" onBack={onBack} />
-      <div className="">
-        <div className="rounded-2xl bg-[var(--background)] dark:bg-[var(--popover)] overflow-hidden divide-y border">
-          {TIMEZONES.map((tz) => (
-            <button
-              key={tz.value}
-              onClick={() => {
-                handleChange("timezone", tz.value);
-                onBack();
-              }}
-              className="w-full flex justify-between px-4 py-4 text-[15px]">
-              <span>{tz.label}</span>
-              {form.timezone === tz.value && (
-                <Check size={18} className="text-blue-500" />
-              )}
-            </button>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function DateMobile({ form, handleChange, onBack }) {
-  return (
-    <div className="bg-[var(--background)] min-h-screen">
-      <MobileHeader title="Formato de fecha" onBack={onBack} />
-      <div className="bg-[var(--background)] dark:bg[var(--popover)] rounded-2xl overflow-hidden divide-y border">
-        {DATE_FORMATS.map((f) => (
-          <button
-            key={f.value}
-            onClick={() => {
-              handleChange("dateFormat", f.value);
-              onBack();
-            }}
-            className="w-full flex justify-between px-4 py-4 text-[15px]">
-            <span>{f.value}</span>
-            {form.dateFormat === f.value && (
-              <Check size={18} className="text-blue-500" />
-            )}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function TimeMobile({ form, handleChange, onBack }) {
-  return (
-    <div className="bg-[var(--background)] min-h-screen">
-      <MobileHeader title="Formato de hora" onBack={onBack} />
-      <div className="">
-        <div className="rounded-2xl bg-[var(--background)] dark:bg-[var(--popover)] overflow-hidden divide-y border">
-          {["12h", "24h"].map((f) => (
-            <button
-              key={f}
-              onClick={() => {
-                handleChange("timeFormat", f);
-                onBack();
-              }}
-              className="w-full flex justify-between px-4 py-4 text-[15px]">
-              <span>{f === "12h" ? "12 horas (PM/AM)" : "24 horas"}</span>
-              {form.timeFormat === f && (
-                <Check size={18} className="text-blue-500" />
-              )}
-            </button>
-          ))}
-        </div>
-      </div>
-    </div>
+      {active && <Check size={16} className="text-primary shrink-0" />}
+    </button>
   );
 }

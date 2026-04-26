@@ -29,11 +29,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-import {
-  getUsers,
-  deleteUser,
-  restoreUser,
-} from "@/services/AuthServices";
+import { getUsers, deleteUser, restoreUser } from "@/services/AuthServices";
 import { getRoles } from "@/services/RolesServices";
 import { sendRecoveryPassword } from "@/services/MailServices";
 import UserPermissionsDrawer from "@/components/Users/Permissions/UserPermissionsDrawer";
@@ -61,35 +57,38 @@ export default function UsersList() {
       (userData?.rol || userData?.role || "").toLowerCase() === "admin" ||
       Boolean(userData?.isAdmin) ||
       Boolean(userData?.es_admin),
-    [userData]
+    [userData],
   );
   const can = useCallback(
     (p) => isAdmin() || hasPermiso(p),
-    [isAdmin, hasPermiso]
+    [isAdmin, hasPermiso],
   );
 
-  const canView        = can("ver_usuarios");
-  const canCreate      = can("crear_usuario");
-  const canEdit        = can("editar_usuario");
-  const canDelete      = can("eliminar_usuario");
-  const canRestore     = can("restaurar_usuario");
+  const canView = can("ver_usuarios");
+  const canCreate = can("crear_usuario");
+  const canEdit = can("editar_usuario");
+  const canDelete = can("eliminar_usuario");
+  const canRestore = can("restaurar_usuario");
   const canAssignPerms = can("asignar_permisos");
 
-  const [users, setUsers]                   = useState([]);
-  const [roles, setRoles]                   = useState([]);
-  const [loading, setLoading]               = useState(true);
-  const [search, setSearch]                 = useState("");
-  const [showInactive, setShowInactive]     = useState(false);
-  const [deleteTarget, setDeleteTarget]     = useState(null);
-  const [deleting, setDeleting]             = useState(false);
+  const [users, setUsers] = useState([]);
+  const [roles, setRoles] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [showInactive, setShowInactive] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
   const [permDrawerOpen, setPermDrawerOpen] = useState(false);
-  const [permUser, setPermUser]             = useState(null);
+  const [permUser, setPermUser] = useState(null);
 
   // ── Carga de datos ──────────────────────────────────────────────────────────
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [usersData, rolesData] = await Promise.all([getUsers(), getRoles()]);
+      const [usersData, rolesData] = await Promise.all([
+        getUsers(),
+        getRoles(),
+      ]);
       setUsers(Array.isArray(usersData) ? usersData : []);
       setRoles(Array.isArray(rolesData) ? rolesData : []);
     } catch {
@@ -110,7 +109,7 @@ export default function UsersList() {
       const r = roles.find((r) => String(r.id) === String(rol_id));
       return r?.nombre || r?.name || null;
     },
-    [roles]
+    [roles],
   );
 
   // ── Filtrado ────────────────────────────────────────────────────────────────
@@ -121,7 +120,7 @@ export default function UsersList() {
       if (!showInactive && !active) return false;
       const roleName = getRoleName(u.rol_id) || u.rol || "";
       const text = normalize(
-        `${u.nombre} ${u.email} ${u.username} ${roleName} ${u.puesto || ""} ${u.ciudad || ""}`
+        `${u.nombre} ${u.email} ${u.username} ${roleName} ${u.puesto || ""} ${u.ciudad || ""}`,
       );
       return text.includes(s);
     });
@@ -139,8 +138,8 @@ export default function UsersList() {
           prev.map((u) =>
             u.id_usuario === deleteTarget.id_usuario
               ? { ...u, estatus: "Inactivo" }
-              : u
-          )
+              : u,
+          ),
         );
         setDeleteTarget(null);
       } else {
@@ -161,8 +160,10 @@ export default function UsersList() {
           showToast("Usuario restaurado", "success");
           setUsers((prev) =>
             prev.map((u) =>
-              u.id_usuario === user.id_usuario ? { ...u, estatus: "Activo" } : u
-            )
+              u.id_usuario === user.id_usuario
+                ? { ...u, estatus: "Activo" }
+                : u,
+            ),
           );
         } else {
           showToast("Error al restaurar", "danger");
@@ -171,7 +172,7 @@ export default function UsersList() {
         showToast("Error al restaurar", "danger");
       }
     },
-    [showToast]
+    [showToast],
   );
 
   const handleResetPassword = useCallback(
@@ -184,7 +185,7 @@ export default function UsersList() {
         showToast("Error al enviar correo", "danger");
       }
     },
-    [showToast]
+    [showToast],
   );
 
   // ── Menú de acciones ────────────────────────────────────────────────────────
@@ -269,7 +270,6 @@ export default function UsersList() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 md:px-8 py-6 md:py-10 space-y-6 animate-in fade-in duration-500">
-
       {/* ── HEADER ── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3.5">
@@ -381,12 +381,11 @@ export default function UsersList() {
             </div>
           </div>
         ) : isMobile ? (
-
           /* ── MOBILE: CARDS ── */
           <div className="divide-y divide-border/50">
             {filtered.map((u) => {
               const isInactive = (u.estatus || "Activo") !== "Activo";
-              const roleName   = getRoleName(u.rol_id) || u.rol;
+              const roleName = getRoleName(u.rol_id) || u.rol;
               return (
                 <div
                   key={u.id_usuario}
@@ -422,9 +421,7 @@ export default function UsersList() {
               );
             })}
           </div>
-
         ) : (
-
           /* ── DESKTOP: TABLA ── */
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -444,12 +441,11 @@ export default function UsersList() {
               <tbody>
                 {filtered.map((u) => {
                   const isInactive = (u.estatus || "Activo") !== "Activo";
-                  const roleName   = getRoleName(u.rol_id) || u.rol;
+                  const roleName = getRoleName(u.rol_id) || u.rol;
                   return (
                     <tr
                       key={u.id_usuario}
                       className="border-b border-border/30 last:border-0 hover:bg-muted/20 dark:hover:bg-slate-800/20 transition-colors group">
-
                       {/* Usuario */}
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
@@ -481,7 +477,9 @@ export default function UsersList() {
                             {roleName}
                           </span>
                         ) : (
-                          <span className="text-muted-foreground/50 text-sm">—</span>
+                          <span className="text-muted-foreground/50 text-sm">
+                            —
+                          </span>
                         )}
                       </td>
 

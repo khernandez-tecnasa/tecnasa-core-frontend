@@ -10,6 +10,7 @@ import {
   Info,
   Car,
   Camera,
+  Sparkles,
 } from "lucide-react";
 import {
   registrarSalida,
@@ -23,14 +24,19 @@ import { useToast } from "@/context/ToastContext";
 import OperacionVehiculo from "./OperacionVehiculo";
 import OperacionInfo from "./OperacionInfo";
 import UploadImages from "@/components/RegisterForm/UploadImages";
+import { Button } from "@/components/ui/button";
 
-// ─── Helpers visuales ───────────────────────────────────────────────────────
+// ─── Helpers visuales ────────────────────────────────────────────────────────
 
 function SectionLabel({ icon, label }) {
   return (
-    <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-      {icon}
-      {label}
+    <div className="flex items-center gap-2 pb-1">
+      <div className="p-1.5 bg-muted dark:bg-slate-800 rounded-xl shrink-0">
+        {icon}
+      </div>
+      <h2 className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">
+        {label}
+      </h2>
     </div>
   );
 }
@@ -38,11 +44,11 @@ function SectionLabel({ icon, label }) {
 function Field({ label, icon, children }) {
   return (
     <div className="space-y-1.5">
-      <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+      <label className="block text-[11px] font-black uppercase tracking-widest text-muted-foreground">
         {label}
       </label>
       <div className="relative">
-        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none">
           {icon}
         </span>
         {children}
@@ -52,9 +58,9 @@ function Field({ label, icon, children }) {
 }
 
 const inputCls =
-  "w-full bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl pl-9 pr-4 py-3 text-sm font-medium text-slate-700 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all";
+  "w-full bg-background dark:bg-slate-900/60 border border-border rounded-xl pl-10 pr-4 py-2.5 text-sm font-medium text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/20 transition-all disabled:opacity-60";
 
-// ─── Componente principal ────────────────────────────────────────────────────
+// ─── Componente principal ─────────────────────────────────────────────────────
 
 export default function OperacionForm({
   operacionActiva,
@@ -229,15 +235,18 @@ export default function OperacionForm({
       className="space-y-4 animate-in slide-in-from-bottom-3 duration-500">
       {/* ── SELECCIÓN DE UNIDAD ─────────────────────────────────────────── */}
       {!operacionActiva && (
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm p-5 md:p-6 space-y-4">
-          <SectionLabel icon={<Car size={13} />} label="Selección de Unidad" />
+        <div className="bg-card dark:bg-slate-900/40 rounded-3xl border border-border/60 shadow-sm p-5 md:p-6 space-y-4">
+          <SectionLabel
+            icon={<Car size={13} className="text-muted-foreground" />}
+            label="Selección de Unidad"
+          />
           <OperacionVehiculo onSelect={setVehiculo} selectedId={vehiculo?.id} />
         </div>
       )}
 
       {/* ── INFO UNIDAD ──────────────────────────────────────────────────── */}
       {showForm && (
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm p-5 md:p-6">
+        <div className="bg-card dark:bg-slate-900/40 rounded-3xl border border-border/60 shadow-sm p-5 md:p-6">
           <OperacionInfo
             vehiculo={vehiculo}
             operacionActiva={operacionActiva}
@@ -248,17 +257,24 @@ export default function OperacionForm({
 
       {/* ── DATOS TÉCNICOS ───────────────────────────────────────────────── */}
       {showForm && (
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm p-5 md:p-6 space-y-5">
-          <SectionLabel icon={<Info size={13} />} label="Estado Técnico" />
+        <div className="bg-card dark:bg-slate-900/40 rounded-3xl border border-border/60 shadow-sm p-5 md:p-6 space-y-5">
+          <SectionLabel
+            icon={<Info size={13} className="text-muted-foreground" />}
+            label="Estado Técnico"
+          />
+
           {isAutofilled && !operacionActiva && (
-            <p className="text-xs text-blue-500 font-semibold">
-              Datos cargados automáticamente del último registro
-            </p>
+            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-primary/5 dark:bg-primary/10 border border-primary/20 text-primary">
+              <Sparkles size={13} className="shrink-0" />
+              <p className="text-xs font-semibold">
+                Datos cargados del último registro
+              </p>
+            </div>
           )}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* KM */}
-            <Field label="Odómetro (KM)" icon={<Gauge size={16} />}>
+            <Field label="Odómetro (KM)" icon={<Gauge size={15} />}>
               <input
                 type="number"
                 min={0}
@@ -266,24 +282,26 @@ export default function OperacionForm({
                 inputMode="numeric"
                 value={form.km}
                 readOnly={isAutofilled}
-                placeholder="Kilometraje Actual"
+                placeholder="Kilometraje actual"
                 onChange={(e) => {
                   let value = Number(e.target.value);
                   if (value < 0) return;
-
                   setForm({ ...form, km: value });
                 }}
-                className={`${inputCls} ${isAutofilled ? "bg-gray-100 cursor-not-allowed" : ""}`}
+                className={`${inputCls} ${isAutofilled ? "opacity-60 cursor-not-allowed" : ""}`}
               />
               {kmDiff !== null && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  Recorrido estimado: {kmDiff} km
+                <p className="text-xs text-muted-foreground mt-1.5 pl-1">
+                  Recorrido estimado:{" "}
+                  <span className="font-semibold text-foreground">
+                    {kmDiff} km
+                  </span>
                 </p>
               )}
             </Field>
 
             {/* UBICACIÓN */}
-            <Field label="Punto de Control" icon={<MapPin size={16} />}>
+            <Field label="Punto de Control" icon={<MapPin size={15} />}>
               <select
                 value={form.ubicacion}
                 disabled={isAutofilled}
@@ -301,7 +319,7 @@ export default function OperacionForm({
             </Field>
 
             {/* COMBUSTIBLE */}
-            <Field label="Combustible (%)" icon={<Fuel size={16} />}>
+            <Field label="Combustible (%)" icon={<Fuel size={15} />}>
               <input
                 type="number"
                 min={0}
@@ -309,13 +327,11 @@ export default function OperacionForm({
                 inputMode="numeric"
                 value={form.combustible}
                 readOnly={isAutofilled}
-                placeholder="0 - 100"
+                placeholder="0 – 100"
                 onChange={(e) => {
                   let value = Number(e.target.value);
-
                   if (value < 0) value = 0;
                   if (value > 100) value = 100;
-
                   setForm({ ...form, combustible: value });
                 }}
                 className={inputCls}
@@ -324,13 +340,13 @@ export default function OperacionForm({
 
             {/* COMENTARIO */}
             <div className="sm:col-span-2 space-y-1.5">
-              <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+              <label className="block text-[11px] font-black uppercase tracking-widest text-muted-foreground">
                 Observaciones
               </label>
               <div className="relative">
                 <FileText
-                  className="absolute left-3 top-3.5 text-slate-400 pointer-events-none"
-                  size={16}
+                  className="absolute left-3.5 top-3.5 text-muted-foreground pointer-events-none"
+                  size={15}
                 />
                 <textarea
                   placeholder="Novedades técnicas o estéticas..."
@@ -345,10 +361,10 @@ export default function OperacionForm({
             </div>
           </div>
 
-          {/* ── EVIDENCIA FOTOGRÁFICA ─────────────────────────────────── */}
-          <div className="space-y-2 pt-1">
+          {/* ── EVIDENCIA FOTOGRÁFICA ──────────────────────────────────── */}
+          <div className="space-y-3 pt-1">
             <SectionLabel
-              icon={<Camera size={13} />}
+              icon={<Camera size={13} className="text-muted-foreground" />}
               label="Evidencia Fotográfica"
             />
             <UploadImages
@@ -362,32 +378,29 @@ export default function OperacionForm({
         </div>
       )}
 
-      {/* ── ACCIONES ─────────────────────────────────────────────────────── */}
+      {/* ── ACCIONES ──────────────────────────────────────────────────────── */}
       {showForm && (
         <div className="flex flex-col sm:flex-row gap-3">
-          <button
+          <Button
             type="button"
+            variante="outline"
             onClick={() => setVehiculo(null)}
-            className="flex-1 flex items-center justify-center gap-2 h-12 rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 text-sm font-black uppercase tracking-wider hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
-            <X size={16} />
+            className="flex-1 rounded-2xl h-10 font-bold">
             Cancelar
-          </button>
+          </Button>
 
-          <button
+          <Button
             type="submit"
+            variant="outline"
             disabled={loading}
-            className={`flex-[2] flex items-center justify-center gap-2 h-12 rounded-xl text-white text-sm font-black uppercase tracking-wider shadow-lg transition-all disabled:opacity-60 ${
-              isActive
-                ? "bg-blue-600 hover:bg-blue-700 shadow-blue-200 dark:shadow-blue-900/40"
-                : "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-200 dark:shadow-emerald-900/40"
-            }`}>
+            className="flex-1 rounded-2xl h-10 font-bold shadow-md shadow-primary/15 hover:shadow-primary/25 transition-all gap-2 disabled:opacity-60">
             {loading ? (
-              <Loader2 className="animate-spin" size={18} />
+              <Loader2 className="animate-spin" size={17} />
             ) : (
-              <Save size={18} />
+              <Save size={17} />
             )}
             {isActive ? "Confirmar Retorno" : "Confirmar Salida"}
-          </button>
+          </Button>
         </div>
       )}
     </form>

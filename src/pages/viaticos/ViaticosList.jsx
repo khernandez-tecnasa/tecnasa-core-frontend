@@ -114,6 +114,10 @@ export default function ViaticosList() {
   const [motivoRechazo, setMotivoRechazo] = useState("");
   const [cancelLoading, setCancelLoading] = useState(false);
 
+  const [approveTarget, setApproveTarget] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [processingAction, setProcessingAction] = useState(false);
+
   const [exportingId, setExportingId] = useState(null);
 
   const { showToast } = useToast();
@@ -241,6 +245,35 @@ export default function ViaticosList() {
     }
   };
 
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    setProcessingAction(true);
+    const res = await deleteViatico(deleteTarget.id);
+    setProcessingAction(false);
+    if (res) {
+      showToast("Viático eliminado", "success");
+      setDeleteTarget(null);
+      fetchViaticos(tipoActivo);
+    } else {
+      showToast("Error al eliminar", "danger");
+    }
+  };
+
+  const confirmAprobar = async () => {
+    if (!approveTarget) return;
+    setProcessingAction(true);
+    const res = await aprobarViatico(approveTarget.id);
+    setProcessingAction(false);
+    if (res) {
+      showToast("Viático aprobado", "success");
+      setApproveTarget(null);
+      setDetalle(null);
+      fetchViaticos(tipoActivo);
+    } else {
+      showToast("Error al aprobar", "danger");
+    }
+  };
+
   const handleExport = async (id) => {
     if (!canExport) {
       return sileo.error({
@@ -290,9 +323,11 @@ export default function ViaticosList() {
   };
 
   const canEditRow = (v) =>
-    canUpdate && (isAdmin || (v.estado !== "Aprobado" && v.estado !== "Liquidado"));
+    canUpdate &&
+    (isAdmin || (v.estado !== "Aprobado" && v.estado !== "Liquidado"));
   const canDeleteRow = (v) =>
-    canDelete && (isAdmin || (v.estado !== "Aprobado" && v.estado !== "Liquidado"));
+    canDelete &&
+    (isAdmin || (v.estado !== "Aprobado" && v.estado !== "Liquidado"));
 
   // Búsqueda local por nombre de empleado o placa — no filtra por estado
   const filtered = viaticos.filter((v) => {
@@ -303,29 +338,37 @@ export default function ViaticosList() {
     );
   });
 
-  // ─── Menú de acciones reutilizable (desktop + mobile) ─────────────────────
+  // ─── Menú de acciones ─────────────────────────────────────────────────────
   const AccionesMenu = ({ v }) => (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
-          className="h-9 w-9 p-0 hover:bg-muted rounded-full">
-          <MoreVertical size={18} />
+          className="h-8 w-8 p-0 hover:bg-muted/80 rounded-xl transition-colors">
+          <MoreVertical size={16} />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+      <DropdownMenuContent
+        align="end"
+        className="w-52 rounded-2xl shadow-xl border-border/60">
+        <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70">
+          Acciones
+        </DropdownMenuLabel>
 
-        <DropdownMenuItem onClick={() => handleVerDetalle(v)}>
-          <Eye className="mr-2 h-4 w-4" /> Ver Detalle
+        <DropdownMenuItem
+          onClick={() => handleVerDetalle(v)}
+          className="rounded-xl cursor-pointer gap-2 text-sm">
+          <Eye size={13} /> Ver Detalle
         </DropdownMenuItem>
 
         {canExport && (
-          <DropdownMenuItem onClick={() => handleExport(v.id)}>
+          <DropdownMenuItem
+            onClick={() => handleExport(v.id)}
+            className="rounded-xl cursor-pointer gap-2 text-sm">
             {exportingId === v.id ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              <Loader2 size={13} className="animate-spin" />
             ) : (
-              <FileText className="mr-2 h-4 w-4" />
+              <FileText size={13} />
             )}
             Exportar Excel
           </DropdownMenuItem>
@@ -333,8 +376,9 @@ export default function ViaticosList() {
 
         {canRead && (v.estado === "Aprobado" || v.estado === "Liquidado") && (
           <DropdownMenuItem
-            onClick={() => navigate(`/admin/viaticos/${v.id}/liquidar`)}>
-            <Receipt className="mr-2 h-4 w-4" /> Ver Liquidación
+            onClick={() => navigate(`/admin/viaticos/${v.id}/liquidar`)}
+            className="rounded-xl cursor-pointer gap-2 text-sm">
+            <Receipt size={13} /> Ver Liquidación
           </DropdownMenuItem>
         )}
 
@@ -344,21 +388,23 @@ export default function ViaticosList() {
           (v.estado === "Borrador" || v.estado === "Pendiente") && (
             <>
               <DropdownMenuItem
-                onClick={() => handleAprobar(v.id)}
-                className="text-emerald-600 focus:text-emerald-600 focus:bg-emerald-50">
-                <CheckCircle className="mr-2 h-4 w-4" /> Aprobar Viático
+                onClick={() => setApproveTarget(v)}
+                className="rounded-xl cursor-pointer gap-2 text-sm text-emerald-600 focus:text-emerald-600 focus:bg-emerald-50 dark:focus:bg-emerald-500/10">
+                <CheckCircle size={13} /> Aprobar Viático
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => setCancelTarget(v.id)}
-                className="text-amber-600 focus:text-amber-600 focus:bg-amber-50">
-                <XCircle className="mr-2 h-4 w-4" /> Rechazar Viático
+                className="rounded-xl cursor-pointer gap-2 text-sm text-amber-600 focus:text-amber-600 focus:bg-amber-50 dark:focus:bg-amber-500/10">
+                <XCircle size={13} /> Rechazar Viático
               </DropdownMenuItem>
             </>
           )}
 
         {canEnviarRevision && v.estado === "Rechazado" && (
-          <DropdownMenuItem onClick={() => handleEnviarRevision(v.id)}>
-            <ArrowRight className="mr-2 h-4 w-4" /> Enviar a Revisión
+          <DropdownMenuItem
+            onClick={() => handleEnviarRevision(v.id)}
+            className="rounded-xl cursor-pointer gap-2 text-sm">
+            <ArrowRight size={13} /> Enviar a Revisión
           </DropdownMenuItem>
         )}
 
@@ -366,16 +412,17 @@ export default function ViaticosList() {
 
         {canEditRow(v) && (
           <DropdownMenuItem
-            onClick={() => navigate(`/admin/viaticos/edit/${v.id}`)}>
-            <Edit3 className="mr-2 h-4 w-4" /> Editar Solicitud
+            onClick={() => navigate(`/admin/viaticos/edit/${v.id}`)}
+            className="rounded-xl cursor-pointer gap-2 text-sm">
+            <Edit3 size={13} /> Editar Solicitud
           </DropdownMenuItem>
         )}
 
         {canDeleteRow(v) && (
           <DropdownMenuItem
-            onClick={() => handleDelete(v.id)}
-            className="text-rose-600 focus:text-rose-600 focus:bg-rose-50">
-            <Trash2 className="mr-2 h-4 w-4" /> Eliminar
+            onClick={() => setDeleteTarget(v)}
+            className="rounded-xl cursor-pointer gap-2 text-sm text-rose-600 focus:text-rose-600 focus:bg-rose-50 dark:focus:bg-rose-500/10">
+            <Trash2 size={13} /> Eliminar
           </DropdownMenuItem>
         )}
       </DropdownMenuContent>
@@ -383,90 +430,121 @@ export default function ViaticosList() {
   );
 
   if (!canView)
-    return <div className="p-10 text-center opacity-50">Acceso denegado</div>;
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center space-y-3 opacity-40">
+          <Wallet size={40} className="mx-auto" />
+          <p className="font-semibold text-sm">Acceso denegado</p>
+        </div>
+      </div>
+    );
 
   return (
-    <div className="max-w-7xl mx-auto p-4 md:p-8 space-y-6 animate-in fade-in duration-500">
-      {/* HEADER */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-black tracking-tight flex items-center gap-2">
-            <Wallet className="text-primary" size={32} />
-            GESTIÓN DE GASTOS
-          </h1>
-          <p className="text-muted-foreground text-sm font-medium">
-            Gestión de gastos de viaje y liquidaciones del personal.
-          </p>
+    <div className="max-w-7xl mx-auto px-4 md:px-8 py-6 md:py-10 space-y-6 animate-in fade-in duration-500">
+      {/* ── HEADER ── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3.5">
+          <div className="p-2.5 rounded-2xl bg-primary/10 dark:bg-primary/15 ring-1 ring-primary/20 dark:ring-primary/30 shadow-sm shadow-primary/10 shrink-0">
+            <Wallet size={22} className="text-primary" />
+          </div>
+          <div>
+            <h1 className="text-2xl md:text-3xl font-black tracking-tight leading-none">
+              Gestión de Viáticos
+            </h1>
+            <p className="text-muted-foreground text-xs md:text-sm font-medium mt-0.5">
+              Gastos de viaje y liquidaciones del personal
+            </p>
+          </div>
         </div>
         {canCreate && (
           <Button
             onClick={() => navigate("/admin/viaticos/new")}
-            className="bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 rounded-xl px-6 h-12 w-full md:w-auto">
-            <Plus size={20} className="mr-2" /> Nueva Solicitud
+            className="rounded-2xl px-5 h-10 font-bold shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all duration-200 gap-2 shrink-0">
+            <Plus size={17} strokeWidth={2.5} />
+            <span className="hidden sm:inline">Nueva Solicitud</span>
           </Button>
         )}
       </div>
 
-      {/* TABS — cada tab dispara una nueva petición al backend */}
-      <div className="bg-card border rounded-2xl p-1.5 shadow-sm flex gap-1 w-fit">
-        {TABS.map((tab) => (
-          <button
-            key={tab.value}
-            onClick={() => handleTabChange(tab.value)}
-            className={`px-5 py-2 rounded-xl text-sm font-bold transition-all ${tipoActivo === tab.value
-              ? "bg-primary text-primary-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
-              }`}>
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
-      {/* BARRA DE BÚSQUEDA */}
-      <div className="bg-card border rounded-2xl p-4 shadow-sm flex gap-4 items-center">
-        <div className="relative w-full">
+      {/* ── TOOLBAR ── */}
+      <div className="flex items-center gap-3 flex-wrap">
+        {/* Búsqueda */}
+        <div className="relative w-full max-w-xs group">
           <Search
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-            size={18}
+            size={15}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/50 group-focus-within:text-primary transition-colors pointer-events-none"
           />
           <input
             type="text"
             placeholder="Buscar por empleado o vehículo..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-muted/50 border-none rounded-xl pl-10 pr-4 py-2.5 text-sm focus:ring-2 ring-primary/20 transition-all outline-none"
+            className="w-full bg-card border border-border/60 rounded-xl pl-9 pr-4 py-2 text-sm outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/15 transition-all placeholder:text-muted-foreground/50 shadow-sm"
           />
         </div>
-        <div className="shrink-0 text-[11px] text-muted-foreground font-semibold whitespace-nowrap">
-          {filtered.length} reg.
+
+        {/* Tabs */}
+        <div className="flex gap-1 bg-muted/50 dark:bg-slate-800/50 border border-border/60 rounded-xl p-1">
+          {TABS.map((tab) => (
+            <button
+              key={tab.value}
+              onClick={() => handleTabChange(tab.value)}
+              className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all duration-150 ${
+                tipoActivo === tab.value
+                  ? "bg-card dark:bg-slate-900 text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}>
+              {tab.label}
+            </button>
+          ))}
         </div>
+
+        {/* Contador */}
+        {!loading && (
+          <span className="text-xs text-muted-foreground/70 font-medium whitespace-nowrap ml-auto">
+            <span className="font-bold text-foreground">{filtered.length}</span>
+            {` registro${filtered.length !== 1 ? "s" : ""}`}
+          </span>
+        )}
       </div>
 
-      {/* CONTENIDO PRINCIPAL */}
-      <div className="bg-card border rounded-3xl shadow-sm overflow-hidden">
+      {/* ── CONTENIDO PRINCIPAL ── */}
+      <div className="bg-card dark:bg-slate-900/40 border border-border/60 rounded-3xl shadow-sm overflow-hidden">
         {loading ? (
-          <div className="p-20 flex flex-col items-center gap-3">
-            <Loader2 className="animate-spin text-primary" size={32} />
-            <p className="text-muted-foreground text-sm">
+          <div className="flex flex-col items-center justify-center gap-4 py-24">
+            <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+              <Loader2 className="animate-spin text-primary" size={22} />
+            </div>
+            <p className="text-sm text-muted-foreground font-medium">
               Cargando viáticos...
             </p>
           </div>
         ) : filtered.length === 0 ? (
-          <div className="p-20 text-center">
-            <FileText size={40} className="mx-auto mb-4 opacity-20" />
-            <p className="text-muted-foreground font-semibold">
-              No hay viáticos registrados
-            </p>
+          <div className="flex flex-col items-center justify-center gap-4 py-24">
+            <div className="w-16 h-16 rounded-3xl bg-muted/50 dark:bg-slate-800/50 flex items-center justify-center">
+              <FileText size={28} className="text-muted-foreground/40" />
+            </div>
+            <div className="text-center">
+              <p className="font-bold text-sm">
+                {searchTerm ? "Sin resultados" : "Sin viáticos registrados"}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {searchTerm
+                  ? `No hay coincidencias para "${searchTerm}"`
+                  : "Crea la primera solicitud usando el botón de arriba"}
+              </p>
+            </div>
           </div>
         ) : isMobile ? (
-          /* ── MOBILE: CARDS ───────────────────────────────────────────────── */
-          <div className="divide-y divide-border">
+          /* ── MOBILE ── */
+          <div className="divide-y divide-border/50">
             {filtered.map((v) => (
-              <div key={v.id} className="p-4 space-y-3">
-                {/* Empleado + Estado */}
-                <div className="flex items-start justify-between gap-2">
+              <div
+                key={v.id}
+                className="p-4 hover:bg-muted/20 dark:hover:bg-slate-800/30 transition-colors">
+                <div className="flex items-start justify-between gap-2 mb-3">
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-10 h-10 shrink-0 rounded-xl bg-muted flex items-center justify-center">
+                    <div className="w-10 h-10 shrink-0 rounded-xl bg-muted/60 dark:bg-slate-800 flex items-center justify-center">
                       <User size={18} className="text-muted-foreground" />
                     </div>
                     <div className="min-w-0">
@@ -485,24 +563,22 @@ export default function ViaticosList() {
                   </span>
                 </div>
 
-                {/* Fechas + Total */}
-                <div className="flex items-center justify-between bg-muted/30 rounded-xl px-3 py-2">
-                  <div className="flex items-center gap-1.5 text-[11px] font-bold">
-                    <Calendar size={11} className="text-primary" />
-                    <span className="bg-background px-2 py-0.5 rounded border">
+                <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between bg-muted/40 dark:bg-slate-800/50 rounded-xl px-3 py-2 mb-3">
+                  <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
+                    <Calendar size={11} />
+                    <span className="bg-background dark:bg-slate-900 px-2 py-0.5 rounded-lg border border-border/50">
                       {formatFecha(v.fecha_salida)}
                     </span>
                     <ArrowRight size={10} className="opacity-30" />
-                    <span className="bg-background px-2 py-0.5 rounded border">
+                    <span className="bg-background dark:bg-slate-900 px-2 py-0.5 rounded-lg border border-border/50">
                       {formatFecha(v.fecha_regreso)}
                     </span>
                   </div>
-                  <span className="font-black text-sm text-primary">
+                  <span className="font-black text-sm text-primary self-end md:self-auto">
                     {formatLps(v.total_general)}
                   </span>
                 </div>
 
-                {/* Acciones */}
                 <div className="flex justify-end">
                   <AccionesMenu v={v} />
                 </div>
@@ -510,46 +586,45 @@ export default function ViaticosList() {
             ))}
           </div>
         ) : (
-          /* ── DESKTOP: TABLA ──────────────────────────────────────────────── */
+          /* ── DESKTOP ── */
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="bg-muted/30 border-b">
-                  <th className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                    Empleado
-                  </th>
-                  <th className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                    Vehículo
-                  </th>
-                  <th className="px-6 py-4 text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                    Período
-                  </th>
-                  <th className="px-6 py-4 text-right text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                    Total General
-                  </th>
-                  <th className="px-6 py-4 text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                    Estado
-                  </th>
-                  <th className="px-6 py-4 text-right text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                    Acciones
-                  </th>
+                <tr className="border-b border-border/60 bg-muted/20 dark:bg-slate-800/30">
+                  {[
+                    ["Empleado", "text-left"],
+                    ["Vehículo", "text-left"],
+                    ["Período", "text-center"],
+                    ["Total General", "text-right"],
+                    ["Estado", "text-center"],
+                    ["Acciones", "text-right"],
+                  ].map(([label, align]) => (
+                    <th key={label} className={`px-6 py-3.5 ${align}`}>
+                      <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70">
+                        {label}
+                      </span>
+                    </th>
+                  ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border">
+              <tbody>
                 {filtered.map((v) => (
                   <tr
                     key={v.id}
-                    className="hover:bg-muted/10 transition-colors group">
+                    className="border-b border-border/30 last:border-0 hover:bg-muted/20 dark:hover:bg-slate-800/20 transition-colors group">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center group-hover:bg-primary/10 group-hover:text-primary transition-all">
-                          <User size={20} />
+                        <div className="w-9 h-9 shrink-0 rounded-xl bg-muted/60 dark:bg-slate-800 group-hover:bg-primary/10 group-hover:ring-1 ring-primary/20 flex items-center justify-center transition-all duration-200">
+                          <User
+                            size={16}
+                            className="text-muted-foreground group-hover:text-primary transition-colors"
+                          />
                         </div>
                         <div>
                           <div className="font-bold text-sm">
                             {empMap[v.empleado_id] || "—"}
                           </div>
-                          <div className="text-[10px] text-muted-foreground uppercase tracking-tighter">
+                          <div className="text-[10px] text-muted-foreground/60 font-mono mt-0.5">
                             ID: {v.empleado_id}
                           </div>
                         </div>
@@ -557,31 +632,31 @@ export default function ViaticosList() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
-                        <Car size={16} className="text-muted-foreground" />
-                        <span className="font-bold text-sm">
+                        <Car size={14} className="text-muted-foreground/60" />
+                        <span className="font-semibold text-sm">
                           {vehMap[v.vehiculo_id] || "S/P"}
                         </span>
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="flex items-center justify-center gap-2 text-[11px] font-bold">
-                        <span className="bg-muted px-2 py-1 rounded border">
+                      <div className="flex items-center justify-center gap-2 text-[11px] font-medium">
+                        <span className="bg-muted/60 dark:bg-slate-800 px-2 py-1 rounded-lg border border-border/50">
                           {formatFecha(v.fecha_salida)}
                         </span>
                         <ArrowRight size={12} className="opacity-30" />
-                        <span className="bg-muted px-2 py-1 rounded border">
+                        <span className="bg-muted/60 dark:bg-slate-800 px-2 py-1 rounded-lg border border-border/50">
                           {formatFecha(v.fecha_regreso)}
                         </span>
                       </div>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <span className="font-black text-sm">
+                      <span className="font-black text-sm text-primary">
                         {formatLps(v.total_general)}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-center">
                       <span
-                        className={`px-3 py-1 text-[10px] font-black uppercase rounded-full border ${getEstadoBadge(v.estado)}`}>
+                        className={`px-2.5 py-1 text-[10px] font-black uppercase rounded-full border ${getEstadoBadge(v.estado)}`}>
                         {v.estado || "Borrador"}
                       </span>
                     </td>
@@ -598,32 +673,39 @@ export default function ViaticosList() {
         )}
       </div>
 
-      {/* MODAL DETALLE */}
+      {/* ── MODAL DETALLE ── */}
       {detalle && (
         <div
-          className="fixed inset-0 z-50 bg-black/50 flex items-end md:items-center justify-center p-0 md:p-4"
+          className="fixed inset-0 z-50 bg-black/40 dark:bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center p-0 md:p-6 animate-in fade-in duration-200"
           onClick={() => setDetalle(null)}>
           <div
-            className="bg-card rounded-t-3xl md:rounded-3xl shadow-2xl w-full max-w-xl p-6 space-y-4 animate-in slide-in-from-bottom md:zoom-in-90 duration-200 max-h-[92vh] overflow-y-auto"
+            className="bg-card dark:bg-slate-900 rounded-t-3xl md:rounded-3xl shadow-2xl dark:shadow-black/50 border border-border/40 w-full max-w-xl p-6 space-y-4 animate-in slide-in-from-bottom md:zoom-in-95 duration-200 max-h-[92vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <h2 className="text-lg font-black uppercase tracking-tight">
-                  Viático #{detalle.id}
-                </h2>
-                <span
-                  className={`px-3 py-1 text-[10px] font-black uppercase rounded-full border ${getEstadoBadge(detalle.estado)}`}>
-                  {detalle.estado || "Borrador"}
-                </span>
+                <div className="p-2 rounded-xl bg-primary/10 dark:bg-primary/15">
+                  <ReceiptText size={16} className="text-primary" />
+                </div>
+                <div>
+                  <h2 className="text-base font-black tracking-tight leading-none">
+                    Viático #{detalle.id}
+                  </h2>
+                  <span
+                    className={`inline-block mt-1 px-2.5 py-0.5 text-[10px] font-black uppercase rounded-full border ${getEstadoBadge(detalle.estado)}`}>
+                    {detalle.estado || "Borrador"}
+                  </span>
+                </div>
               </div>
               <button
                 onClick={() => setDetalle(null)}
-                className="p-2 hover:bg-muted rounded-xl transition-colors">
-                <X size={18} />
+                className="p-2 hover:bg-muted dark:hover:bg-slate-800 rounded-xl transition-colors text-muted-foreground hover:text-foreground">
+                <X size={16} />
               </button>
             </div>
 
-            <div className="space-y-3 text-sm">
+            <div className="h-px bg-border/50" />
+
+            <div className="space-y-2.5 text-sm">
               <Row
                 label="Empleado"
                 value={
@@ -643,54 +725,52 @@ export default function ViaticosList() {
               )}
             </div>
 
-            <div className="border-t pt-4 space-y-3">
-              <h3 className="text-[11px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-                <ReceiptText size={14} /> Detalle de Gastos
+            <div className="border-t border-border/50 pt-4 space-y-3">
+              <h3 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70 flex items-center gap-2">
+                <ReceiptText size={13} /> Detalle de Gastos
               </h3>
 
               {loadingItems ? (
                 <div className="flex items-center justify-center py-6 gap-2 text-muted-foreground">
-                  <Loader2 size={18} className="animate-spin" />
-                  <span className="text-sm">Cargando ítems...</span>
+                  <Loader2 size={16} className="animate-spin" />
+                  <span className="text-sm font-medium">Cargando ítems...</span>
                 </div>
               ) : detalleItems.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-4">
                   Sin ítems registrados
                 </p>
               ) : (
-                <div className="rounded-xl border overflow-hidden text-xs">
+                <div className="rounded-2xl border border-border/60 overflow-hidden text-xs">
                   <div className="overflow-x-auto">
                     <table className="w-full">
                       <thead>
-                        <tr className="bg-muted/40 border-b">
-                          <th className="px-3 py-2 text-left font-bold uppercase tracking-wider text-muted-foreground">
-                            Tipo
-                          </th>
-                          <th className="px-3 py-2 text-left font-bold uppercase tracking-wider text-muted-foreground">
-                            Descripción
-                          </th>
-                          <th className="px-3 py-2 text-center font-bold uppercase tracking-wider text-muted-foreground">
-                            Fecha
-                          </th>
-                          <th className="px-3 py-2 text-right font-bold uppercase tracking-wider text-muted-foreground">
-                            Cant.
-                          </th>
-                          <th className="px-3 py-2 text-right font-bold uppercase tracking-wider text-muted-foreground">
-                            P. Unit.
-                          </th>
-                          <th className="px-3 py-2 text-right font-bold uppercase tracking-wider text-muted-foreground">
-                            Subtotal
-                          </th>
+                        <tr className="bg-muted/30 dark:bg-slate-800/40 border-b border-border/60">
+                          {[
+                            "Tipo",
+                            "Descripción",
+                            "Fecha",
+                            "Cant.",
+                            "P.Unit.",
+                            "Subtotal",
+                          ].map((h, i) => (
+                            <th
+                              key={h}
+                              className={`px-3 py-2 font-black uppercase tracking-wider text-muted-foreground/70 ${i >= 3 ? "text-right" : i === 2 ? "text-center" : "text-left"}`}>
+                              {h}
+                            </th>
+                          ))}
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-border">
+                      <tbody>
                         {detalleItems.map((item, idx) => {
                           const subtotal =
                             item.subtotal ??
                             Number(item.cantidad || 1) *
-                            Number(item.precio_unitario || 0);
+                              Number(item.precio_unitario || 0);
                           return (
-                            <tr key={idx} className="hover:bg-muted/10">
+                            <tr
+                              key={idx}
+                              className="border-b border-border/30 last:border-0 hover:bg-muted/20 dark:hover:bg-slate-800/20">
                               <td className="px-3 py-2 font-semibold">
                                 {capTipo(item.tipo)}
                               </td>
@@ -719,7 +799,7 @@ export default function ViaticosList() {
               )}
             </div>
 
-            <div className="flex justify-between items-center border-t pt-3">
+            <div className="flex justify-between items-center border-t border-border/50 pt-3">
               <span className="text-muted-foreground font-semibold text-sm">
                 Total General
               </span>
@@ -728,29 +808,29 @@ export default function ViaticosList() {
               </span>
             </div>
 
-            <div className="flex flex-wrap gap-2 pt-2">
+            <div className="flex flex-wrap gap-2 pt-1">
               {canApprove &&
                 (detalle.estado === "Pendiente" ||
                   detalle.estado === "Borrador") && (
                   <>
                     <Button
-                      onClick={() => handleAprobar(detalle.id)}
-                      className="rounded-2xl h-10 bg-emerald-600 hover:bg-emerald-700 text-white flex-1">
-                      <CheckCircle size={16} className="mr-2" /> Aprobar
+                      onClick={() => setApproveTarget(detalle)}
+                      className="rounded-2xl h-10 bg-emerald-600 hover:bg-emerald-700 text-white flex-1 gap-2 font-bold">
+                      <CheckCircle size={15} /> Aprobar
                     </Button>
                     <Button
                       variant="outline"
                       onClick={() => setCancelTarget(detalle.id)}
-                      className="rounded-2xl h-10 border-rose-300 text-rose-600 hover:bg-rose-50 flex-1">
-                      <XCircle size={16} className="mr-2" /> Cancelar
+                      className="rounded-2xl h-10 border-amber-300 text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-500/10 flex-1 gap-2 font-bold">
+                      <XCircle size={15} /> Rechazar
                     </Button>
                   </>
                 )}
               {canApprove && detalle.estado === "Rechazado" && (
                 <Button
                   onClick={() => handleEnviarRevision(detalle.id)}
-                  className="rounded-2xl h-10 bg-amber-500 hover:bg-amber-600 text-white">
-                  <ArrowRight size={16} className="mr-2" /> Enviar a revisión
+                  className="rounded-2xl h-10 bg-amber-500 hover:bg-amber-600 text-white gap-2 font-bold">
+                  <ArrowRight size={15} /> Enviar a revisión
                 </Button>
               )}
               {canEditRow(detalle) && (
@@ -759,14 +839,14 @@ export default function ViaticosList() {
                     navigate(`/admin/viaticos/edit/${detalle.id}`);
                     setDetalle(null);
                   }}
-                  className="rounded-2xl h-10 flex-1">
-                  <Edit3 size={16} className="mr-2" /> Editar
+                  className="rounded-2xl h-10 flex-1 gap-2 font-bold">
+                  <Edit3 size={15} /> Editar
                 </Button>
               )}
               <Button
                 variant="outline"
                 onClick={() => setDetalle(null)}
-                className="rounded-2xl h-10 flex-1">
+                className="rounded-2xl h-10 flex-1 font-bold">
                 Cerrar
               </Button>
             </div>
@@ -774,31 +854,83 @@ export default function ViaticosList() {
         </div>
       )}
 
-      {/* MODAL CANCELAR */}
-      {cancelTarget !== null && (
+      {/* ── MODAL: APROBAR VIÁTICO ── */}
+      {approveTarget && (
         <div
-          className="fixed inset-0 z-[60] bg-black/60 flex items-end md:items-center justify-center p-0 md:p-4"
-          onClick={() => !cancelLoading && setCancelTarget(null)}>
+          className="fixed inset-0 z-[60] bg-black/40 dark:bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center p-0 md:p-6 animate-in fade-in duration-200"
+          onClick={() => !processingAction && setApproveTarget(null)}>
           <div
-            className="bg-card rounded-t-3xl md:rounded-3xl shadow-2xl w-full max-w-md p-6 space-y-5 animate-in slide-in-from-bottom md:zoom-in-90 duration-200"
+            className="w-full max-w-md bg-card dark:bg-slate-900 rounded-t-3xl md:rounded-3xl shadow-2xl dark:shadow-black/50 border border-border/40 p-6 space-y-5 animate-in slide-in-from-bottom md:zoom-in-95 duration-200"
             onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-start gap-3">
-              <div className="p-3 bg-rose-100 rounded-2xl shrink-0">
-                <AlertTriangle size={22} className="text-rose-600" />
+            <div className="flex items-start gap-4">
+              <div className="p-3 bg-emerald-500/10 dark:bg-emerald-500/15 rounded-2xl ring-1 ring-emerald-500/20 shrink-0">
+                <CheckCircle size={20} className="text-emerald-600" />
               </div>
               <div>
-                <h2 className="text-lg font-black uppercase tracking-tight">
-                  Cancelar Viático
+                <h2 className="text-base font-black tracking-tight">
+                  Aprobar Viático
                 </h2>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Indica el motivo del rechazo. Se enviará por correo al
-                  empleado.
+                <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed">
+                  ¿Aprobar el viático de{" "}
+                  <span className="font-bold text-foreground">
+                    {empMap[approveTarget.empleado_id] ||
+                      `ID ${approveTarget.empleado_id}`}
+                  </span>
+                  ? El empleado será notificado y podrá proceder con su
+                  liquidación.
                 </p>
               </div>
             </div>
+            <div className="h-px bg-border/50" />
+            <div className="flex gap-2.5">
+              <Button
+                onClick={confirmAprobar}
+                disabled={processingAction}
+                className="flex-1 rounded-2xl h-10 bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md gap-2 disabled:opacity-60">
+                {processingAction ? (
+                  <Loader2 size={15} className="animate-spin" />
+                ) : (
+                  <CheckCircle size={15} />
+                )}
+                {processingAction ? "Aprobando..." : "Sí, aprobar"}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setApproveTarget(null)}
+                disabled={processingAction}
+                className="flex-1 rounded-2xl h-10 font-bold">
+                Cancelar
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
-            <div className="space-y-2">
-              <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">
+      {/* ── MODAL: RECHAZAR VIÁTICO ── */}
+      {cancelTarget !== null && (
+        <div
+          className="fixed inset-0 z-[60] bg-black/40 dark:bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center p-0 md:p-6 animate-in fade-in duration-200"
+          onClick={() => !cancelLoading && setCancelTarget(null)}>
+          <div
+            className="w-full max-w-md bg-card dark:bg-slate-900 rounded-t-3xl md:rounded-3xl shadow-2xl dark:shadow-black/50 border border-border/40 p-6 space-y-5 animate-in slide-in-from-bottom md:zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start gap-4">
+              <div className="p-3 bg-amber-500/10 dark:bg-amber-500/15 rounded-2xl ring-1 ring-amber-500/20 shrink-0">
+                <XCircle size={20} className="text-amber-600" />
+              </div>
+              <div>
+                <h2 className="text-base font-black tracking-tight">
+                  Rechazar Viático
+                </h2>
+                <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed">
+                  Indica el motivo del rechazo. Se notificará al empleado por
+                  correo electrónico.
+                </p>
+              </div>
+            </div>
+            <div className="h-px bg-border/50" />
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">
                 Motivo de Rechazo *
               </label>
               <textarea
@@ -807,21 +939,20 @@ export default function ViaticosList() {
                 onChange={(e) => setMotivoRechazo(e.target.value)}
                 placeholder="Ej: Documentación incompleta, fechas incorrectas..."
                 disabled={cancelLoading}
-                className="w-full rounded-xl border bg-muted/50 px-4 py-3 text-sm resize-none focus:ring-2 ring-rose-300/50 outline-none transition-all disabled:opacity-60"
+                className="w-full rounded-xl border px-4 py-2.5 text-sm resize-none outline-none transition-all bg-background dark:bg-slate-900/60 border-border focus:border-amber-400/60 focus:ring-2 focus:ring-amber-400/20 placeholder:text-muted-foreground/50 disabled:opacity-60"
               />
             </div>
-
-            <div className="flex gap-3">
+            <div className="flex gap-2.5">
               <Button
                 onClick={handleRechazarConfirm}
                 disabled={cancelLoading || !motivoRechazo.trim()}
-                className="flex-1 rounded-2xl h-10 bg-rose-600 hover:bg-rose-700 text-white disabled:opacity-60">
+                className="flex-1 rounded-2xl h-10 bg-amber-500 hover:bg-amber-600 text-white font-bold shadow-md gap-2 disabled:opacity-60">
                 {cancelLoading ? (
-                  <Loader2 size={16} className="animate-spin mr-2" />
+                  <Loader2 size={15} className="animate-spin" />
                 ) : (
-                  <XCircle size={16} className="mr-2" />
+                  <XCircle size={15} />
                 )}
-                {cancelLoading ? "Cancelando..." : "Confirmar"}
+                {cancelLoading ? "Rechazando..." : "Confirmar rechazo"}
               </Button>
               <Button
                 variant="outline"
@@ -830,8 +961,59 @@ export default function ViaticosList() {
                   setMotivoRechazo("");
                 }}
                 disabled={cancelLoading}
-                className="flex-1 rounded-2xl h-10">
+                className="flex-1 rounded-2xl h-10 font-bold">
                 Volver
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL: ELIMINAR VIÁTICO ── */}
+      {deleteTarget && (
+        <div
+          className="fixed inset-0 z-[60] bg-black/40 dark:bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center p-0 md:p-6 animate-in fade-in duration-200"
+          onClick={() => !processingAction && setDeleteTarget(null)}>
+          <div
+            className="w-full max-w-md bg-card dark:bg-slate-900 rounded-t-3xl md:rounded-3xl shadow-2xl dark:shadow-black/50 border border-border/40 p-6 space-y-5 animate-in slide-in-from-bottom md:zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start gap-4">
+              <div className="p-3 bg-rose-500/10 dark:bg-rose-500/15 rounded-2xl ring-1 ring-rose-500/20 shrink-0">
+                <AlertTriangle size={20} className="text-rose-500" />
+              </div>
+              <div>
+                <h2 className="text-base font-black tracking-tight">
+                  Eliminar Viático
+                </h2>
+                <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed">
+                  ¿Eliminar definitivamente el viático de{" "}
+                  <span className="font-bold text-foreground">
+                    {empMap[deleteTarget.empleado_id] ||
+                      `ID ${deleteTarget.empleado_id}`}
+                  </span>
+                  ? Este registro no podrá recuperarse.
+                </p>
+              </div>
+            </div>
+            <div className="h-px bg-border/50" />
+            <div className="flex gap-2.5">
+              <Button
+                onClick={confirmDelete}
+                disabled={processingAction}
+                className="flex-1 rounded-2xl h-10 bg-rose-500 hover:bg-rose-600 text-white font-bold shadow-md gap-2 disabled:opacity-60">
+                {processingAction ? (
+                  <Loader2 size={15} className="animate-spin" />
+                ) : (
+                  <Trash2 size={15} />
+                )}
+                {processingAction ? "Eliminando..." : "Sí, eliminar"}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setDeleteTarget(null)}
+                disabled={processingAction}
+                className="flex-1 rounded-2xl h-10 font-bold">
+                Cancelar
               </Button>
             </div>
           </div>

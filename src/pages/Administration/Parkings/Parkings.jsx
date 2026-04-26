@@ -170,19 +170,19 @@ export default function Parkings() {
   const { showToast } = useToast();
   const isMobile = useIsMobile();
 
-  const canView   = can("ver_estacionamientos");
+  const canView = can("ver_estacionamientos");
   const canCreate = can("crear_estacionamientos");
-  const canEdit   = can("editar_estacionamientos");
+  const canEdit = can("editar_estacionamientos");
   const canDelete = can("eliminar_estacionamientos");
 
-  const [parkings, setParkings]           = useState([]);
-  const [citiesList, setCitiesList]       = useState([]);
-  const [loading, setLoading]             = useState(true);
-  const [search, setSearch]               = useState("");
-  const [modal, setModal]                 = useState(false);
+  const [parkings, setParkings] = useState([]);
+  const [citiesList, setCitiesList] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [modal, setModal] = useState(false);
   const [editingParking, setEditingParking] = useState(null);
-  const [deleteTarget, setDeleteTarget]   = useState(null);
-  const [deleting, setDeleting]           = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -352,7 +352,6 @@ export default function Parkings() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 md:px-8 py-6 md:py-10 space-y-6 animate-in fade-in duration-500">
-
       {/* ── HEADER ── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3.5">
@@ -439,7 +438,6 @@ export default function Parkings() {
             </div>
           </div>
         ) : isMobile ? (
-
           /* ── MOBILE: CARDS ── */
           <div className="divide-y divide-border/50">
             {filtered.map((p) => (
@@ -457,7 +455,10 @@ export default function Parkings() {
                     {p.nombre_ubicacion}
                   </p>
                   <div className="flex items-center gap-1 mt-0.5">
-                    <MapPin size={10} className="text-muted-foreground/60 shrink-0" />
+                    <MapPin
+                      size={10}
+                      className="text-muted-foreground/60 shrink-0"
+                    />
                     <p className="text-[11px] text-muted-foreground truncate">
                       {p.ciudad || p.nombre_ciudad || "Sin ciudad asignada"}
                     </p>
@@ -467,9 +468,7 @@ export default function Parkings() {
               </div>
             ))}
           </div>
-
         ) : (
-
           /* ── DESKTOP: TABLA ── */
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -522,7 +521,9 @@ export default function Parkings() {
                           {p.ciudad || p.nombre_ciudad}
                         </span>
                       ) : (
-                        <span className="text-muted-foreground/50 text-sm">—</span>
+                        <span className="text-muted-foreground/50 text-sm">
+                          —
+                        </span>
                       )}
                     </td>
                     <td className="px-6 py-4">
@@ -546,7 +547,6 @@ export default function Parkings() {
           <div
             className="w-full max-w-md bg-card dark:bg-slate-900 rounded-t-3xl md:rounded-3xl shadow-2xl dark:shadow-black/50 border border-border/40 flex flex-col max-h-[92vh] animate-in slide-in-from-bottom md:zoom-in-95 duration-200"
             onClick={(e) => e.stopPropagation()}>
-
             {/* Header */}
             <div className="flex-none flex items-center gap-3 px-6 py-4 border-b border-border/60">
               <div className="p-2 bg-primary/10 dark:bg-primary/15 rounded-2xl ring-1 ring-primary/20 dark:ring-primary/25">
@@ -554,7 +554,9 @@ export default function Parkings() {
               </div>
               <div className="flex-1 min-w-0">
                 <h2 className="text-base font-black tracking-tight">
-                  {editingParking ? "Editar Estacionamiento" : "Nuevo Estacionamiento"}
+                  {editingParking
+                    ? "Editar Estacionamiento"
+                    : "Nuevo Estacionamiento"}
                 </h2>
                 <p className="text-[11px] text-muted-foreground mt-0.5">
                   {editingParking
@@ -572,7 +574,6 @@ export default function Parkings() {
 
             {/* Cuerpo scrollable */}
             <div className="flex-1 overflow-y-auto overscroll-contain px-6 py-5 space-y-5">
-
               {/* Sección: Información básica */}
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
@@ -599,18 +600,20 @@ export default function Parkings() {
                     className={[
                       "w-full rounded-xl border px-4 py-2.5 text-sm transition-all outline-none",
                       "bg-background dark:bg-slate-900/60 placeholder:text-muted-foreground/50",
-                      formik.touched.nombre_ubicacion && formik.errors.nombre_ubicacion
+                      formik.touched.nombre_ubicacion &&
+                      formik.errors.nombre_ubicacion
                         ? "border-rose-400/70 ring-2 ring-rose-400/20"
                         : "border-border focus:border-primary/60 focus:ring-2 focus:ring-primary/20",
                       "disabled:opacity-60",
                     ].join(" ")}
                   />
-                  {formik.touched.nombre_ubicacion && formik.errors.nombre_ubicacion && (
-                    <p className="text-[11px] text-rose-500 font-semibold flex items-center gap-1">
-                      <AlertTriangle size={10} />
-                      {formik.errors.nombre_ubicacion}
-                    </p>
-                  )}
+                  {formik.touched.nombre_ubicacion &&
+                    formik.errors.nombre_ubicacion && (
+                      <p className="text-[11px] text-rose-500 font-semibold flex items-center gap-1">
+                        <AlertTriangle size={10} />
+                        {formik.errors.nombre_ubicacion}
+                      </p>
+                    )}
                 </div>
 
                 {/* Ciudad */}
@@ -654,8 +657,8 @@ export default function Parkings() {
                   {formik.isSubmitting
                     ? "Guardando..."
                     : editingParking
-                    ? "Guardar Cambios"
-                    : "Registrar"}
+                      ? "Guardar Cambios"
+                      : "Registrar"}
                 </Button>
                 <Button
                   type="button"

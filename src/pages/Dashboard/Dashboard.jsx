@@ -1,31 +1,19 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  Box,
-  Grid,
-  Typography,
-  Card,
-  CardContent,
-  Sheet,
-  Table,
-  Stack,
-  CircularProgress,
-  IconButton,
-  Button,
-  Alert,
-  Chip,
-  LinearProgress,
-} from "@mui/joy";
 import { BarChart } from "@mui/x-charts/BarChart";
-
-// Iconos
-import DirectionsCarIcon from "@mui/icons-material/DirectionsCar";
-import PersonIcon from "@mui/icons-material/Person";
-import SpeedIcon from "@mui/icons-material/Speed";
-import LocalGasStationIcon from "@mui/icons-material/LocalGasStation";
-import RefreshRoundedIcon from "@mui/icons-material/RefreshRounded";
-import PendingActionsRoundedIcon from "@mui/icons-material/PendingActionsRounded";
-import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
+import {
+  Car,
+  Users2,
+  Gauge,
+  Fuel,
+  RefreshCw,
+  Clock,
+  CheckCircle2,
+  LayoutDashboard,
+  AlertTriangle,
+  Loader2,
+  TrendingUp,
+} from "lucide-react";
 
 // Servicios
 import { fetchDashboardData } from "../../services/DashboardServices";
@@ -39,54 +27,99 @@ import {
   getVehiculosEnUso,
 } from "../../services/ReportServices";
 
-// Componente KPI Card Reutilizable con diseño moderno
-const KpiCard = ({ title, value, icon: Icon, color, trend }) => (
-  <Card
-    variant="solid"
-    color={color}
-    invertedColors
-    sx={{ boxShadow: "lg", overflow: "hidden", position: "relative" }}>
-    <Box
-      sx={{
-        position: "absolute",
-        top: -20,
-        right: -20,
-        opacity: 0.2,
-        transform: "rotate(15deg)",
-      }}>
-      <Icon sx={{ fontSize: 120 }} />
-    </Box>
-    <Stack spacing={1} sx={{ position: "relative", zIndex: 1 }}>
-      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-        <Box
-          sx={{
-            p: 0.5,
-            bgcolor: "rgba(255,255,255,0.2)",
-            borderRadius: "50%",
-          }}>
-          <Icon />
-        </Box>
-        <Typography
-          level="title-sm"
-          textColor="common.white"
-          sx={{ opacity: 0.9 }}>
+/* ── KPI Card ─────────────────────────────────────────────────────────────── */
+
+const ACCENT = {
+  blue:    { icon: "bg-blue-50 dark:bg-blue-900/20 ring-blue-100 dark:ring-blue-800",    text: "text-blue-600 dark:text-blue-400" },
+  emerald: { icon: "bg-emerald-50 dark:bg-emerald-900/20 ring-emerald-100 dark:ring-emerald-800", text: "text-emerald-600 dark:text-emerald-400" },
+  slate:   { icon: "bg-slate-100 dark:bg-slate-800 ring-slate-200 dark:ring-slate-700",  text: "text-slate-600 dark:text-slate-400" },
+  amber:   { icon: "bg-amber-50 dark:bg-amber-900/20 ring-amber-100 dark:ring-amber-800", text: "text-amber-600 dark:text-amber-400" },
+};
+
+function KpiCard({ title, value, icon: Icon, accent = "slate", trend }) {
+  const a = ACCENT[accent];
+  return (
+    <div className="bg-card dark:bg-slate-900/40 rounded-3xl border border-border/60 shadow-sm p-5 space-y-3 hover:shadow-md transition-shadow">
+      <div className="flex items-center justify-between">
+        <p className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">
           {title}
-        </Typography>
-      </Box>
-      <Typography level="h2" textColor="common.white">
+        </p>
+        <div className={`p-2.5 rounded-2xl ring-1 shrink-0 ${a.icon}`}>
+          <Icon size={17} className={a.text} />
+        </div>
+      </div>
+      <p className="text-3xl font-black tracking-tight text-foreground leading-none">
         {value}
-      </Typography>
+      </p>
       {trend && (
-        <Typography
-          level="body-xs"
-          textColor="common.white"
-          sx={{ opacity: 0.8 }}>
-          {trend}
-        </Typography>
+        <p className="text-xs text-muted-foreground font-medium">{trend}</p>
       )}
-    </Stack>
-  </Card>
-);
+    </div>
+  );
+}
+
+/* ── Section Header ───────────────────────────────────────────────────────── */
+
+function SectionHeader({ icon: Icon, title }) {
+  return (
+    <div className="flex items-center gap-2.5 mb-4">
+      <div className="p-1.5 bg-muted dark:bg-slate-800 rounded-xl shrink-0">
+        <Icon size={14} className="text-muted-foreground" />
+      </div>
+      <h2 className="text-xs font-black uppercase tracking-widest text-muted-foreground">
+        {title}
+      </h2>
+    </div>
+  );
+}
+
+/* ── Empty row ────────────────────────────────────────────────────────────── */
+
+function EmptyRow({ colSpan, label }) {
+  return (
+    <tr>
+      <td colSpan={colSpan} className="py-10 text-center">
+        <p className="text-sm text-muted-foreground">{label}</p>
+      </td>
+    </tr>
+  );
+}
+
+/* ── Loading Skeleton ─────────────────────────────────────────────────────── */
+
+function DashboardSkeleton() {
+  return (
+    <div className="max-w-7xl mx-auto px-4 md:px-8 py-6 md:py-10 space-y-8 animate-pulse">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3.5">
+          <div className="w-12 h-12 bg-muted rounded-2xl" />
+          <div className="space-y-2">
+            <div className="h-7 w-40 bg-muted rounded-xl" />
+            <div className="h-4 w-56 bg-muted rounded-lg" />
+          </div>
+        </div>
+        <div className="w-9 h-9 bg-muted rounded-xl" />
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="h-32 bg-muted rounded-3xl" />
+        ))}
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {[...Array(2)].map((_, i) => (
+          <div key={i} className="h-72 bg-muted rounded-3xl" />
+        ))}
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {[...Array(2)].map((_, i) => (
+          <div key={i} className="h-64 bg-muted rounded-3xl" />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ── Dashboard ────────────────────────────────────────────────────────────── */
 
 export default function Dashboard() {
   const { t } = useTranslation();
@@ -97,7 +130,7 @@ export default function Dashboard() {
     totalVehiculos: 0,
     vehiculosEnUso: 0,
     registrosHoy: 0,
-    registrosPendientes: 0, // Calculado o traído si existe endpoint
+    registrosPendientes: 0,
     empleadosTop: [],
     vehiculosTop: [],
     kilometrajeTop: [],
@@ -150,15 +183,14 @@ export default function Dashboard() {
     loadData();
   }, []);
 
-  // Preparación de datos para gráficos
   const chartEmpleados = useMemo(
     () => ({
       labels: data.empleadosTop
         .slice(0, 5)
-        .map((e) => e.nombre_empleado.split(" ")[0]), // Solo primer nombre
+        .map((e) => e.nombre_empleado.split(" ")[0]),
       data: data.empleadosTop.slice(0, 5).map((e) => e.total_salidas),
     }),
-    [data.empleadosTop]
+    [data.empleadosTop],
   );
 
   const chartVehiculos = useMemo(
@@ -166,297 +198,254 @@ export default function Dashboard() {
       labels: data.vehiculosTop.slice(0, 5).map((v) => v.placa),
       data: data.vehiculosTop.slice(0, 5).map((v) => v.total_usos),
     }),
-    [data.vehiculosTop]
+    [data.vehiculosTop],
   );
 
-  if (loading) {
-    return (
-      <Box
-        sx={{
-          height: "80vh",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 2,
-        }}>
-        <CircularProgress size="lg" />
-        <Typography>{t("common.loading")}</Typography>
-      </Box>
-    );
-  }
+  if (loading) return <DashboardSkeleton />;
 
   if (error) {
     return (
-      <Box p={4}>
-        <Alert
-          color="danger"
-          variant="soft"
-          endDecorator={
-            <Button size="sm" variant="soft" color="danger" onClick={loadData}>
-              Reintentar
-            </Button>
-          }>
-          {error}
-        </Alert>
-      </Box>
+      <div className="max-w-7xl mx-auto px-4 md:px-8 py-6 md:py-10">
+        <div className="flex items-start gap-3 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/60 rounded-2xl">
+          <AlertTriangle size={15} className="text-red-500 shrink-0 mt-0.5" />
+          <p className="flex-1 text-sm font-semibold text-red-700 dark:text-red-400">
+            {error}
+          </p>
+          <button
+            onClick={loadData}
+            className="shrink-0 text-xs font-bold px-3 py-1.5 rounded-lg bg-red-100 dark:bg-red-800 text-red-700 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-700 transition-colors"
+          >
+            Reintentar
+          </button>
+        </div>
+      </div>
     );
   }
 
   return (
-    <Box sx={{ p: { xs: 2, md: 4 }, maxWidth: 1600, mx: "auto" }}>
-      {/* Header */}
-      <Stack
-        direction={{ xs: "column", sm: "row" }}
-        justifyContent="space-between"
-        alignItems="center"
-        mb={4}
-        spacing={2}>
-        <Box>
-          <Typography level="h2">{t("dashboard.title")}</Typography>
-          <Typography level="body-md" color="neutral">
-            {t("dashboard.subtitle")}
-          </Typography>
-        </Box>
-        <IconButton variant="soft" onClick={loadData}>
-          <RefreshRoundedIcon />
-        </IconButton>
-      </Stack>
+    <div className="max-w-7xl mx-auto px-4 md:px-8 py-6 md:py-10 space-y-8 animate-in fade-in duration-500">
 
-      {/* KPI Grid */}
-      <Grid container spacing={2} mb={4}>
-        <Grid xs={12} sm={6} md={3}>
-          <KpiCard
-            title={t("dashboard.kpi.active_vehicles")}
-            value={`${data.vehiculosEnUso} / ${data.totalVehiculos}`}
-            icon={DirectionsCarIcon}
-            color="primary"
-            trend={t("dashboard.kpi.currently_in_use")}
-          />
-        </Grid>
-        <Grid xs={12} sm={6} md={3}>
-          <KpiCard
-            title={t("dashboard.kpi.today_activity")}
-            value={data.registrosHoy}
-            icon={CheckCircleRoundedIcon}
-            color="success"
-            trend={t("dashboard.kpi.movements_today")}
-          />
-        </Grid>
-        <Grid xs={12} sm={6} md={3}>
-          <KpiCard
-            title={t("dashboard.kpi.total_employees")}
-            value={data.totalEmpleados}
-            icon={PersonIcon}
-            color="neutral"
-            trend={t("dashboard.kpi.registered")}
-          />
-        </Grid>
-        <Grid xs={12} sm={6} md={3}>
-          {/* Ejemplo de KPI de alerta/pendiente */}
-          <KpiCard
-            title={t("dashboard.kpi.pending_maintenance")}
-            value="0"
-            icon={PendingActionsRoundedIcon}
-            color="warning"
-            trend={t("dashboard.kpi.requires_attention")}
-          />
-        </Grid>
-      </Grid>
+      {/* ── Header ── */}
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex items-center gap-3.5">
+          <div className="p-2.5 rounded-2xl bg-primary/10 dark:bg-primary/15 ring-1 ring-primary/20 dark:ring-primary/30 shadow-sm shadow-primary/10 shrink-0">
+            <LayoutDashboard size={22} className="text-primary" />
+          </div>
+          <div>
+            <h1 className="text-2xl md:text-3xl font-black tracking-tight leading-none">
+              {t("dashboard.title")}
+            </h1>
+            <p className="text-muted-foreground text-xs md:text-sm font-medium mt-0.5">
+              {t("dashboard.subtitle")}
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={loadData}
+          className="mt-0.5 p-2 hover:bg-muted dark:hover:bg-slate-800 rounded-xl transition-colors text-muted-foreground hover:text-foreground shrink-0"
+          title="Actualizar datos"
+        >
+          <RefreshCw size={17} />
+        </button>
+      </div>
 
-      {/* Gráficos Row */}
-      <Grid container spacing={3} mb={4}>
-        <Grid xs={12} lg={6}>
-          <Card variant="outlined" sx={{ height: "100%", borderRadius: "lg" }}>
-            <Typography level="title-lg" mb={2}>
-              {t("dashboard.charts.top_employees")}
-            </Typography>
-            <Box sx={{ width: "100%", height: 300 }}>
-              {chartEmpleados.data.length > 0 ? (
-                <BarChart
-                  series={[
-                    {
-                      data: chartEmpleados.data,
-                      color: "#0B6BCB",
-                      label: t("dashboard.charts.exits"),
-                    },
-                  ]}
-                  xAxis={[{ scaleType: "band", data: chartEmpleados.labels }]}
-                  margin={{ top: 10, bottom: 30, left: 40, right: 10 }}
-                  borderRadius={4}
-                />
-              ) : (
-                <Typography level="body-sm" textAlign="center" mt={10}>
-                  {t("dashboard.empty_data")}
-                </Typography>
-              )}
-            </Box>
-          </Card>
-        </Grid>
-        <Grid xs={12} lg={6}>
-          <Card variant="outlined" sx={{ height: "100%", borderRadius: "lg" }}>
-            <Typography level="title-lg" mb={2}>
-              {t("dashboard.charts.top_vehicles")}
-            </Typography>
-            <Box sx={{ width: "100%", height: 300 }}>
-              {chartVehiculos.data.length > 0 ? (
-                <BarChart
-                  series={[
-                    {
-                      data: chartVehiculos.data,
-                      color: "#10b981",
-                      label: t("dashboard.charts.uses"),
-                    },
-                  ]}
-                  xAxis={[{ scaleType: "band", data: chartVehiculos.labels }]}
-                  margin={{ top: 10, bottom: 30, left: 40, right: 10 }}
-                  borderRadius={4}
-                />
-              ) : (
-                <Typography level="body-sm" textAlign="center" mt={10}>
-                  {t("dashboard.empty_data")}
-                </Typography>
-              )}
-            </Box>
-          </Card>
-        </Grid>
-      </Grid>
+      {/* ── KPI Grid ── */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <KpiCard
+          title={t("dashboard.kpi.active_vehicles")}
+          value={`${data.vehiculosEnUso} / ${data.totalVehiculos}`}
+          icon={Car}
+          accent="blue"
+          trend={t("dashboard.kpi.currently_in_use")}
+        />
+        <KpiCard
+          title={t("dashboard.kpi.today_activity")}
+          value={data.registrosHoy}
+          icon={CheckCircle2}
+          accent="emerald"
+          trend={t("dashboard.kpi.movements_today")}
+        />
+        <KpiCard
+          title={t("dashboard.kpi.total_employees")}
+          value={data.totalEmpleados}
+          icon={Users2}
+          accent="slate"
+          trend={t("dashboard.kpi.registered")}
+        />
+        <KpiCard
+          title={t("dashboard.kpi.pending_maintenance")}
+          value="0"
+          icon={Clock}
+          accent="amber"
+          trend={t("dashboard.kpi.requires_attention")}
+        />
+      </div>
 
-      {/* Tablas Detalladas Row */}
-      <Grid container spacing={3}>
-        {/* Tabla Km */}
-        <Grid xs={12} md={6}>
-          <Sheet
-            variant="outlined"
-            sx={{ borderRadius: "lg", p: 0, overflow: "hidden" }}>
-            <Box
-              sx={{
-                p: 2,
-                borderBottom: "1px solid",
-                borderColor: "divider",
-                bgcolor: "background.surface",
-              }}>
-              <Typography level="title-md" startDecorator={<SpeedIcon />}>
-                {t("dashboard.tables.km_title")}
-              </Typography>
-            </Box>
-            <Table
-              hoverRow
-              sx={{ "& thead th": { bgcolor: "background.level1" } }}>
+      {/* ── Charts ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Top empleados */}
+        <div className="bg-card dark:bg-slate-900/40 rounded-3xl border border-border/60 shadow-sm p-5 md:p-6">
+          <SectionHeader icon={TrendingUp} title={t("dashboard.charts.top_employees")} />
+          {chartEmpleados.data.length > 0 ? (
+            <div className="w-full h-64">
+              <BarChart
+                series={[{
+                  data: chartEmpleados.data,
+                  color: "hsl(var(--primary))",
+                  label: t("dashboard.charts.exits"),
+                }]}
+                xAxis={[{ scaleType: "band", data: chartEmpleados.labels }]}
+                margin={{ top: 10, bottom: 30, left: 40, right: 10 }}
+                borderRadius={6}
+              />
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-48 text-muted-foreground gap-2">
+              <TrendingUp size={28} className="opacity-20" />
+              <p className="text-sm">{t("dashboard.empty_data")}</p>
+            </div>
+          )}
+        </div>
+
+        {/* Top vehículos */}
+        <div className="bg-card dark:bg-slate-900/40 rounded-3xl border border-border/60 shadow-sm p-5 md:p-6">
+          <SectionHeader icon={Car} title={t("dashboard.charts.top_vehicles")} />
+          {chartVehiculos.data.length > 0 ? (
+            <div className="w-full h-64">
+              <BarChart
+                series={[{
+                  data: chartVehiculos.data,
+                  color: "#10b981",
+                  label: t("dashboard.charts.uses"),
+                }]}
+                xAxis={[{ scaleType: "band", data: chartVehiculos.labels }]}
+                margin={{ top: 10, bottom: 30, left: 40, right: 10 }}
+                borderRadius={6}
+              />
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-48 text-muted-foreground gap-2">
+              <Car size={28} className="opacity-20" />
+              <p className="text-sm">{t("dashboard.empty_data")}</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ── Detail Tables ── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+        {/* Tabla Kilometraje */}
+        <div className="bg-card dark:bg-slate-900/40 rounded-3xl border border-border/60 shadow-sm overflow-hidden">
+          <div className="px-5 py-4 border-b border-border/50">
+            <SectionHeader icon={Gauge} title={t("dashboard.tables.km_title")} />
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full">
               <thead>
-                <tr>
-                  <th>{t("dashboard.tables.employee")}</th>
-                  <th style={{ textAlign: "right" }}>
+                <tr className="border-b border-border/40 bg-muted/30 dark:bg-slate-800/30">
+                  <th className="px-5 py-3 text-left text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                    {t("dashboard.tables.employee")}
+                  </th>
+                  <th className="px-5 py-3 text-right text-[10px] font-black uppercase tracking-widest text-muted-foreground">
                     {t("dashboard.tables.km_total")}
                   </th>
                 </tr>
               </thead>
               <tbody>
-                {data.kilometrajeTop.slice(0, 5).map((row, i) => (
-                  <tr key={i}>
-                    <td>
-                      <Typography level="body-sm" fontWeight="md">
-                        {row.nombre_empleado}
-                      </Typography>
-                    </td>
-                    <td style={{ textAlign: "right" }}>
-                      <Chip size="sm" variant="soft" color="neutral">
-                        {Number(row.kilometraje_total_recorrido).toFixed(1)} km
-                      </Chip>
-                    </td>
-                  </tr>
-                ))}
-                {data.kilometrajeTop.length === 0 && (
-                  <tr>
-                    <td
-                      colSpan={2}
-                      style={{ textAlign: "center", padding: 20 }}>
-                      {t("dashboard.empty_data")}
-                    </td>
-                  </tr>
+                {data.kilometrajeTop.length === 0 ? (
+                  <EmptyRow colSpan={2} label={t("dashboard.empty_data")} />
+                ) : (
+                  data.kilometrajeTop.slice(0, 5).map((row, i) => (
+                    <tr
+                      key={i}
+                      className="border-b border-border/30 last:border-0 hover:bg-muted/20 dark:hover:bg-slate-800/20 transition-colors"
+                    >
+                      <td className="px-5 py-3.5">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-6 h-6 rounded-full bg-primary/10 dark:bg-primary/20 flex items-center justify-center shrink-0">
+                            <span className="text-[9px] font-black text-primary">{i + 1}</span>
+                          </div>
+                          <span className="text-sm font-medium text-foreground">
+                            {row.nombre_empleado}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-5 py-3.5 text-right">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-muted/60 dark:bg-slate-800 text-foreground border border-border/50">
+                          {Number(row.kilometraje_total_recorrido).toFixed(1)} km
+                        </span>
+                      </td>
+                    </tr>
+                  ))
                 )}
               </tbody>
-            </Table>
-          </Sheet>
-        </Grid>
+            </table>
+          </div>
+        </div>
 
-        {/* Tabla Combustible (Con barra de progreso visual) */}
-        <Grid xs={12} md={6}>
-          <Sheet
-            variant="outlined"
-            sx={{ borderRadius: "lg", p: 0, overflow: "hidden" }}>
-            <Box
-              sx={{
-                p: 2,
-                borderBottom: "1px solid",
-                borderColor: "divider",
-                bgcolor: "background.surface",
-              }}>
-              <Typography
-                level="title-md"
-                startDecorator={<LocalGasStationIcon />}>
-                {t("dashboard.tables.fuel_title")}
-              </Typography>
-            </Box>
-            <Table
-              hoverRow
-              sx={{ "& thead th": { bgcolor: "background.level1" } }}>
+        {/* Tabla Combustible */}
+        <div className="bg-card dark:bg-slate-900/40 rounded-3xl border border-border/60 shadow-sm overflow-hidden">
+          <div className="px-5 py-4 border-b border-border/50">
+            <SectionHeader icon={Fuel} title={t("dashboard.tables.fuel_title")} />
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full">
               <thead>
-                <tr>
-                  <th>{t("dashboard.tables.vehicle")}</th>
-                  <th>{t("dashboard.tables.consumption")}</th>
+                <tr className="border-b border-border/40 bg-muted/30 dark:bg-slate-800/30">
+                  <th className="px-5 py-3 text-left text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                    {t("dashboard.tables.vehicle")}
+                  </th>
+                  <th className="px-5 py-3 text-right text-[10px] font-black uppercase tracking-widest text-muted-foreground w-36">
+                    {t("dashboard.tables.consumption")}
+                  </th>
                 </tr>
               </thead>
               <tbody>
-                {data.consumoTop.slice(0, 5).map((row, i) => {
-                  const val = parseFloat(row.promedio_consumo_porcentaje);
-                  return (
-                    <tr key={i}>
-                      <td>
-                        <Typography level="body-sm" fontWeight="md">
-                          {row.marca} {row.modelo}
-                        </Typography>
-                        <Typography level="body-xs" color="neutral">
-                          {row.placa}
-                        </Typography>
-                      </td>
-                      <td style={{ width: 150 }}>
-                        <Stack spacing={0.5}>
-                          <Typography level="body-xs" textAlign="right">
-                            {val.toFixed(1)}%
-                          </Typography>
-                          <LinearProgress
-                            determinate
-                            value={Math.min(val, 100)}
-                            color={
-                              val > 80
-                                ? "danger"
-                                : val > 50
-                                ? "warning"
-                                : "success"
-                            }
-                            thickness={6}
-                            sx={{ borderRadius: 4 }}
-                          />
-                        </Stack>
-                      </td>
-                    </tr>
-                  );
-                })}
-                {data.consumoTop.length === 0 && (
-                  <tr>
-                    <td
-                      colSpan={2}
-                      style={{ textAlign: "center", padding: 20 }}>
-                      {t("dashboard.empty_data")}
-                    </td>
-                  </tr>
+                {data.consumoTop.length === 0 ? (
+                  <EmptyRow colSpan={2} label={t("dashboard.empty_data")} />
+                ) : (
+                  data.consumoTop.slice(0, 5).map((row, i) => {
+                    const val = parseFloat(row.promedio_consumo_porcentaje);
+                    const barColor =
+                      val > 80
+                        ? "bg-red-500"
+                        : val > 50
+                          ? "bg-amber-500"
+                          : "bg-emerald-500";
+                    return (
+                      <tr
+                        key={i}
+                        className="border-b border-border/30 last:border-0 hover:bg-muted/20 dark:hover:bg-slate-800/20 transition-colors"
+                      >
+                        <td className="px-5 py-3.5">
+                          <p className="text-sm font-medium text-foreground">
+                            {row.marca} {row.modelo}
+                          </p>
+                          <p className="text-xs text-muted-foreground">{row.placa}</p>
+                        </td>
+                        <td className="px-5 py-3.5 w-36">
+                          <div className="space-y-1.5">
+                            <span className="text-xs text-muted-foreground block text-right">
+                              {val.toFixed(1)}%
+                            </span>
+                            <div className="h-1.5 bg-muted dark:bg-slate-700 rounded-full overflow-hidden">
+                              <div
+                                className={`h-full rounded-full transition-all ${barColor}`}
+                                style={{ width: `${Math.min(val, 100)}%` }}
+                              />
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
-            </Table>
-          </Sheet>
-        </Grid>
-      </Grid>
-    </Box>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

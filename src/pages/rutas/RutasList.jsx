@@ -12,6 +12,8 @@ import {
   Milestone,
   X,
   Loader2,
+  AlertTriangle,
+  MoreVertical,
 } from "lucide-react";
 import { MapContainer, TileLayer, Marker, Polyline } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
@@ -24,15 +26,13 @@ import { useAuth } from "@/context/AuthContext";
 import useIsMobile from "@/hooks/useIsMobile";
 import { Button } from "@/components/ui/button";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 // Fix Leaflet default icons
 delete L.Icon.Default.prototype._getIconUrl;
@@ -45,7 +45,24 @@ L.Icon.Default.mergeOptions({
 
 const peajeIcon = new L.DivIcon({
   className: "",
-  html: `<div style="width:28px;height:28px;background:#f59e0b;border:3px solid #fff;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.35);font-size:13px;">💰</div>`,
+  html: `
+    <div style="
+      width:24px;
+      height:24px;
+      background:#6366f1;
+      border:2px solid white;
+      border-radius:20px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      box-shadow:0 2px 6px rgba(0,0,0,.25);
+      color:white;
+      font-size:14px;
+      font-weight:bold;
+    ">
+      $
+    </div>
+  `,
   iconSize: [28, 28],
   iconAnchor: [14, 14],
 });
@@ -63,6 +80,8 @@ export default function RutasList() {
   // Delete state
   const [pendingDeleteId, setPendingDeleteId] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   const { showToast } = useToast();
   const { userData, hasPermiso } = useAuth();
@@ -182,19 +201,23 @@ export default function RutasList() {
   };
 
   const handleDelete = async () => {
-    if (!pendingDeleteId) return;
-    const id = pendingDeleteId;
-    setPendingDeleteId(null);
-    setDeletingId(id);
+    if (!deleteTarget) return;
 
-    const res = await deleteRuta(id);
-    if (res) {
-      showToast("Ruta eliminada correctamente", "success");
-      fetchRutas();
-    } else {
-      showToast("No se pudo eliminar la ruta. Intenta de nuevo.", "danger");
+    setDeleting(true);
+
+    try {
+      const res = await deleteRuta(deleteTarget.id);
+
+      if (res) {
+        showToast("Ruta eliminada correctamente", "success");
+        fetchRutas();
+        setDeleteTarget(null);
+      } else {
+        showToast("No se pudo eliminar la ruta. Intenta de nuevo.", "danger");
+      }
+    } finally {
+      setDeleting(false);
     }
-    setDeletingId(null);
   };
 
   const filteredRutas = rutas.filter((r) =>
@@ -209,6 +232,45 @@ export default function RutasList() {
       </div>
     );
   }
+
+  const AccionesMenu = ({ ruta }) => {
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            className="h-8 w-8 p-0 hover:bg-muted/80 rounded-xl transition-colors">
+            <MoreVertical size={16} />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent
+          align="end"
+          className="w-48 rounded-2xl shadow-xl border-border/60">
+          <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70">
+            Acciones
+          </DropdownMenuLabel>
+
+          {canEdit && (
+            <DropdownMenuItem
+              onClick={() => navigate(`edit/${ruta.id}`)}
+              className="rounded-xl cursor-pointer gap-2 text-sm">
+              <Edit3 size={13} /> Editar
+            </DropdownMenuItem>
+          )}
+
+          {canDelete && (
+            <DropdownMenuItem
+              onClick={() => {
+                setDeleteTarget(ruta);
+              }}
+              className="text-rose-600 focus:text-rose-600 focus:bg-rose-50 dark:focus:bg-rose-950/30 rounded-xl cursor-pointer gap-2 text-sm">
+              <Trash2 size={13} /> Eliminar
+            </DropdownMenuItem>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
+  };
 
   return (
     <div className="max-w-7xl mx-auto p-4 md:p-8 space-y-6 animate-in fade-in duration-500">
@@ -227,50 +289,77 @@ export default function RutasList() {
         {canCreate && (
           <Button
             onClick={() => navigate("/admin/rutas/new")}
-            className="bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 rounded-xl px-6">
+            className="rounded-2xl px-5 h-10 font-bold shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all duration-200 gap-2 shrink-0">
             <Plus size={20} className="mr-2" /> Nueva Ruta
           </Button>
         )}
       </div>
 
       {/* FILTROS / TOOLBAR */}
-      <div className="bg-card border rounded-2xl p-4 shadow-sm flex flex-col md:flex-row gap-4 items-center">
-        <div className="relative w-full md:w-96">
+      <div className="flex items-center gap-3 flex-wrap">
+        <div className="relative w-full max-w-xs group">
           <Search
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-            size={18}
+            size={15}
+            className="
+              text-muted-foreground/50
+              transition-colors pointer-events-none
+              absolute left-3 top-1/2 -translate-y-1/2 group-focus-within:text-primary
+            "
           />
           <input
             type="text"
             placeholder="Buscar por nombre de ruta..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-muted/50 border-transparent rounded-xl pl-10 pr-4 py-2 text-sm focus:bg-background focus:ring-2 ring-primary/20 transition-all outline-none"
+            className="w-full bg-card border border-border/60 rounded-xl pl-9 pr-8 py-2 text-sm outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/15 transition-all placeholder:text-muted-foreground/50 shadow-sm"
           />
+          {searchTerm && (
+            <button
+              onClick={() => setSearchTerm("")}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 hover:bg-muted rounded-md transition-colors text-muted-foreground/60 hover:text-foreground">
+              <X size={13} />
+            </button>
+          )}
         </div>
-        <div className="flex-1" />
-        <div className="text-xs font-bold text-muted-foreground uppercase tracking-widest bg-muted px-3 py-1 rounded-full">
-          {filteredRutas.length} Rutas encontradas
-        </div>
+
+        {!loading && (
+          <span className="text-xs text-muted-foreground/70 font-medium whitespace-nowrap">
+            <span className="font-bold text-foreground">
+              {filteredRutas.length}
+            </span>
+            {searchTerm
+              ? ` de ${rutas.length}`
+              : ` ruta${rutas.length !== 1 ? "s" : ""}`}
+          </span>
+        )}
       </div>
 
       {/* MAIN CONTENT */}
-      <div className="bg-card border rounded-3xl shadow-sm overflow-hidden">
+      <div className="bg-card dark:bg-slate-900/40 border border-border/60 rounded-3xl shadow-sm overflow-hidden">
         {loading ? (
-          <div className="p-20 text-center">
-            <div className="animate-spin inline-block w-8 h-8 border-4 border-primary border-t-transparent rounded-full mb-4"></div>
-            <p className="text-muted-foreground font-medium">
-              Sincronizando rutas...
+          <div className="flex flex-col items-center justify-center gap-4 py-24">
+            <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+              <Loader2 className="animate-spin text-primary" size={22} />
+            </div>
+            <p className="text-sm text-muted-foreground font-medium">
+              Cargando rutas...
             </p>
           </div>
         ) : filteredRutas.length === 0 ? (
-          <div className="p-20 text-center space-y-4">
-            <div className="bg-muted w-16 h-16 rounded-full flex items-center justify-center mx-auto text-muted-foreground">
-              <Map size={32} />
+          <div className="flex flex-col items-center justify-center gap-4 py-24">
+            <div className="w-16 h-16 rounded-3xl bg-muted/50 dark:bg-slate-800/50 flex items-center justify-center">
+              <Map size={28} className="text-muted-foreground/40" />
             </div>
-            <p className="text-muted-foreground">
-              No se encontraron rutas que coincidan con la búsqueda.
-            </p>
+            <div className="text-center">
+              <p className="font-bold text-sm">
+                {searchTerm ? "Sin resultados" : "Sin rutas registradas"}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {searchTerm
+                  ? `No hay coincidencias para "${searchTerm}"`
+                  : "Crea la primera ruta usando el botón de arriba"}
+              </p>
+            </div>
           </div>
         ) : isMobile ? (
           /* 📱 MOBILE VIEW (CARDS) */
@@ -290,23 +379,7 @@ export default function RutasList() {
                       title="Ver peajes">
                       <Milestone size={18} />
                     </button>
-                    {canEdit && (
-                      <button
-                        onClick={() => navigate(`/admin/rutas/edit/${ruta.id}`)}
-                        className="p-2 text-primary bg-primary/10 rounded-lg">
-                        <Edit3 size={18} />
-                      </button>
-                    )}
-                    {canDelete && (
-                      <button
-                        onClick={() => setPendingDeleteId(ruta.id)}
-                        disabled={deletingId === ruta.id}
-                        className="p-2 text-destructive bg-destructive/10 rounded-lg disabled:opacity-50">
-                        {deletingId === ruta.id
-                          ? <Loader2 size={18} className="animate-spin" />
-                          : <Trash2 size={18} />}
-                      </button>
-                    )}
+                    <AccionesMenu ruta={ruta} />
                   </div>
                 </div>
 
@@ -335,93 +408,108 @@ export default function RutasList() {
         ) : (
           /* 💻 DESKTOP VIEW (TABLE) */
           <div className="overflow-x-auto">
-            <table className="w-full table-fixed">
+            <table className="w-full">
               <thead>
-                <tr className="bg-muted/30 border-b">
-                  <th className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-widest text-muted-foreground w-[28%]">
-                    Nombre de Ruta
-                  </th>
-                  <th className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-widest text-muted-foreground w-[30%]">
-                    Descripción
-                  </th>
-                  <th className="px-6 py-4 text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground w-[24%]">
-                    Vigencia
-                  </th>
-                  <th className="px-6 py-4 text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground w-[8%]">
-                    Peajes
-                  </th>
-                  <th className="px-6 py-4 text-right text-[10px] font-black uppercase tracking-widest text-muted-foreground w-[10%]">
-                    Acciones
-                  </th>
+                <tr className="border-b border-border/60 bg-muted/20 dark:bg-slate-800/30">
+                  {[
+                    "Nombre de Ruta",
+                    "Descripción",
+                    "Vigencia",
+                    "Peajes",
+                    "",
+                  ].map((h, i) => (
+                    <th
+                      key={i}
+                      className={`px-6 py-3.5 ${i === 4 ? "text-right" : "text-left"}`}>
+                      <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70">
+                        {h}
+                      </span>
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {filteredRutas.map((ruta) => (
-                  <tr
-                    key={ruta.id}
-                    className="hover:bg-muted/20 transition-colors group">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 shrink-0 rounded-xl bg-primary/10 text-primary flex items-center justify-center group-hover:scale-110 transition-transform">
-                          <Map size={20} />
+                {filteredRutas.map((ruta) => {
+                  return (
+                    <tr
+                      key={ruta.id}
+                      className="border-b border-border/30 last:border-0 hover:bg-muted/20 dark:hover:bg-slate-800/20 transition-colors group">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 shrink-0 rounded-xl bg-muted/60 dark:bg-slate-800 group-hover:bg-primary/10 group-hover:ring-1 ring-primary/20 flex items-center justify-center transition-all duration-200">
+                            <Map size={16} className="text-primary" />
+                          </div>
+                          <div>
+                            <div className="font-bold text-sm">
+                              {ruta.nombre || "—"}
+                            </div>
+                          </div>
                         </div>
-                        <span className="font-bold text-foreground truncate">
-                          {ruta.nombre}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="text-sm text-muted-foreground block truncate italic">
-                        {ruta.descripcion || "N/A"}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <div className="inline-flex items-center gap-2 bg-muted/50 px-3 py-1 rounded-full text-[11px] font-bold whitespace-nowrap">
-                        <Calendar size={12} className="text-primary" />
-                        {ruta.fecha_inicio
-                          ? new Date(ruta.fecha_inicio).toLocaleDateString()
-                          : "-"}
-                        <span className="opacity-30">|</span>
-                        {ruta.fecha_fin
-                          ? new Date(ruta.fecha_fin).toLocaleDateString()
-                          : "-"}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <button
-                        onClick={() => handleVerPeajes(ruta)}
-                        className="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-amber-50 text-amber-600 border border-amber-200 hover:bg-amber-100 transition-colors"
-                        title="Ver peajes de esta ruta">
-                        <Milestone size={16} />
-                      </button>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex justify-end gap-2">
-                        {canEdit && (
-                          <button
-                            onClick={() =>
-                              navigate(`/admin/rutas/edit/${ruta.id}`)
-                            }
-                            className="p-2 hover:bg-primary hover:text-white rounded-xl text-primary transition-all shadow-sm border border-primary/10"
-                            title="Editar Ruta">
-                            <Edit3 size={18} />
-                          </button>
-                        )}
-                        {canDelete && (
-                          <button
-                            onClick={() => setPendingDeleteId(ruta.id)}
-                            disabled={!!deletingId}
-                            className="p-2 hover:bg-destructive hover:text-white rounded-xl text-destructive transition-all shadow-sm border border-destructive/10 disabled:opacity-40 disabled:cursor-not-allowed"
-                            title="Eliminar Ruta">
-                            {deletingId === ruta.id
-                              ? <Loader2 size={18} className="animate-spin" />
-                              : <Trash2 size={18} />}
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="relative group max-w-[250px]">
+                          <span className="text-sm text-muted-foreground block truncate italic">
+                            {ruta.descripcion || "N/A"}
+                          </span>
+
+                          <div className="absolute left-0 bottom-full mb-1 hidden group-hover:block bg-gray-900 text-white text-xs rounded-2xl px-2 py-1 z-10 shadow">
+                            {ruta.descripcion || "N/A"}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <div className="inline-flex items-center gap-2 bg-muted/50 px-3 py-1 rounded-full text-[11px] font-bold whitespace-nowrap">
+                          <Calendar size={12} className="text-primary" />
+                          {ruta.fecha_inicio
+                            ? new Date(ruta.fecha_inicio).toLocaleDateString()
+                            : "-"}
+                          <span className="opacity-30">|</span>
+                          {ruta.fecha_fin
+                            ? new Date(ruta.fecha_fin).toLocaleDateString()
+                            : "-"}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <button
+                          onClick={() => handleVerPeajes(ruta)}
+                          className="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-amber-50 text-amber-600 border border-amber-200 hover:bg-amber-100 transition-colors"
+                          title="Ver peajes de esta ruta">
+                          <Milestone size={16} />
+                        </button>
+                      </td>
+                      {/* <td className="px-6 py-4">
+                        <div className="flex justify-end gap-2">
+                          {canEdit && (
+                            <button
+                              onClick={() =>
+                                navigate(`/admin/rutas/edit/${ruta.id}`)
+                              }
+                              className="p-2 hover:bg-primary hover:text-white rounded-xl text-primary transition-all shadow-sm border border-primary/10"
+                              title="Editar Ruta">
+                              <Edit3 size={18} />
+                            </button>
+                          )}
+                          {canDelete && (
+                            <button
+                              onClick={() => setDeleteTarget(ruta)}
+                              disabled={!!deletingId}
+                              className="p-2 hover:bg-destructive hover:text-white rounded-xl text-destructive transition-all shadow-sm border border-destructive/10 disabled:opacity-40 disabled:cursor-not-allowed"
+                              title="Eliminar Ruta">
+                              {deletingId === ruta.id ? (
+                                <Loader2 size={18} className="animate-spin" />
+                              ) : (
+                                <Trash2 size={18} />
+                              )}
+                            </button>
+                          )}
+                        </div>
+                      </td> */}
+                      <td className="px-6 py-4 text-right">
+                        <AccionesMenu ruta={ruta} />
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -429,35 +517,66 @@ export default function RutasList() {
       </div>
 
       {/* CONFIRM DELETE DIALOG */}
-      <AlertDialog
-        open={pendingDeleteId !== null}
-        onOpenChange={(open) => !open && setPendingDeleteId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>¿Eliminar esta ruta?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta acción no se puede deshacer. La ruta y todos sus puntos
-              serán eliminados permanentemente del sistema.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Sí, eliminar
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {deleteTarget && (
+        <div
+          className="fixed inset-0 z-50 bg-black/40 dark:bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center p-0 md:p-6 animate-in fade-in duration-200"
+          onClick={() => !deleting && setDeleteTarget(null)}>
+          <div
+            className="w-full max-w-md bg-card dark:bg-slate-900 rounded-t-3xl md:rounded-3xl shadow-2xl dark:shadow-black/50 border border-border/40 p-6 space-y-5 animate-in slide-in-from-bottom md:zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start gap-4">
+              <div className="p-3 bg-red-500/10 dark:bg-red-500/15 rounded-2xl ring-1 ring-red-500/20 shrink-0">
+                <AlertTriangle size={20} className="text-red-500" />
+              </div>
+
+              <div>
+                <h2 className="text-base font-black tracking-tight">
+                  Eliminar Ruta
+                </h2>
+                <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed">
+                  ¿Eliminar la ruta{" "}
+                  <span className="font-bold text-foreground">
+                    "{deleteTarget.nombre}"
+                  </span>
+                  ? Esta acción no se puede deshacer.
+                </p>
+              </div>
+            </div>
+
+            <div className="h-px bg-border/50" />
+
+            <div className="flex gap-2.5">
+              <Button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="flex-1 rounded-2xl h-10 bg-red-500 hover:bg-red-600 text-white font-bold shadow-md gap-2 disabled:opacity-60">
+                {deleting ? (
+                  <Loader2 size={15} className="animate-spin" />
+                ) : (
+                  <Trash2 size={15} />
+                )}
+                {deleting ? "Eliminando..." : "Eliminar"}
+              </Button>
+
+              <Button
+                variant="outline"
+                onClick={() => setDeleteTarget(null)}
+                disabled={deleting}
+                className="flex-1 rounded-2xl h-10 font-bold">
+                Cancelar
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* MODAL PEAJES */}
       {modalRuta && (
         <div
-          className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 bg-black/40 dark:bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center p-0 md:p-6 animate-in fade-in duration-200"
           onClick={() => setModalRuta(null)}>
           <div
-            className="bg-card rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in zoom-in-90 duration-200"
+            className="w-full max-w-2xl bg-card dark:bg-slate-900 rounded-t-3xl md:rounded-3xl shadow-2xl dark:shadow-black/50 border border-border/40 p-6 space-y-5 animate-in slide-in-from-bottom md:zoom-in-95 duration-200"
             onClick={(e) => e.stopPropagation()}>
             {/* Header modal */}
             <div className="flex items-center justify-between px-6 py-4 border-b">
@@ -550,10 +669,11 @@ export default function RutasList() {
                     {modalPeajes.map((p, i) => (
                       <div
                         key={p.id}
-                        className="flex items-center gap-3 p-3 bg-amber-50 border border-amber-100 rounded-2xl">
-                        <div className="w-7 h-7 rounded-full bg-amber-400 text-white flex items-center justify-center text-xs font-black">
+                        className="flex items-center gap-3 p-3 bg-muted/40 border border-border rounded-2xl hover:bg-muted/60 transition">
+                        <div className="w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-black">
                           {i + 1}
                         </div>
+
                         <div className="flex-1">
                           <p className="font-bold text-sm">{p.nombre}</p>
                           <p className="text-[10px] font-mono text-muted-foreground">

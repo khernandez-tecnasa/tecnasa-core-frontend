@@ -3,7 +3,7 @@ import { getOperacionActiva } from "@/services/operaciones.service";
 import { useAuth } from "@/context/AuthContext";
 import OperacionForm from "./OperacionForm";
 import OperacionHeader from "./OperacionHeader";
-import { Loader2 } from "lucide-react";
+import { Loader2, Lock } from "lucide-react";
 
 export default function OperacionesPage() {
   const { userData, hasPermiso, checkingSession } = useAuth();
@@ -31,35 +31,36 @@ export default function OperacionesPage() {
   if (checkingSession) return null;
 
   if (!canView)
-    return <div className="p-10 text-center opacity-50">Acceso denegado</div>;
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center space-y-3 opacity-40">
+          <Lock size={40} className="mx-auto" />
+          <p className="font-semibold text-sm">Acceso denegado</p>
+        </div>
+      </div>
+    );
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
-      <div className="max-w-2xl mx-auto px-4 py-6 md:py-10 space-y-4">
-        <OperacionHeader operacionActiva={operacionActiva} />
+    <div className="max-w-2xl mx-auto px-4 py-6 md:py-10 space-y-4 animate-in fade-in duration-500">
+      <OperacionHeader operacionActiva={operacionActiva} />
 
-        {loading ? (
-          <div className="flex flex-col items-center justify-center py-24 gap-4">
-            <div className="relative w-14 h-14">
-              <div className="absolute inset-0 rounded-full border-4 border-slate-100 dark:border-slate-800" />
-              <Loader2
-                className="absolute inset-0 m-auto animate-spin text-primary"
-                size={26}
-              />
-            </div>
-            <p className="text-[11px] font-black uppercase tracking-[0.25em] text-slate-400">
-              Sincronizando Estado
-            </p>
+      {loading ? (
+        <div className="flex flex-col items-center justify-center py-24 gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+            <Loader2 className="animate-spin text-primary" size={22} />
           </div>
-        ) : (
-          <OperacionForm
-            operacionActiva={operacionActiva}
-            refresh={loadOperacion}
-            canViewEstacionamientos={canViewEstacionamientos}
-            canRegister={canRegister}
-          />
-        )}
-      </div>
+          <p className="text-[11px] font-black uppercase tracking-[0.25em] text-muted-foreground">
+            Sincronizando estado…
+          </p>
+        </div>
+      ) : (
+        <OperacionForm
+          operacionActiva={operacionActiva}
+          refresh={loadOperacion}
+          canViewEstacionamientos={canViewEstacionamientos}
+          canRegister={canRegister}
+        />
+      )}
     </div>
   );
 }

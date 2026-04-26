@@ -1,43 +1,13 @@
-import { useState, useEffect, useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { useFormik } from "formik";
-import * as yup from "yup";
 import { useTranslation } from "react-i18next";
-import { X, Loader2 } from "lucide-react";
+import { X, Loader2, AlertTriangle } from "lucide-react";
 
-import { getUbicaciones as defaultGetUbicaciones } from "../../services/VehiculosService";
+import { validationSchemaFactory } from "./VehiculosModal";
 
-/* ── Validation ──────────────────────────────────────────────────────── */
-
-export const validationSchemaFactory = (t) =>
-  yup.object({
-    placa:  yup.string().trim().required(t("vehiculos.modal.validation.placa",    "La placa es requerida")),
-    marca:  yup.string().trim().required(t("vehiculos.modal.validation.marca",    "La marca es requerida")),
-    modelo: yup.string().trim().required(t("vehiculos.modal.validation.modelo",   "El modelo es requerido")),
-    estado: yup.string().required(       t("vehiculos.modal.validation.estado",   "El estado es requerido")),
-    id_ubicacion_actual: yup
-      .number()
-      .typeError(t("vehiculos.modal.validation.ubicacion", "La ubicación es requerida"))
-      .required( t("vehiculos.modal.validation.ubicacion", "La ubicación es requerida")),
-  });
+/* ── Shared helpers ──────────────────────────────────────────────────── */
 
 const STATE_OPTIONS = ["Disponible", "En Uso", "En Mantenimiento", "Reservado", "Inactivo"];
-
-/* ── Sub-components ──────────────────────────────────────────────────── */
-
-function Field({ label, required, error, touched, children }) {
-  return (
-    <div className="flex flex-col gap-1.5">
-      <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-        {label}
-        {required && <span className="text-red-500 ml-0.5">*</span>}
-      </label>
-      {children}
-      {touched && error && (
-        <p className="text-xs text-red-500 dark:text-red-400" role="alert">{error}</p>
-      )}
-    </div>
-  );
-}
 
 function fieldCls(hasError) {
   return [
@@ -52,57 +22,44 @@ function fieldCls(hasError) {
   ].join(" ");
 }
 
-/* ── Modal ───────────────────────────────────────────────────────────── */
+function Field({ label, required, error, touched, children }) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+        {label}
+        {required && <span className="text-red-500 ml-0.5">*</span>}
+      </label>
+      {children}
+      {touched && error && (
+        <p className="text-xs text-red-500 dark:text-red-400 flex items-center gap-1" role="alert">
+          <AlertTriangle size={10} />
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}
 
-export default function VehiculoModal({
+/* ── Sheet ───────────────────────────────────────────────────────────── */
+
+export default function VehiculoFormSheet({
   open,
   onClose,
   onSubmit,
-  ubicaciones: ubicacionesProp,
-  loadingUbicaciones: loadingUbicacionesProp,
-  fetchUbicaciones = defaultGetUbicaciones,
-  saving = false,
+  saving      = false,
   initialValues = {
-    id: null,
-    placa: "",
-    marca: "",
-    modelo: "",
-    estado: "Disponible",
-    id_ubicacion_actual: null,
+    id:                   null,
+    placa:                "",
+    marca:                "",
+    modelo:               "",
+    estado:               "Disponible",
+    id_ubicacion_actual:  null,
   },
+  ubicOptions    = [],
+  isLoadingUbics = false,
   title,
 }) {
   const { t } = useTranslation();
-
-  const [ubicaciones,   setUbicaciones]   = useState([]);
-  const [loadingUbics,  setLoadingUbics]  = useState(true);
-
-  const useExternal    = Array.isArray(ubicacionesProp);
-  const isLoadingUbics = typeof loadingUbicacionesProp === "boolean"
-    ? loadingUbicacionesProp
-    : loadingUbics;
-
-  /* fetch ubicaciones */
-  useEffect(() => {
-    if (!open) return;
-    let cancelled = false;
-    if (useExternal) {
-      setUbicaciones(ubicacionesProp || []);
-      setLoadingUbics(false);
-      return;
-    }
-    setLoadingUbics(true);
-    fetchUbicaciones()
-      .then((d)  => { if (!cancelled) setUbicaciones(Array.isArray(d) ? d : []); })
-      .catch(()  => { if (!cancelled) setUbicaciones([]); })
-      .finally(() => { if (!cancelled) setLoadingUbics(false); });
-    return () => { cancelled = true; };
-  }, [open, useExternal, ubicacionesProp]);
-
-  const ubicOptions = useMemo(() => {
-    const arr = useExternal ? ubicacionesProp || [] : ubicaciones;
-    return Array.isArray(arr) ? arr : [];
-  }, [useExternal, ubicacionesProp, ubicaciones]);
 
   const validationSchema = useMemo(() => validationSchemaFactory(t), [t]);
 
@@ -120,7 +77,7 @@ export default function VehiculoModal({
 
   const isBusy = saving || formik.isSubmitting;
 
-  /* scroll lock */
+  /* Scroll lock */
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
@@ -131,22 +88,25 @@ export default function VehiculoModal({
   const handleClose = () => { if (!isBusy) onClose?.(); };
 
   return (
-    <div className="fixed inset-0 flex" style={{ zIndex: 500 }}>
-      {/* Backdrop */}
+    <div
+      className="fixed inset-0 z-50 bg-black/40 dark:bg-black/60 backdrop-blur-sm flex items-end justify-center animate-in fade-in duration-200"
+      onClick={handleClose}
+    >
       <div
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-        onClick={handleClose}
-      />
-
-      {/* Panel — slides in from the right */}
-      <div className="absolute top-0 right-0 h-full w-full sm:w-[440px] flex flex-col bg-white dark:bg-gray-900 shadow-2xl animate-in slide-in-from-right duration-200">
+        className="w-full bg-card dark:bg-slate-900 rounded-t-3xl shadow-2xl dark:shadow-black/50 border border-border/40 flex flex-col max-h-[92vh] animate-in slide-in-from-bottom duration-200"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Drag handle */}
+        <div className="flex justify-center pt-3 pb-1 shrink-0">
+          <div className="w-10 h-1 rounded-full bg-gray-300 dark:bg-gray-700" />
+        </div>
 
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-gray-800 shrink-0">
+        <div className="flex items-center justify-between px-5 py-3 border-b border-border/60 shrink-0">
           <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
             {title || (initialValues?.id
-              ? t("vehiculos.modal.title_edit", "Editar vehículo")
-              : t("vehiculos.modal.title_add",  "Agregar vehículo"))}
+              ? t("vehiculos.modal.title_edit",  "Editar vehículo")
+              : t("vehiculos.modal.title_add",   "Agregar vehículo"))}
           </h2>
           <button
             onClick={handleClose}
@@ -157,16 +117,20 @@ export default function VehiculoModal({
           </button>
         </div>
 
-        {/* Form */}
+        {/* Form body */}
         <form onSubmit={formik.handleSubmit} className="flex-1 flex flex-col overflow-hidden">
-          <div className="flex-1 overflow-y-auto px-5 py-5 space-y-4">
+          <div className="flex-1 overflow-y-auto px-5 py-5 space-y-4 pb-[env(safe-area-inset-bottom,0px)]">
             <p className="text-xs text-gray-400 dark:text-gray-500">
               {t("vehiculos.modal.required_note", "Los campos marcados con * son obligatorios.")}
             </p>
 
             {/* Placa */}
-            <Field label={t("vehiculos.modal.labels.placa", "Placa")} required
-              error={formik.errors.placa} touched={formik.touched.placa}>
+            <Field
+              label={t("vehiculos.modal.labels.placa", "Placa")}
+              required
+              error={formik.errors.placa}
+              touched={formik.touched.placa}
+            >
               <input
                 name="placa"
                 value={formik.values.placa}
@@ -180,8 +144,12 @@ export default function VehiculoModal({
             </Field>
 
             {/* Marca */}
-            <Field label={t("vehiculos.modal.labels.marca", "Marca")} required
-              error={formik.errors.marca} touched={formik.touched.marca}>
+            <Field
+              label={t("vehiculos.modal.labels.marca", "Marca")}
+              required
+              error={formik.errors.marca}
+              touched={formik.touched.marca}
+            >
               <input
                 name="marca"
                 value={formik.values.marca}
@@ -194,8 +162,12 @@ export default function VehiculoModal({
             </Field>
 
             {/* Modelo */}
-            <Field label={t("vehiculos.modal.labels.modelo", "Modelo")} required
-              error={formik.errors.modelo} touched={formik.touched.modelo}>
+            <Field
+              label={t("vehiculos.modal.labels.modelo", "Modelo")}
+              required
+              error={formik.errors.modelo}
+              touched={formik.touched.modelo}
+            >
               <input
                 name="modelo"
                 value={formik.values.modelo}
@@ -207,9 +179,13 @@ export default function VehiculoModal({
               />
             </Field>
 
-            {/* Estado */}
-            <Field label={t("vehiculos.modal.labels.estado", "Estado")} required
-              error={formik.errors.estado} touched={formik.touched.estado}>
+            {/* Estado — native select avoids overflow/z-index issues in sheet */}
+            <Field
+              label={t("vehiculos.modal.labels.estado", "Estado")}
+              required
+              error={formik.errors.estado}
+              touched={formik.touched.estado}
+            >
               <select
                 name="estado"
                 value={formik.values.estado || ""}
@@ -229,9 +205,13 @@ export default function VehiculoModal({
               </select>
             </Field>
 
-            {/* Ubicación */}
-            <Field label={t("vehiculos.modal.labels.ubicacion", "Ubicación actual")} required
-              error={formik.errors.id_ubicacion_actual} touched={formik.touched.id_ubicacion_actual}>
+            {/* Ubicación — native select */}
+            <Field
+              label={t("vehiculos.modal.labels.ubicacion", "Ubicación actual")}
+              required
+              error={formik.errors.id_ubicacion_actual}
+              touched={formik.touched.id_ubicacion_actual}
+            >
               <div className="relative">
                 <select
                   name="id_ubicacion_actual"
@@ -269,7 +249,7 @@ export default function VehiculoModal({
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-end gap-2 px-5 py-4 border-t border-gray-200 dark:border-gray-800 shrink-0">
+          <div className="flex items-center justify-end gap-2 px-5 py-4 border-t border-border/60 shrink-0 pb-[calc(1rem+env(safe-area-inset-bottom,0px))]">
             <button
               type="button"
               onClick={handleClose}

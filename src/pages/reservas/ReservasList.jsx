@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import {
   Plus,
   Car,
-  User,
   Calendar,
   Play,
   CheckCircle2,
@@ -13,6 +12,9 @@ import {
   Search,
   Clock,
   ArrowRight,
+  MoreVertical,
+  AlertTriangle,
+  Loader2,
 } from "lucide-react";
 
 import FullCalendar from "@fullcalendar/react";
@@ -32,6 +34,14 @@ import { useToast } from "@/context/ToastContext";
 import { useAuth } from "@/context/AuthContext";
 import useIsMobile from "@/hooks/useIsMobile";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function ReservasList() {
   const [reservas, setReservas] = useState([]);
@@ -39,6 +49,9 @@ export default function ReservasList() {
   const [searchTerm, setSearchTerm] = useState("");
 
   const [viewMode, setViewMode] = useState("table");
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [cancelTarget, setCancelTarget] = useState(null);
+  const [processing, setProcessing] = useState(false);
 
   const { showToast } = useToast();
   const { userData, hasPermiso } = useAuth();
@@ -109,15 +122,31 @@ export default function ReservasList() {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!canDelete) return showToast("No tienes permiso", "warning");
-    if (!confirm("¿Eliminar esta reserva definitivamente?")) return;
-    const res = await deleteReserva(id);
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    setProcessing(true);
+    const res = await deleteReserva(deleteTarget.id);
+    setProcessing(false);
     if (res) {
       showToast("Reserva eliminada", "success");
+      setDeleteTarget(null);
       fetchReservas();
     } else {
       showToast("Error al eliminar", "danger");
+    }
+  };
+
+  const confirmCancel = async () => {
+    if (!cancelTarget) return;
+    setProcessing(true);
+    const res = await cancelarReserva(cancelTarget.id);
+    setProcessing(false);
+    if (res) {
+      showToast("Reserva cancelada", "success");
+      setCancelTarget(null);
+      fetchReservas();
+    } else {
+      showToast("Error al cancelar reserva", "danger");
     }
   };
 
@@ -280,70 +309,145 @@ export default function ReservasList() {
     );
   };
 
+  const AccionesMenu = ({ r }) => (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          className="h-8 w-8 p-0 hover:bg-muted/80 rounded-xl transition-colors">
+          <MoreVertical size={16} />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent
+        align="end"
+        className="w-48 rounded-2xl shadow-xl border-border/60">
+        <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70">
+          Acciones
+        </DropdownMenuLabel>
+
+        {r.estado === "Reservado" && (
+          <DropdownMenuItem
+            onClick={() => handleEstado(r.id, "iniciar")}
+            className="rounded-xl cursor-pointer gap-2 text-sm text-blue-600 focus:text-blue-600 focus:bg-blue-50 dark:focus:bg-blue-500/10">
+            <Play size={13} fill="currentColor" /> Iniciar viaje
+          </DropdownMenuItem>
+        )}
+
+        {r.estado === "En Uso" && (
+          <DropdownMenuItem
+            onClick={() => handleEstado(r.id, "finalizar")}
+            className="rounded-xl cursor-pointer gap-2 text-sm text-emerald-600 focus:text-emerald-600 focus:bg-emerald-50 dark:focus:bg-emerald-500/10">
+            <CheckCircle2 size={13} /> Finalizar viaje
+          </DropdownMenuItem>
+        )}
+
+        {canUpdate && r.estado === "Reservado" && (
+          <DropdownMenuItem
+            onClick={() => navigate(`/admin/reservas-vehiculos/edit/${r.id}`)}
+            className="rounded-xl cursor-pointer gap-2 text-sm">
+            <Edit3 size={13} /> Editar
+          </DropdownMenuItem>
+        )}
+
+        {r.estado === "Reservado" && <DropdownMenuSeparator />}
+
+        {r.estado === "Reservado" && (
+          <DropdownMenuItem
+            onClick={() => setCancelTarget(r)}
+            className="rounded-xl cursor-pointer gap-2 text-sm text-amber-600 focus:text-amber-600 focus:bg-amber-50 dark:focus:bg-amber-500/10">
+            <XCircle size={13} /> Cancelar reserva
+          </DropdownMenuItem>
+        )}
+
+        {canDelete && r.estado === "Reservado" && (
+          <DropdownMenuItem
+            onClick={() => setDeleteTarget(r)}
+            className="rounded-xl cursor-pointer gap-2 text-sm text-rose-600 focus:text-rose-600 focus:bg-rose-50 dark:focus:bg-rose-500/10">
+            <Trash2 size={13} /> Eliminar
+          </DropdownMenuItem>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+
   if (!canView)
-    return <div className="p-10 text-center opacity-50">Acceso denegado</div>;
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center space-y-3 opacity-40">
+          <Clock size={40} className="mx-auto" />
+          <p className="font-semibold text-sm">Acceso denegado</p>
+        </div>
+      </div>
+    );
 
   return (
-    <div className="max-w-7xl mx-auto p-4 md:p-8 space-y-6 animate-in fade-in duration-500">
-      {/* HEADER */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-black tracking-tight flex items-center gap-2">
-            <Clock className="text-primary" size={32} />
-            CONTROL DE RESERVAS
-          </h1>
-          <p className="text-muted-foreground text-sm font-medium">
-            Monitoreo y asignación de vehículos para el personal.
-          </p>
+    <div className="max-w-7xl mx-auto px-4 md:px-8 py-6 md:py-10 space-y-6 animate-in fade-in duration-500">
+      {/* ── HEADER ── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3.5">
+          <div className="p-2.5 rounded-2xl bg-primary/10 dark:bg-primary/15 ring-1 ring-primary/20 dark:ring-primary/30 shadow-sm shadow-primary/10 shrink-0">
+            <Clock size={22} className="text-primary" />
+          </div>
+          <div>
+            <h1 className="text-2xl md:text-3xl font-black tracking-tight leading-none">
+              Reservas de Vehículos
+            </h1>
+            <p className="text-muted-foreground text-xs md:text-sm font-medium mt-0.5">
+              Monitoreo y asignación de vehículos para el personal
+            </p>
+          </div>
         </div>
 
         {canCreate && (
           <Button
             onClick={() => navigate("/admin/reservas-vehiculos/new")}
-            className="bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 rounded-xl px-6 h-12">
-            <Plus size={20} className="mr-2" /> Nueva Reserva
+            className="rounded-2xl px-5 h-10 font-bold shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all duration-200 gap-2 shrink-0">
+            <Plus size={17} strokeWidth={2.5} />
+            <span className="hidden sm:inline">Nueva Reserva</span>
           </Button>
         )}
       </div>
 
-      {/* FILTROS */}
-      <div className="bg-card border rounded-2xl p-4 shadow-sm flex flex-col md:flex-row gap-4 items-center">
-        <div className="relative w-full md:w-96">
+      {/* ── TOOLBAR ── */}
+      <div className="flex items-center gap-3 flex-wrap">
+        <div className="relative w-full max-w-xs group">
           <Search
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-            size={18}
+            size={15}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/50 group-focus-within:text-primary transition-colors pointer-events-none"
           />
           <input
             type="text"
             placeholder="Buscar por placa o empleado..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-muted/50 border-none rounded-xl pl-10 pr-4 py-2.5 text-sm focus:ring-2 ring-primary/20 transition-all outline-none"
+            className="w-full bg-card border border-border/60 rounded-xl pl-9 pr-4 py-2 text-sm outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/15 transition-all placeholder:text-muted-foreground/50 shadow-sm"
           />
         </div>
 
-        {/* VIEW MODE */}
-        <div className="flex gap-2 ml-auto">
+        <div className="flex gap-1 bg-muted/50 dark:bg-slate-800/50 border border-border/60 rounded-xl p-1 ml-auto">
           <button
             onClick={() => setViewMode("table")}
-            className={`px-4 py-2 rounded-xl text-sm font-semibold ${
-              viewMode === "table" ? "bg-primary text-white" : "bg-muted"
+            className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all duration-150 ${
+              viewMode === "table"
+                ? "bg-card dark:bg-slate-900 text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
             }`}>
             Tabla
           </button>
-
           <button
             onClick={() => setViewMode("calendar")}
-            className={`px-4 py-2 rounded-xl text-sm font-semibold ${
-              viewMode === "calendar" ? "bg-primary text-white" : "bg-muted"
+            className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all duration-150 ${
+              viewMode === "calendar"
+                ? "bg-card dark:bg-slate-900 text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
             }`}>
             Calendario
           </button>
         </div>
       </div>
 
-      {/* LISTADO */}
-      <div className="bg-card border rounded-3xl shadow-sm overflow-hidden">
+      {/* ── CONTENIDO PRINCIPAL ── */}
+      <div className="bg-card dark:bg-slate-900/40 border border-border/60 rounded-3xl shadow-sm overflow-hidden">
         {viewMode === "calendar" ? (
           <div className="p-6 calendar-container">
             <FullCalendar
@@ -383,202 +487,138 @@ export default function ReservasList() {
           </div>
         ) : (
           <>
-            {/* 🔥 TU TABLA ORIGINAL (NO LA TOQUES) */}
             {loading ? (
-              <div className="p-20 text-center">Cargando...</div>
+              <div className="flex flex-col items-center justify-center gap-4 py-24">
+                <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+                  <Clock className="animate-pulse text-primary" size={22} />
+                </div>
+                <p className="text-sm text-muted-foreground font-medium">
+                  Cargando reservas...
+                </p>
+              </div>
             ) : filteredReservas.length === 0 ? (
-              <div className="p-20 text-center">No hay reservas</div>
+              <div className="flex flex-col items-center justify-center gap-4 py-24">
+                <div className="w-16 h-16 rounded-3xl bg-muted/50 dark:bg-slate-800/50 flex items-center justify-center">
+                  <Clock size={28} className="text-muted-foreground/40" />
+                </div>
+                <div className="text-center">
+                  <p className="font-bold text-sm">
+                    {searchTerm ? "Sin resultados" : "Sin reservas registradas"}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {searchTerm
+                      ? `No hay coincidencias para "${searchTerm}"`
+                      : "Crea la primera reserva usando el botón de arriba"}
+                  </p>
+                </div>
+              </div>
             ) : isMobile ? (
-              /* MOBILE */
-              <div className="divide-y divide-border">
+              /* ── MOBILE ── */
+              <div className="divide-y divide-border/50">
                 {filteredReservas.map((r) => (
-                  <div key={r.id} className="p-5 space-y-4">
-                    <div className="flex justify-between items-start">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2 font-black text-lg">
-                          <Car size={18} className="text-primary" />
-                          {r.vehiculo_placa}
+                  <div
+                    key={r.id}
+                    className="p-4 hover:bg-muted/20 dark:hover:bg-slate-800/30 transition-colors">
+                    <div className="flex justify-between items-start mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 shrink-0 rounded-xl bg-muted/60 dark:bg-slate-800 flex items-center justify-center">
+                          <Car size={18} className="text-muted-foreground" />
                         </div>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <User size={14} />
-                          {r.empleado_nombre || "ID: " + r.empleado_id}
+                        <div>
+                          <div className="font-bold text-sm">
+                            {r.vehiculo_placa}
+                          </div>
+                          <div className="text-[11px] text-muted-foreground truncate">
+                            {r.empleado_nombre || "ID: " + r.empleado_id}
+                          </div>
                         </div>
                       </div>
                       <span
-                        className={`px-3 py-1 text-[10px] font-black uppercase rounded-full border ${getEstadoStyle(r.estado)}`}>
+                        className={`px-2.5 py-1 text-[10px] font-black uppercase rounded-full border ${getEstadoStyle(r.estado)}`}>
                         {r.estado}
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-3 text-[11px] font-bold text-muted-foreground bg-muted/40 p-2 rounded-lg">
-                      <Calendar size={14} />
+                    <div className="flex items-center gap-2 text-[11px] font-medium text-muted-foreground bg-muted/40 dark:bg-slate-800/50 px-3 py-2 rounded-xl mb-3">
+                      <Calendar size={12} />
                       {formatFechaLocal(r.fecha_inicio)}
-                      <ArrowRight size={12} />
+                      <ArrowRight size={10} className="opacity-40" />
                       {formatFechaLocal(r.fecha_fin)}
                     </div>
 
-                    <div className="flex gap-2 pt-2 overflow-x-auto pb-1">
-                      {r.estado === "Reservado" && (
-                        <>
-                          <Button
-                            size="sm"
-                            onClick={() => handleEstado(r.id, "iniciar")}
-                            className="bg-blue-600 hover:bg-blue-700 text-[11px] h-8 px-4 rounded-lg">
-                            <Play size={12} className="mr-1" /> Iniciar
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleEstado(r.id, "cancelar")}
-                            className="text-rose-600 border-rose-200 text-[11px] h-8 rounded-lg">
-                            Cancelar
-                          </Button>
-                        </>
-                      )}
-                      {r.estado === "En Uso" && (
-                        <Button
-                          size="sm"
-                          onClick={() => handleEstado(r.id, "finalizar")}
-                          className="bg-emerald-600 hover:bg-emerald-700 text-[11px] h-8 px-4 rounded-lg">
-                          <CheckCircle2 size={12} className="mr-1" /> Finalizar
-                        </Button>
-                      )}
-                      {canUpdate && r.estado === "Reservado" && (
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() =>
-                            navigate(`/admin/reservas-vehiculos/edit/${r.id}`)
-                          }
-                          className="text-muted-foreground h-8 rounded-lg">
-                          <Edit3 size={14} />
-                        </Button>
-                      )}
-                      {canDelete && r.estado === "Reservado" && (
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => handleDelete(r.id)}
-                          className="text-rose-500 hover:bg-rose-50 h-8 rounded-lg">
-                          <Trash2 size={14} />
-                        </Button>
-                      )}
+                    <div className="flex justify-end">
+                      <AccionesMenu r={r} />
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              /* DESKTOP */
+              /* ── DESKTOP ── */
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="bg-muted/30 border-b">
-                      <th className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                        Vehículo
-                      </th>
-                      <th className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                        Empleado Responsable
-                      </th>
-                      <th className="px-6 py-4 text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                        Periodo de Uso
-                      </th>
-                      <th className="px-6 py-4 text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                        Estado
-                      </th>
-                      <th className="px-6 py-4 text-right text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                        Acciones Operativas
-                      </th>
+                    <tr className="border-b border-border/60 bg-muted/20 dark:bg-slate-800/30">
+                      {[
+                        ["Vehículo", "text-left"],
+                        ["Empleado Responsable", "text-left"],
+                        ["Periodo de Uso", "text-center"],
+                        ["Estado", "text-center"],
+                        ["Acciones", "text-right"],
+                      ].map(([label, align]) => (
+                        <th key={label} className={`px-6 py-3.5 ${align}`}>
+                          <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70">
+                            {label}
+                          </span>
+                        </th>
+                      ))}
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-border">
+                  <tbody>
                     {filteredReservas.map((r) => (
                       <tr
                         key={r.id}
-                        className="hover:bg-muted/10 transition-colors group">
+                        className="border-b border-border/30 last:border-0 hover:bg-muted/20 dark:hover:bg-slate-800/20 transition-colors group">
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center group-hover:bg-primary/10 group-hover:text-primary transition-all">
-                              <Car size={20} />
+                            <div className="w-9 h-9 shrink-0 rounded-xl bg-muted/60 dark:bg-slate-800 group-hover:bg-primary/10 group-hover:ring-1 ring-primary/20 flex items-center justify-center transition-all duration-200">
+                              <Car
+                                size={16}
+                                className="text-muted-foreground group-hover:text-primary transition-colors"
+                              />
                             </div>
-                            <span className="font-bold tracking-tight">
+                            <span className="font-bold text-sm">
                               {r.vehiculo_placa || "S/P"}
                             </span>
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <div className="text-sm font-semibold">
+                          <div className="font-semibold text-sm">
                             {r.empleado_nombre || "Desconocido"}
                           </div>
-                          <div className="text-[10px] text-muted-foreground uppercase tracking-tighter">
+                          <div className="text-[10px] text-muted-foreground/60 font-mono mt-0.5">
                             ID: {r.empleado_id}
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <div className="flex items-center justify-center gap-2 text-[11px] font-bold">
-                            <span className="bg-muted px-2 py-1 rounded border">
+                          <div className="flex items-center justify-center gap-2 text-[11px] font-medium">
+                            <span className="bg-muted/60 dark:bg-slate-800 px-2 py-1 rounded-lg border border-border/50">
                               {formatFechaLocal(r.fecha_inicio)}
                             </span>
                             <ArrowRight size={12} className="opacity-30" />
-                            <span className="bg-muted px-2 py-1 rounded border">
+                            <span className="bg-muted/60 dark:bg-slate-800 px-2 py-1 rounded-lg border border-border/50">
                               {formatFechaLocal(r.fecha_fin)}
                             </span>
                           </div>
                         </td>
                         <td className="px-6 py-4 text-center">
                           <span
-                            className={`px-3 py-1 text-[10px] font-black uppercase rounded-full border ${getEstadoStyle(r.estado)}`}>
+                            className={`px-2.5 py-1 text-[10px] font-black uppercase rounded-full border ${getEstadoStyle(r.estado)}`}>
                             {r.estado}
                           </span>
                         </td>
                         <td className="px-6 py-4">
-                          <div className="flex justify-end gap-2">
-                            {/* ACCIONES DINÁMICAS */}
-                            {r.estado === "Reservado" && (
-                              <>
-                                <button
-                                  onClick={() => handleEstado(r.id, "iniciar")}
-                                  className="p-2 text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
-                                  title="Iniciar Viaje">
-                                  <Play size={18} fill="currentColor" />
-                                </button>
-                                <button
-                                  onClick={() => handleEstado(r.id, "cancelar")}
-                                  className="p-2 text-rose-500 hover:bg-rose-50 rounded-xl transition-all"
-                                  title="Cancelar">
-                                  <XCircle size={18} />
-                                </button>
-                              </>
-                            )}
-                            {r.estado === "En Uso" && (
-                              <button
-                                onClick={() => handleEstado(r.id, "finalizar")}
-                                className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all"
-                                title="Finalizar Viaje">
-                                <CheckCircle2 size={18} />
-                              </button>
-                            )}
-
-                            <div className="h-6 w-[1px] bg-border mx-1" />
-
-                            {/* EDITAR / ELIMINAR */}
-                            {canUpdate && r.estado === "Reservado" && (
-                              <button
-                                onClick={() =>
-                                  navigate(
-                                    `/admin/reservas-vehiculos/edit/${r.id}`,
-                                  )
-                                }
-                                className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-xl transition-all">
-                                <Edit3 size={18} />
-                              </button>
-                            )}
-                            {canDelete && r.estado === "Reservado" && (
-                              <button
-                                onClick={() => handleDelete(r.id)}
-                                className="p-2 text-muted-foreground hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all">
-                                <Trash2 size={18} />
-                              </button>
-                            )}
+                          <div className="flex justify-end">
+                            <AccionesMenu r={r} />
                           </div>
                         </td>
                       </tr>
@@ -590,6 +630,109 @@ export default function ReservasList() {
           </>
         )}
       </div>
+      {/* ── MODAL: CANCELAR RESERVA ── */}
+      {cancelTarget && (
+        <div
+          className="fixed inset-0 z-50 bg-black/40 dark:bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center p-0 md:p-6 animate-in fade-in duration-200"
+          onClick={() => !processing && setCancelTarget(null)}>
+          <div
+            className="w-full max-w-md bg-card dark:bg-slate-900 rounded-t-3xl md:rounded-3xl shadow-2xl dark:shadow-black/50 border border-border/40 p-6 space-y-5 animate-in slide-in-from-bottom md:zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start gap-4">
+              <div className="p-3 bg-amber-500/10 dark:bg-amber-500/15 rounded-2xl ring-1 ring-amber-500/20 shrink-0">
+                <XCircle size={20} className="text-amber-500" />
+              </div>
+              <div>
+                <h2 className="text-base font-black tracking-tight">
+                  Cancelar Reserva
+                </h2>
+                <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed">
+                  ¿Cancelar la reserva del vehículo{" "}
+                  <span className="font-bold text-foreground">
+                    "{cancelTarget.vehiculo_placa}"
+                  </span>{" "}
+                  asignado a{" "}
+                  <span className="font-bold text-foreground">
+                    {cancelTarget.empleado_nombre || `ID ${cancelTarget.empleado_id}`}
+                  </span>
+                  ? Esta acción no se puede deshacer.
+                </p>
+              </div>
+            </div>
+            <div className="h-px bg-border/50" />
+            <div className="flex gap-2.5">
+              <Button
+                onClick={confirmCancel}
+                disabled={processing}
+                className="flex-1 rounded-2xl h-10 bg-amber-500 hover:bg-amber-600 text-white font-bold shadow-md gap-2 disabled:opacity-60">
+                {processing ? (
+                  <Loader2 size={15} className="animate-spin" />
+                ) : (
+                  <XCircle size={15} />
+                )}
+                {processing ? "Cancelando..." : "Sí, cancelar"}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setCancelTarget(null)}
+                disabled={processing}
+                className="flex-1 rounded-2xl h-10 font-bold">
+                Volver
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL: ELIMINAR RESERVA ── */}
+      {deleteTarget && (
+        <div
+          className="fixed inset-0 z-50 bg-black/40 dark:bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center p-0 md:p-6 animate-in fade-in duration-200"
+          onClick={() => !processing && setDeleteTarget(null)}>
+          <div
+            className="w-full max-w-md bg-card dark:bg-slate-900 rounded-t-3xl md:rounded-3xl shadow-2xl dark:shadow-black/50 border border-border/40 p-6 space-y-5 animate-in slide-in-from-bottom md:zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start gap-4">
+              <div className="p-3 bg-rose-500/10 dark:bg-rose-500/15 rounded-2xl ring-1 ring-rose-500/20 shrink-0">
+                <AlertTriangle size={20} className="text-rose-500" />
+              </div>
+              <div>
+                <h2 className="text-base font-black tracking-tight">
+                  Eliminar Reserva
+                </h2>
+                <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed">
+                  ¿Eliminar definitivamente la reserva del vehículo{" "}
+                  <span className="font-bold text-foreground">
+                    "{deleteTarget.vehiculo_placa}"
+                  </span>
+                  ? Este registro no podrá recuperarse.
+                </p>
+              </div>
+            </div>
+            <div className="h-px bg-border/50" />
+            <div className="flex gap-2.5">
+              <Button
+                onClick={confirmDelete}
+                disabled={processing}
+                className="flex-1 rounded-2xl h-10 bg-rose-500 hover:bg-rose-600 text-white font-bold shadow-md gap-2 disabled:opacity-60">
+                {processing ? (
+                  <Loader2 size={15} className="animate-spin" />
+                ) : (
+                  <Trash2 size={15} />
+                )}
+                {processing ? "Eliminando..." : "Sí, eliminar"}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setDeleteTarget(null)}
+                disabled={processing}
+                className="flex-1 rounded-2xl h-10 font-bold">
+                Cancelar
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

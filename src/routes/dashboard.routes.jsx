@@ -9,7 +9,8 @@ import Usuarios    from "@/pages/Users/Users";
 import UsersList   from "@/pages/Users/UsersList";
 import UsersForm   from "@/pages/Users/UsersForm";
 import MyAccount from "@/pages/Users/MyAccount/MyAccount";
-import Vehiculos from "@/pages/Vehiculos/Vehiculos";
+import Vehiculos     from "@/pages/Vehiculos/Vehiculos";
+import VehiculosForm from "@/pages/Vehiculos/VehiculosForm";
 import Register from "@/pages/Register/Register";
 import RegisterForm from "@/pages/Register/RegisterForm";
 // import Reservas from "@/pages/Register/Reservas";
@@ -94,7 +95,11 @@ export default function DashboardRoutes() {
         <Route path="mi-cuenta" element={<MyAccount />} />
 
         {/* Vehículos / Registro */}
-        <Route path="vehiculos" element={<Vehiculos />} />
+        <Route path="vehiculos">
+          <Route index element={<Vehiculos />} />
+          <Route path="new" element={<VehiculosForm />} />
+          <Route path="edit/:id" element={<VehiculosForm />} />
+        </Route>
         <Route path="panel-vehiculos" element={<OperacionesPage />} />
         <Route path="panel-vehiculos/register" element={<RegisterForm />} />
         {/* <Route path="reservas" element={<Reservas />} /> */}
