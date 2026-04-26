@@ -1,4 +1,20 @@
-﻿## v2.6.0 - 2026-04-23
+﻿## v2.7.0 - 2026-04-26
+
+* chore(release): v2.7.0 (d5c04fa)
+* Merge pull request #4 from khernandez-tecnasa/feat/ui-tailwind-refactor-screens (7c4f3df)
+* feat(pages): replace confirm dialogs with custom modals and add DropdownMenu row actions (d0d6bb6)
+* feat(viaticos): replace browser confirm with custom modals for approve/delete (c8b137f)
+* fix(settings): fix mobile scroll/sticky and persist active section via URL (b8e6960)
+* refactor(settings): redesign all sections with responsive Tailwind UI (9e655f2)
+* fix(rutas): replace JoyUI CSS variable with Tailwind-compatible shadow (7538a90)
+* refactor(layout): remove dead breadcrumb logic and clean up MainLayout (17267ba)
+* feat(deps): add @radix-ui/react-tooltip and wrap app in TooltipProvider (9aa4ba2)
+* feat(ui): complete Tailwind refactor ÔÇö remove JoyUI across all screens (dc82f2d)
+* docs(changelog): v2.6.0 (7f81665)
+
+**Comparacion:** https://github.com/khernandez-tecnasa/tecnasa-core-frontend/compare/v2.6.0...v2.7.0
+
+## v2.6.0 - 2026-04-23
 
 * chore(release): v2.6.0 (e902568)
 * Merge pull request #3 from khernandez-tecnasa/refactory/rols_module (6110fa4)
@@ -222,6 +238,7 @@
 - Full changelog: https://github.com/khernan14/AutoLog/compare/prod-2025-11-04...v1.0.0
 
 > Nota: si sigues **Conventional Commits** (`feat:`, `fix:`, `chore:`â€¦), herramientas como `conventional-changelog` te generan estas secciones solitas.
+
 
 
 
