@@ -7,6 +7,7 @@ import {
   Fingerprint,
   Lock,
   ChevronRight,
+  Home,
 } from "lucide-react";
 import { getPasskeysStatus } from "@/services/webAuthn.service.js";
 
@@ -53,22 +54,58 @@ export default function Inicio({ allSettings, onNavigate }) {
         ? t("settings.home.security.action_passkey")
         : t("settings.home.security.action_alerts");
 
+  const scoreColor =
+    securityScore === 100
+      ? "bg-emerald-500"
+      : securityScore >= 66
+        ? "bg-primary"
+        : securityScore >= 33
+          ? "bg-amber-500"
+          : "bg-rose-500";
+
   return (
-    <div className="space-y-6">
-      {/* 🔒 HEADER / STATUS */}
-      <div className="rounded-2xl border border-[var(--border)] dark:bg-[var(--popover)] p-5 flex gap-4 items-start">
-        <div className="p-3 rounded-xl bg-[var(--joy-palette-primary-softBg)] text-[var(--foreground)]">
-          {isSecure ? <ShieldCheck size={24} /> : <Lock size={24} />}
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+      {/* HEADER */}
+      <div className="flex items-center gap-3">
+        <div>
+          <h1 className="text-xl font-black tracking-tight leading-none dark:text-slate-100">
+            {t("settings.home.title", "General")}
+          </h1>
+          <p className="text-xs text-muted-foreground dark:text-slate-400 mt-0.5 font-medium">
+            Resumen de tu cuenta y accesos rápidos
+          </p>
+        </div>
+      </div>
+
+      {/* ESTADO DE SEGURIDAD */}
+      <div
+        className={[
+          "bg-card dark:bg-slate-800/60 border rounded-3xl shadow-sm p-5 flex gap-4 items-start",
+          isSecure
+            ? "border-emerald-500/30 dark:border-emerald-500/30"
+            : "border-amber-500/30 dark:border-amber-500/30",
+        ].join(" ")}>
+        <div
+          className={[
+            "p-3 rounded-2xl ring-1 shrink-0",
+            isSecure
+              ? "bg-emerald-500/10 dark:bg-emerald-500/20 ring-emerald-500/20 dark:ring-emerald-500/40"
+              : "bg-amber-500/10 dark:bg-amber-500/20 ring-amber-500/20 dark:ring-amber-500/40",
+          ].join(" ")}>
+          {isSecure ? (
+            <ShieldCheck size={22} className="text-emerald-500" />
+          ) : (
+            <Lock size={22} className="text-amber-500" />
+          )}
         </div>
 
-        <div className="flex-1">
-          <h2 className="text-lg font-semibold text-[var(--foreground)]">
+        <div className="flex-1 min-w-0">
+          <h2 className="text-sm font-black tracking-tight dark:text-slate-100">
             {isSecure
               ? t("settings.home.welcome_secure")
               : t("settings.home.welcome_warning")}
           </h2>
-
-          <p className="text-sm text-[var(--muted-foreground)] mt-1">
+          <p className="text-xs text-muted-foreground dark:text-slate-400 mt-1 leading-relaxed">
             {isSecure
               ? t("settings.home.welcome_desc_secure")
               : t("settings.home.welcome_desc_warning")}
@@ -76,14 +113,68 @@ export default function Inicio({ allSettings, onNavigate }) {
         </div>
       </div>
 
-      {/* ⚡ QUICK ACTIONS */}
-      <div className="space-y-2">
-        <h3 className="text-sm font-medium text-[var(--foreground)]">
-          {t("settings.home.shortcuts")}
-        </h3>
+      {/* SECURITY SCORE */}
+      <div className="bg-card dark:bg-slate-800/60 border border-border/60 dark:border-slate-700/60 rounded-3xl shadow-sm p-5 space-y-3">
+        <div className="flex items-center gap-2.5 pb-1">
+          <div className="p-1.5 bg-muted dark:bg-slate-700 rounded-xl">
+            <ShieldCheck
+              size={14}
+              className="text-muted-foreground dark:text-slate-400"
+            />
+          </div>
+          <h2 className="text-xs font-black uppercase tracking-widest text-muted-foreground dark:text-slate-400">
+            {t("settings.home.health.label", "Salud de la cuenta")}
+          </h2>
+          <span
+            className={[
+              "ml-auto text-xs font-black tabular-nums",
+              securityScore === 100
+                ? "text-emerald-500"
+                : securityScore >= 66
+                  ? "text-primary"
+                  : securityScore >= 33
+                    ? "text-amber-500"
+                    : "text-rose-500",
+            ].join(" ")}>
+            {securityScore}%
+          </span>
+        </div>
 
-        <div className="divide-y divide-[var(--border)] rounded-xl border border-[var(--border)] dark:bg-[var(--popover)] overflow-hidden">
-          {/* SEGURIDAD */}
+        <div className="h-2 w-full rounded-full bg-muted dark:bg-slate-700 overflow-hidden">
+          <div
+            className={`h-full rounded-full transition-all duration-700 ${scoreColor}`}
+            style={{ width: `${securityScore}%` }}
+          />
+        </div>
+
+        {!isSecure && (
+          <p className="text-xs text-muted-foreground dark:text-slate-400 leading-relaxed">
+            {t("settings.home.health.recommendation_prefix")}{" "}
+            <button
+              onClick={() => onNavigate("seguridad")}
+              className="font-bold text-primary dark:text-primary underline-offset-2 hover:underline transition-all">
+              {t("settings.menu.security")}
+            </button>{" "}
+            {t("settings.home.health.recommendation_suffix")}
+          </p>
+        )}
+      </div>
+
+      {/* ACCESOS RÁPIDOS */}
+      <div className="bg-card dark:bg-slate-800/60 border border-border/60 dark:border-slate-700/60 rounded-3xl shadow-sm overflow-hidden">
+        <div className="flex items-center gap-2.5 px-5 py-3.5 border-b border-border/60 dark:border-slate-700/50">
+          <div className="p-1.5 bg-muted dark:bg-slate-700 rounded-xl">
+            <ChevronRight
+              size={14}
+              className="text-muted-foreground dark:text-slate-400"
+            />
+          </div>
+          <h2 className="text-xs font-black uppercase tracking-widest text-muted-foreground dark:text-slate-400">
+            {t("settings.home.shortcuts", "Accesos rápidos")}
+          </h2>
+        </div>
+
+        <div className="divide-y divide-border/40 dark:divide-slate-700/50">
           <Row
             icon={isSecure ? ShieldCheck : ShieldAlert}
             label={t("settings.menu.security")}
@@ -94,86 +185,62 @@ export default function Inicio({ allSettings, onNavigate }) {
                     action: missingActionText,
                   })
             }
+            accent={isSecure ? "emerald" : "amber"}
             onClick={() => onNavigate("seguridad")}
           />
-
-          {/* APARIENCIA */}
           <Row
             icon={Palette}
             label={t("settings.home.appearance.title")}
             desc={t("settings.home.appearance.desc")}
+            accent="blue"
             onClick={() => onNavigate("apariencia")}
           />
-
-          {/* PRIVACIDAD */}
           <Row
             icon={Fingerprint}
             label={t("settings.home.privacy.title")}
             desc={t("settings.home.privacy.desc")}
+            accent="rose"
             onClick={() => onNavigate("privacidad")}
           />
         </div>
-      </div>
-
-      {/* 📊 SECURITY SCORE */}
-      <div className="space-y-3 rounded-xl border border-[var(--border)] dark:bg-[var(--popover)] p-5">
-        <div className="flex justify-between items-center">
-          <span className="text-sm text-[var(--foreground)]">
-            {t("settings.home.health.label")}
-          </span>
-
-          <span className="text-sm font-semibold text-[var(--muted-foreground)] ">
-            {securityScore}%
-          </span>
-        </div>
-
-        {/* PROGRESS BAR */}
-        <div className="h-2 w-full rounded-full bg-[var(--muted)] overflow-hidden">
-          <div
-            className="h-full bg-[hsl(var(--primary))] transition-all duration-500"
-            style={{ width: `${securityScore}%` }}
-          />
-        </div>
-
-        {!isSecure && (
-          <p className="text-xs text-[var(--muted-foreground)]">
-            {t("settings.home.health.recommendation_prefix")}{" "}
-            <span className="font-medium text-[var(--foreground)]">
-              {t("settings.menu.security")}
-            </span>{" "}
-            {t("settings.home.health.recommendation_suffix")}
-          </p>
-        )}
       </div>
     </div>
   );
 }
 
-/* 🔥 ROW COMPONENT (tipo iOS settings) */
-function Row({ icon: Icon, label, desc, onClick }) {
+function Row({ icon: Icon, label, desc, accent = "primary", onClick }) {
+  const accentMap = {
+    primary: "bg-primary/10 dark:bg-primary/20 text-primary",
+    emerald: "bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-500",
+    amber: "bg-amber-500/10 dark:bg-amber-500/20 text-amber-500",
+    blue: "bg-blue-500/10 dark:bg-blue-500/20 text-blue-500",
+    violet: "bg-violet-500/10 dark:bg-violet-500/20 text-violet-500",
+    rose: "bg-rose-500/10 dark:bg-rose-500/20 text-rose-500",
+    cyan: "bg-cyan-500/10 dark:bg-cyan-500/20 text-cyan-500",
+  };
+
   return (
     <button
       onClick={onClick}
-      className="
-        w-full flex items-center justify-between px-4 py-3 text-left group
-        hover:bg-[var(--joy-palette-primary-softHoverBg)]
-        transition
-        first:rounded-t-xl last:rounded-b-xl
-      ">
-      <div className="flex items-start gap-3">
-        <div className="mt-0.5 text-[var(--muted-foreground)] group-hover:text-[var(--foreground)] transition">
-          <Icon size={18} />
+      className="w-full flex items-center justify-between px-4 py-3.5 text-left group hover:bg-muted/30 dark:hover:bg-slate-700/40 active:scale-[0.99] transition-all duration-150">
+      <div className="flex items-center gap-3">
+        <div
+          className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-colors ${accentMap[accent]}`}>
+          <Icon size={15} />
         </div>
-
         <div>
-          <p className="text-sm font-medium text-[var(--foreground)]">
+          <p className="text-sm font-semibold text-foreground dark:text-slate-100 leading-none">
             {label}
           </p>
-          <p className="text-xs text-[var(--muted-foreground)]">{desc}</p>
+          <p className="text-xs text-muted-foreground dark:text-slate-400 mt-0.5 leading-snug">
+            {desc}
+          </p>
         </div>
       </div>
-
-      <ChevronRight size={18} className="text-[var(--muted-foreground)]" />
+      <ChevronRight
+        size={15}
+        className="text-muted-foreground/40 dark:text-slate-600 group-hover:text-muted-foreground dark:group-hover:text-slate-400 transition-colors shrink-0"
+      />
     </button>
   );
 }
