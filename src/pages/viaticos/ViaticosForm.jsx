@@ -343,7 +343,7 @@ export default function ViaticosForm() {
         const nuevos = data.map((p) => ({
           tipo: "PEAJE",
           descripcion: p.nombre,
-          cantidad: 2,
+          cantidad: p.es_bidireccional ? 2 : 1,
           precio_unitario: Number(p.tarifa_liviano || 0),
           fecha: form.fecha_salida,
         }));
@@ -391,7 +391,7 @@ export default function ViaticosForm() {
     const nuevos = peajesRuta.map((p) => ({
       tipo: "PEAJE",
       descripcion: p.nombre,
-      cantidad: 2,
+      cantidad: p.es_bidireccional ? 2 : 1,
       precio_unitario: Number(p.tarifa_liviano || 0),
       fecha: form.fecha_salida,
     }));
@@ -523,24 +523,25 @@ export default function ViaticosForm() {
     };
 
     setLoading(true);
-    const res = isEdit
-      ? await updateViatico(id, payload)
-      : await createViatico(payload);
-    setLoading(false);
-
-    if (res) {
-      showToast(
-        isEdit
-          ? "Viático actualizado correctamente"
-          : "Viático creado correctamente",
-        "success",
-      );
-      navigate("/admin/viaticos");
-    } else {
-      showToast(
-        "Hubo un error. Verifica los datos e inténtalo de nuevo.",
-        "danger",
-      );
+    try {
+      const res = isEdit
+        ? await updateViatico(id, payload)
+        : await createViatico(payload);
+      if (res) {
+        showToast(
+          isEdit
+            ? "Viático actualizado correctamente"
+            : "Viático creado correctamente",
+          "success",
+        );
+        navigate("/admin/viaticos");
+      } else {
+        showToast("Hubo un error. Verifica los datos e inténtalo de nuevo.", "danger");
+      }
+    } catch (err) {
+      showToast(err.message || "Hubo un error al procesar la solicitud.", "danger");
+    } finally {
+      setLoading(false);
     }
   };
 

@@ -28,6 +28,7 @@ import {
   deleteViatico,
   aprobarViatico,
   rechazarViatico,
+  cancelarViatico,
   enviarRevision,
 } from "@/services/viaticos.service";
 import { obtenerVehiculos } from "@/services/VehiculosService";
@@ -116,6 +117,7 @@ export default function ViaticosList() {
 
   const [approveTarget, setApproveTarget] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [cancelViaticoTarget, setCancelViaticoTarget] = useState(null);
   const [processingAction, setProcessingAction] = useState(false);
 
   const [exportingId, setExportingId] = useState(null);
@@ -139,6 +141,7 @@ export default function ViaticosList() {
   const canExport = can("export_viatico");
   const canRead = can("read_liquidacion");
   const canEnviarRevision = can("enviar_revision");
+  const canCancel = can("cancel_viatico");
 
   // ── Fetch centralizado — llama al backend con el tipo del tab activo ────────
   const fetchViaticos = useCallback(
@@ -274,6 +277,22 @@ export default function ViaticosList() {
     }
   };
 
+  const confirmCancelarViatico = async () => {
+    if (!cancelViaticoTarget) return;
+    setProcessingAction(true);
+    try {
+      await cancelarViatico(cancelViaticoTarget.id);
+      showToast("Viático cancelado", "success");
+      setCancelViaticoTarget(null);
+      setDetalle(null);
+      fetchViaticos(tipoActivo);
+    } catch (err) {
+      showToast(err.message || "Error al cancelar el viático", "danger");
+    } finally {
+      setProcessingAction(false);
+    }
+  };
+
   const handleExport = async (id) => {
     if (!canExport) {
       return sileo.error({
@@ -324,10 +343,16 @@ export default function ViaticosList() {
 
   const canEditRow = (v) =>
     canUpdate &&
+    v.estado !== "Cancelado" &&
     (isAdmin || (v.estado !== "Aprobado" && v.estado !== "Liquidado"));
   const canDeleteRow = (v) =>
     canDelete &&
+    v.estado !== "Cancelado" &&
     (isAdmin || (v.estado !== "Aprobado" && v.estado !== "Liquidado"));
+  const canCancelRow = (v) =>
+    canCancel &&
+    v.estado !== "Cancelado" &&
+    v.estado !== "Liquidado";
 
   // Búsqueda local por nombre de empleado o placa — no filtra por estado
   const filtered = viaticos.filter((v) => {
@@ -405,6 +430,14 @@ export default function ViaticosList() {
             onClick={() => handleEnviarRevision(v.id)}
             className="rounded-xl cursor-pointer gap-2 text-sm">
             <ArrowRight size={13} /> Enviar a Revisión
+          </DropdownMenuItem>
+        )}
+
+        {canCancelRow(v) && (
+          <DropdownMenuItem
+            onClick={() => setCancelViaticoTarget(v)}
+            className="rounded-xl cursor-pointer gap-2 text-sm text-rose-600 focus:text-rose-600 focus:bg-rose-50 dark:focus:bg-rose-500/10">
+            <XCircle size={13} /> Cancelar Viático
           </DropdownMenuItem>
         )}
 
@@ -961,6 +994,57 @@ export default function ViaticosList() {
                   setMotivoRechazo("");
                 }}
                 disabled={cancelLoading}
+                className="flex-1 rounded-2xl h-10 font-bold">
+                Volver
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL: CANCELAR VIÁTICO ── */}
+      {cancelViaticoTarget && (
+        <div
+          className="fixed inset-0 z-[60] bg-black/40 dark:bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center p-0 md:p-6 animate-in fade-in duration-200"
+          onClick={() => !processingAction && setCancelViaticoTarget(null)}>
+          <div
+            className="w-full max-w-md bg-card dark:bg-slate-900 rounded-t-3xl md:rounded-3xl shadow-2xl dark:shadow-black/50 border border-border/40 p-6 space-y-5 animate-in slide-in-from-bottom md:zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start gap-4">
+              <div className="p-3 bg-rose-500/10 dark:bg-rose-500/15 rounded-2xl ring-1 ring-rose-500/20 shrink-0">
+                <XCircle size={20} className="text-rose-500" />
+              </div>
+              <div>
+                <h2 className="text-base font-black tracking-tight">
+                  Cancelar Viático
+                </h2>
+                <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed">
+                  ¿Cancelar el viático de{" "}
+                  <span className="font-bold text-foreground">
+                    {empMap[cancelViaticoTarget.empleado_id] ||
+                      `ID ${cancelViaticoTarget.empleado_id}`}
+                  </span>
+                  ? Esta acción cambiará el estado a <span className="font-bold text-rose-600">Cancelado</span> y no podrá editarse.
+                </p>
+              </div>
+            </div>
+            <div className="h-px bg-border/50" />
+            <div className="flex gap-2.5">
+              <Button
+                onClick={confirmCancelarViatico}
+                disabled={processingAction}
+                className="flex-1 rounded-2xl h-10 bg-rose-500 hover:bg-rose-600 text-white font-bold shadow-md gap-2 disabled:opacity-60">
+                {processingAction ? (
+                  <Loader2 size={15} className="animate-spin" />
+                ) : (
+                  <XCircle size={15} />
+                )}
+                {processingAction ? "Cancelando..." : "Sí, cancelar"}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setCancelViaticoTarget(null)}
+                disabled={processingAction}
                 className="flex-1 rounded-2xl h-10 font-bold">
                 Volver
               </Button>

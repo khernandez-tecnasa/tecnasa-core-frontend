@@ -30,19 +30,17 @@ export async function getViatico(id) {
 }
 
 export async function createViatico(data) {
-  try {
-    const res = await fetchConToken(endpoints.createViatico, {
-      method: "POST",
-      body: JSON.stringify(data),
-      headers: { "Content-Type": "application/json" },
-    });
+  const res = await fetchConToken(endpoints.createViatico, {
+    method: "POST",
+    body: JSON.stringify(data),
+    headers: { "Content-Type": "application/json" },
+  });
 
-    if (!res.ok) throw new Error("No se pudo crear el viático");
-    return await res.json();
-  } catch (err) {
-    console.error("createViatico error:", err);
-    return null;
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message || "No se pudo crear el viático");
   }
+  return res.json();
 }
 
 export async function updateViatico(id, data) {
@@ -104,6 +102,22 @@ export async function rechazarViatico(id, motivoRechazo) {
   } catch (err) {
     console.error("cancelarViatico error:", err);
     return null;
+  }
+}
+
+export async function cancelarViatico(id) {
+  try {
+    const res = await fetchConToken(
+      endpoints.cancelarViatico + id + "/cancelar",
+      { method: "PUT" },
+    );
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body.message || "No se pudo cancelar el viático");
+    }
+    return true;
+  } catch (err) {
+    throw err;
   }
 }
 
