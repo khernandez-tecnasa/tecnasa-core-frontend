@@ -105,6 +105,22 @@ export async function rechazarViatico(id, motivoRechazo) {
   }
 }
 
+export async function cancelarViatico(id) {
+  try {
+    const res = await fetchConToken(
+      endpoints.cancelarViatico + id + "/cancelar",
+      { method: "PUT" },
+    );
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body.message || "No se pudo cancelar el viático");
+    }
+    return true;
+  } catch (err) {
+    throw err;
+  }
+}
+
 export async function enviarRevision(id) {
   try {
     const res = await fetchConToken(
