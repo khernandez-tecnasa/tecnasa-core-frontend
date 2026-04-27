@@ -214,7 +214,10 @@ export default function LiquidacionForm() {
   const [detalles, setDetalles] = useState([]);
   const [observaciones, setObservaciones] = useState("");
 
-  // modal de rechazo
+  // modales de confirmación
+  const [showEnviarModal, setShowEnviarModal] = useState(false);
+  const [showAprobarModal, setShowAprobarModal] = useState(false);
+  const [showLiquidarModal, setShowLiquidarModal] = useState(false);
   const [showRechazarModal, setShowRechazarModal] = useState(false);
   const [motivoRechazo, setMotivoRechazo] = useState("");
   const [rechazandoSubmit, setRechazandoSubmit] = useState(false);
@@ -382,17 +385,20 @@ export default function LiquidacionForm() {
     }
   };
 
-  const handleEnviar = async () => {
+  const handleEnviar = () => {
     if (!uiRules.canSend) return;
     if (!detalles.length)
       return showToast("Agrega al menos un detalle", "warning");
-    if (!confirm("¿Enviar a revisión? Se notificará al supervisor.")) return;
+    setShowEnviarModal(true);
+  };
+
+  const confirmEnviar = async () => {
     setSubmitting(true);
     try {
-      // Guardar primero, luego enviar
       await guardarLiquidacion(liquidacion.id, buildPayload());
       await enviarRevisionLiquidacion(liquidacion.id);
       showToast("Liquidación enviada a revisión", "success");
+      setShowEnviarModal(false);
       fetchData();
     } catch (err) {
       showToast(err.message || "Error al enviar", "danger");
@@ -401,13 +407,17 @@ export default function LiquidacionForm() {
     }
   };
 
-  const handleAprobar = async () => {
+  const handleAprobar = () => {
     if (!uiRules.canApprove) return;
-    if (!confirm("¿Aprobar esta liquidación?")) return;
+    setShowAprobarModal(true);
+  };
+
+  const confirmAprobar = async () => {
     setSubmitting(true);
     try {
       await aprobarLiquidacion(liquidacion.id);
       showToast("Liquidación aprobada", "success");
+      setShowAprobarModal(false);
       fetchData();
     } catch (err) {
       showToast(err.message || "Error al aprobar", "danger");
@@ -433,18 +443,17 @@ export default function LiquidacionForm() {
     }
   };
 
-  const handleLiquidar = async () => {
+  const handleLiquidar = () => {
     if (!uiRules.canLiquidate) return;
-    if (
-      !confirm(
-        "¿Confirmar liquidación final? Esta acción no se puede revertir.",
-      )
-    )
-      return;
+    setShowLiquidarModal(true);
+  };
+
+  const confirmLiquidar = async () => {
     setSubmitting(true);
     try {
       await liquidarFinal(liquidacion.id);
       showToast("¡Viático liquidado exitosamente!", "success");
+      setShowLiquidarModal(false);
       fetchData();
     } catch (err) {
       showToast(err.message || "Error al liquidar", "danger");
@@ -818,30 +827,128 @@ export default function LiquidacionForm() {
         )}
       </div>
 
-      {/* ── MODAL RECHAZO ─────────────────────────────────────────────────────── */}
-      {showRechazarModal && (
+      {/* ── MODAL: ENVIAR A REVISIÓN ──────────────────────────────────────────── */}
+      {showEnviarModal && (
         <div
-          className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4"
-          onClick={() => !rechazandoSubmit && setShowRechazarModal(false)}>
+          className="fixed inset-0 z-[60] bg-black/40 dark:bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center p-0 md:p-6 animate-in fade-in duration-200"
+          onClick={() => !submitting && setShowEnviarModal(false)}>
           <div
-            className="bg-card rounded-3xl shadow-2xl w-full max-w-md p-6 space-y-5 animate-in zoom-in-90 duration-200"
+            className="w-full max-w-md bg-card dark:bg-slate-900 rounded-t-3xl md:rounded-3xl shadow-2xl dark:shadow-black/50 border border-border/40 p-6 space-y-5 animate-in slide-in-from-bottom md:zoom-in-95 duration-200"
             onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-start gap-3">
-              <div className="p-3 bg-rose-100 rounded-2xl shrink-0">
-                <AlertTriangle size={20} className="text-rose-600" />
+            <div className="flex items-start gap-4">
+              <div className="p-3 bg-blue-500/10 dark:bg-blue-500/15 rounded-2xl ring-1 ring-blue-500/20 shrink-0">
+                <Send size={20} className="text-blue-600" />
               </div>
               <div>
-                <h2 className="text-lg font-black uppercase tracking-tight">
-                  Rechazar Liquidación
+                <h2 className="text-base font-black tracking-tight">
+                  Enviar a Revisión
                 </h2>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Indica el motivo para que el empleado pueda corregirla.
+                <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed">
+                  Se guardará la liquidación y se enviará al supervisor para su
+                  revisión. El empleado será notificado del resultado.
                 </p>
               </div>
             </div>
+            <div className="h-px bg-border/50" />
+            <div className="flex gap-2.5">
+              <Button
+                onClick={confirmEnviar}
+                disabled={submitting}
+                className="flex-1 rounded-2xl h-10 bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-md gap-2 disabled:opacity-60">
+                {submitting ? (
+                  <Loader2 size={15} className="animate-spin" />
+                ) : (
+                  <Send size={15} />
+                )}
+                {submitting ? "Enviando..." : "Sí, enviar"}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setShowEnviarModal(false)}
+                disabled={submitting}
+                className="flex-1 rounded-2xl h-10 font-bold">
+                Cancelar
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
-            <div className="space-y-2">
-              <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">
+      {/* ── MODAL: APROBAR LIQUIDACIÓN ────────────────────────────────────────── */}
+      {showAprobarModal && (
+        <div
+          className="fixed inset-0 z-[60] bg-black/40 dark:bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center p-0 md:p-6 animate-in fade-in duration-200"
+          onClick={() => !submitting && setShowAprobarModal(false)}>
+          <div
+            className="w-full max-w-md bg-card dark:bg-slate-900 rounded-t-3xl md:rounded-3xl shadow-2xl dark:shadow-black/50 border border-border/40 p-6 space-y-5 animate-in slide-in-from-bottom md:zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start gap-4">
+              <div className="p-3 bg-emerald-500/10 dark:bg-emerald-500/15 rounded-2xl ring-1 ring-emerald-500/20 shrink-0">
+                <CheckCircle size={20} className="text-emerald-600" />
+              </div>
+              <div>
+                <h2 className="text-base font-black tracking-tight">
+                  Aprobar Liquidación
+                </h2>
+                <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed">
+                  ¿Aprobar la liquidación de{" "}
+                  <span className="font-bold text-foreground">
+                    {empMap[liquidacion?.empleado_id] || "este empleado"}
+                  </span>
+                  ? Se notificará al equipo de finanzas para el cierre.
+                </p>
+              </div>
+            </div>
+            <div className="h-px bg-border/50" />
+            <div className="flex gap-2.5">
+              <Button
+                onClick={confirmAprobar}
+                disabled={submitting}
+                className="flex-1 rounded-2xl h-10 bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md gap-2 disabled:opacity-60">
+                {submitting ? (
+                  <Loader2 size={15} className="animate-spin" />
+                ) : (
+                  <CheckCircle size={15} />
+                )}
+                {submitting ? "Aprobando..." : "Sí, aprobar"}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setShowAprobarModal(false)}
+                disabled={submitting}
+                className="flex-1 rounded-2xl h-10 font-bold">
+                Cancelar
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL: RECHAZAR LIQUIDACIÓN ───────────────────────────────────────── */}
+      {showRechazarModal && (
+        <div
+          className="fixed inset-0 z-[60] bg-black/40 dark:bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center p-0 md:p-6 animate-in fade-in duration-200"
+          onClick={() => !rechazandoSubmit && setShowRechazarModal(false)}>
+          <div
+            className="w-full max-w-md bg-card dark:bg-slate-900 rounded-t-3xl md:rounded-3xl shadow-2xl dark:shadow-black/50 border border-border/40 p-6 space-y-5 animate-in slide-in-from-bottom md:zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start gap-4">
+              <div className="p-3 bg-amber-500/10 dark:bg-amber-500/15 rounded-2xl ring-1 ring-amber-500/20 shrink-0">
+                <XCircle size={20} className="text-amber-600" />
+              </div>
+              <div>
+                <h2 className="text-base font-black tracking-tight">
+                  Rechazar Liquidación
+                </h2>
+                <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed">
+                  Indica el motivo del rechazo. El empleado será notificado para
+                  que realice las correcciones.
+                </p>
+              </div>
+            </div>
+            <div className="h-px bg-border/50" />
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">
                 Motivo de Rechazo *
               </label>
               <textarea
@@ -850,21 +957,20 @@ export default function LiquidacionForm() {
                 onChange={(e) => setMotivoRechazo(e.target.value)}
                 disabled={rechazandoSubmit}
                 placeholder="Ej: Montos inconsistentes, faltan comprobantes..."
-                className="w-full rounded-xl border bg-muted/50 px-4 py-3 text-sm resize-none focus:ring-2 ring-rose-300/50 outline-none transition-all disabled:opacity-60"
+                className="w-full rounded-xl border px-4 py-2.5 text-sm resize-none outline-none transition-all bg-background dark:bg-slate-900/60 border-border focus:border-amber-400/60 focus:ring-2 focus:ring-amber-400/20 placeholder:text-muted-foreground/50 disabled:opacity-60"
               />
             </div>
-
-            <div className="flex gap-3">
+            <div className="flex gap-2.5">
               <Button
                 onClick={handleRechazarConfirm}
                 disabled={rechazandoSubmit || !motivoRechazo.trim()}
-                className="flex-1 rounded-2xl h-10 bg-rose-600 hover:bg-rose-700 text-white">
+                className="flex-1 rounded-2xl h-10 bg-amber-500 hover:bg-amber-600 text-white font-bold shadow-md gap-2 disabled:opacity-60">
                 {rechazandoSubmit ? (
-                  <Loader2 size={16} className="animate-spin mr-2" />
+                  <Loader2 size={15} className="animate-spin" />
                 ) : (
-                  <XCircle size={16} className="mr-2" />
+                  <XCircle size={15} />
                 )}
-                {rechazandoSubmit ? "Rechazando..." : "Confirmar Rechazo"}
+                {rechazandoSubmit ? "Rechazando..." : "Confirmar rechazo"}
               </Button>
               <Button
                 variant="outline"
@@ -873,7 +979,62 @@ export default function LiquidacionForm() {
                   setMotivoRechazo("");
                 }}
                 disabled={rechazandoSubmit}
-                className="flex-1 rounded-2xl h-10">
+                className="flex-1 rounded-2xl h-10 font-bold">
+                Volver
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL: LIQUIDAR FINAL ─────────────────────────────────────────────── */}
+      {showLiquidarModal && (
+        <div
+          className="fixed inset-0 z-[60] bg-black/40 dark:bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center p-0 md:p-6 animate-in fade-in duration-200"
+          onClick={() => !submitting && setShowLiquidarModal(false)}>
+          <div
+            className="w-full max-w-md bg-card dark:bg-slate-900 rounded-t-3xl md:rounded-3xl shadow-2xl dark:shadow-black/50 border border-border/40 p-6 space-y-5 animate-in slide-in-from-bottom md:zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start gap-4">
+              <div className="p-3 bg-violet-500/10 dark:bg-violet-500/15 rounded-2xl ring-1 ring-violet-500/20 shrink-0">
+                <BadgeCheck size={20} className="text-violet-600" />
+              </div>
+              <div>
+                <h2 className="text-base font-black tracking-tight">
+                  Confirmar Liquidación Final
+                </h2>
+                <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed">
+                  Esta acción cerrará definitivamente el viático y no podrá
+                  revertirse. Se notificará a todos los involucrados.
+                </p>
+              </div>
+            </div>
+            <div className="h-px bg-border/50" />
+            <div className="bg-violet-50 dark:bg-violet-500/10 rounded-2xl px-4 py-3 flex justify-between items-center border border-violet-200/50 dark:border-violet-500/20">
+              <span className="text-xs font-black uppercase tracking-widest text-violet-700 dark:text-violet-400">
+                Total a liquidar
+              </span>
+              <span className="text-lg font-black text-violet-700 dark:text-violet-400">
+                {formatLps(totalGastado)}
+              </span>
+            </div>
+            <div className="flex gap-2.5">
+              <Button
+                onClick={confirmLiquidar}
+                disabled={submitting}
+                className="flex-1 rounded-2xl h-10 bg-violet-600 hover:bg-violet-700 text-white font-bold shadow-md gap-2 disabled:opacity-60">
+                {submitting ? (
+                  <Loader2 size={15} className="animate-spin" />
+                ) : (
+                  <BadgeCheck size={15} />
+                )}
+                {submitting ? "Liquidando..." : "Sí, liquidar"}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setShowLiquidarModal(false)}
+                disabled={submitting}
+                className="flex-1 rounded-2xl h-10 font-bold">
                 Cancelar
               </Button>
             </div>
