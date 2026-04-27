@@ -18,6 +18,7 @@ import { SiteAutocomplete } from "@/components/rutas/Autocomplete";
 import MapSelector from "@/components/rutas/MapSelector";
 import { createRuta, updateRuta, getRuta } from "@/services/rutas.service";
 import { getSites } from "@/services/SitesServices";
+import { douglasPeucker, toGeometriaPayload } from "@/utils/douglasPeucker";
 
 import { useToast } from "@/context/ToastContext";
 import { useAuth } from "@/context/AuthContext";
@@ -39,6 +40,9 @@ export default function RutasForm() {
     fecha_fin: "",
     puntos: [],
   });
+
+  // Polyline simplificada — usada solo para detección de peajes en backend
+  const [geometria, setGeometria] = useState([]);
 
   const isAdmin = (userData?.rol || "").toLowerCase() === "admin";
   const can = useCallback(
@@ -139,6 +143,8 @@ export default function RutasForm() {
         longitud: p.longitud,
         nombre_referencia: p.nombre_referencia || "",
       })),
+      // Polyline simplificada para detección precisa de peajes (no se muestra en UI)
+      geometria: geometria.length ? geometria : undefined,
     };
   };
 
@@ -462,8 +468,11 @@ export default function RutasForm() {
             <MapSelector
               puntos={form.puntos}
               onAdd={addPuntoDesdeMapa}
-              onRouteChange={({ distancia }) => {
-                console.log("Distancia real:", distancia);
+              onRouteChange={({ distancia, ruta }) => {
+                if (ruta?.length) {
+                  const simplified = douglasPeucker(ruta, 0.002);
+                  setGeometria(toGeometriaPayload(simplified));
+                }
               }}
             />
           </div>

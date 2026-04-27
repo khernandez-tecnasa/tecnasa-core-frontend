@@ -1,5 +1,12 @@
 // src/context/AuthContext.jsx
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { useNavigate } from "react-router-dom";
 import * as AuthServices from "../services/AuthServices";
 import { getPermisosEfectivos } from "../services/PermissionsServices";
@@ -64,13 +71,13 @@ export const AuthProvider = ({ children }) => {
 
   const isAdmin = useMemo(
     () => (user?.rol || "").toLowerCase() === "admin",
-    [user?.rol]
+    [user?.rol],
   );
 
   // Fuente de verdad: admin bypasea todo, igual que el middleware
   const can = useCallback(
     (permiso) => isAdmin || permisos.includes(permiso),
-    [isAdmin, permisos]
+    [isAdmin, permisos],
   );
 
   // Alias para no romper código existente que usa hasPermiso

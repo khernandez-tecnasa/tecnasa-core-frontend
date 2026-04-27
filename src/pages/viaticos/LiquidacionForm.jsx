@@ -78,7 +78,7 @@ function getUIRules(estado, userData, permisos) {
   }
   const rol = (userData?.rol || "").toLowerCase();
   const isAdmin = rol === "admin";
-  const isEmpleado = rol === "empleado";
+  const isEmpleado = rol === "tecnico";
   const isSupervisor = rol === "supervisor";
   const isFinanzas = rol === "finanzas";
 
@@ -240,7 +240,13 @@ export default function LiquidacionForm() {
         canReject: false,
         canLiquidate: false,
       },
-    [liquidacion?.estado, userData, canEditPerm, canApprovePerm, canLiquidarPerm]
+    [
+      liquidacion?.estado,
+      userData,
+      canEditPerm,
+      canApprovePerm,
+      canLiquidarPerm,
+    ],
   );
   // Bandera auxiliar para mostrar el aviso de "estado bloqueado" en la tabla
   const estadoBloqueado = ["Aprobado", "Liquidado"].includes(
@@ -564,10 +570,11 @@ export default function LiquidacionForm() {
               onClick={handleExportExcel}
               disabled={exporting}
               className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl border transition-all
-              ${exporting
+              ${
+                exporting
                   ? "bg-muted text-muted-foreground cursor-not-allowed opacity-70"
                   : "bg-background hover:bg-muted"
-                }`}>
+              }`}>
               {exporting ? (
                 <Loader2 size={14} className="animate-spin" />
               ) : (

@@ -47,12 +47,17 @@ export async function getPermisosEfectivos(id) {
       `${endpoints.getUserPermissions}${id}/efectivos`,
       { method: "GET" }
     );
-    if (!res.ok) throw new Error("No se pudo obtener los permisos efectivos");
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      console.error(`[permisos] HTTP ${res.status} para usuario ${id}:`, body);
+      return [];
+    }
     const data = await res.json();
-    // Acepta tanto string[] como { permisos: string[] }
-    return Array.isArray(data) ? data : (data?.permisos_efectivos ?? []);
+    if (Array.isArray(data)) return data;
+    // El backend puede devolver { permisos_efectivos: [] } o { permisos: [] }
+    return data?.permisos_efectivos ?? data?.permisos ?? [];
   } catch (err) {
-    console.error("Get effective permissions error:", err);
+    console.error("[permisos] Error al obtener permisos efectivos:", err);
     return [];
   }
 }

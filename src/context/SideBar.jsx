@@ -175,20 +175,19 @@ export default function Sidebar() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
-  const { hasPermiso, userData, logout: ctxLogout } = useAuth();
+  const { hasPermiso, isAdmin, userData, logout: ctxLogout } = useAuth();
   const isMobile = useIsMobile(768);
 
   const currentPath = location.pathname;
   const userName = userData?.nombre || "Usuario";
   const userEmail = userData?.email || "usuario@test.com";
-  const userRole = userData?.rol;
 
   const { setOpen: openCommandPalette } = useCommandPalette();
   const [logoutOpen, setLogoutOpen] = useState(false);
 
   const checkPermission = useCallback(
-    (permiso) => userRole === "Admin" || (permiso ? hasPermiso(permiso) : true),
-    [userRole, hasPermiso],
+    (permiso) => isAdmin || (permiso ? hasPermiso(permiso) : true),
+    [isAdmin, hasPermiso],
   );
 
   /* ── Nav items data ─────────────────────────────────────────────── */
