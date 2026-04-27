@@ -1,4 +1,15 @@
-﻿## v2.7.0 - 2026-04-26
+﻿## v2.8.0 - 2026-04-27
+
+* chore(release): v2.8.0 (f829ee8)
+* Merge pull request #5 from khernandez-tecnasa/fix/general-bugfixes (d10e00e)
+* feat(liquidacion): replace confirm() dialogs with custom modals in LiquidacionForm (1ea33e3)
+* feat(viaticos): add viatico cancellation with modal confirmation and permission guard (4d65b17)
+* fix: permissions, toll detection, and viatico validation bugfixes (a0fe474)
+* docs(changelog): v2.7.0 (004cafd)
+
+**Comparacion:** https://github.com/khernandez-tecnasa/tecnasa-core-frontend/compare/v2.7.0...v2.8.0
+
+## v2.7.0 - 2026-04-26
 
 * chore(release): v2.7.0 (d5c04fa)
 * Merge pull request #4 from khernandez-tecnasa/feat/ui-tailwind-refactor-screens (7c4f3df)
@@ -238,6 +249,7 @@
 - Full changelog: https://github.com/khernan14/AutoLog/compare/prod-2025-11-04...v1.0.0
 
 > Nota: si sigues **Conventional Commits** (`feat:`, `fix:`, `chore:`â€¦), herramientas como `conventional-changelog` te generan estas secciones solitas.
+
 
 
 
