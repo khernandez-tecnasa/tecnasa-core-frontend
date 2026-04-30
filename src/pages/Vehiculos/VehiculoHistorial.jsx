@@ -9,13 +9,18 @@ import { obtenerVehiculos } from "@/services/VehiculosService";
 /* ── Status badge ──────────────────────────────────────────────────── */
 
 const STATUS_CLASSES = {
-  disponible:         "bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400",
-  en_uso:             "bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400",
-  "en uso":           "bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400",
-  en_mantenimiento:   "bg-red-100 dark:bg-red-950/60 text-red-700 dark:text-red-400",
-  "en mantenimiento": "bg-red-100 dark:bg-red-950/60 text-red-700 dark:text-red-400",
-  reservado:          "bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-400",
-  inactivo:           "bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400",
+  disponible:
+    "bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400",
+  en_uso:
+    "bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400",
+  "en uso":
+    "bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400",
+  en_mantenimiento:
+    "bg-red-100 dark:bg-red-950/60 text-red-700 dark:text-red-400",
+  "en mantenimiento":
+    "bg-red-100 dark:bg-red-950/60 text-red-700 dark:text-red-400",
+  reservado: "bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-400",
+  inactivo: "bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400",
 };
 
 function estadoClass(estado) {
@@ -23,16 +28,41 @@ function estadoClass(estado) {
   return STATUS_CLASSES[key] || STATUS_CLASSES.inactivo;
 }
 
+function getCambios(valorAnterior = {}, valorNuevo = {}) {
+  const cambios = [];
+
+  const keys = new Set([
+    ...Object.keys(valorAnterior || {}),
+    ...Object.keys(valorNuevo || {}),
+  ]);
+
+  keys.forEach((key) => {
+    const antes = valorAnterior?.[key];
+    const despues = valorNuevo?.[key];
+
+    if (antes !== despues) {
+      cambios.push({
+        campo: key,
+        antes,
+        despues,
+      });
+    }
+  });
+
+  return cambios;
+}
+
 /* ── Page ──────────────────────────────────────────────────────────── */
 
 export default function VehiculoHistorial() {
-  const { id }       = useParams();
-  const navigate     = useNavigate();
-  const location     = useLocation();
-  const { t }        = useTranslation();
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { t } = useTranslation();
 
   const [vehiculo, setVehiculo] = useState(location.state?.vehiculo ?? null);
-  const [loading,  setLoading]  = useState(!location.state?.vehiculo);
+  const [loading, setLoading] = useState(!location.state?.vehiculo);
+  const cambios = getCambios(log.valor_anterior, log.valor_nuevo);
 
   useEffect(() => {
     if (vehiculo) return;
@@ -40,24 +70,28 @@ export default function VehiculoHistorial() {
     obtenerVehiculos()
       .then((raw) => {
         if (cancelled) return;
-        const list = Array.isArray(raw) ? raw : (raw?.vehiculos ?? raw?.data ?? []);
+        const list = Array.isArray(raw)
+          ? raw
+          : (raw?.vehiculos ?? raw?.data ?? []);
         const found = list.find((x) => String(x.id) === String(id));
         setVehiculo(found ?? null);
       })
       .catch(() => setVehiculo(null))
-      .finally(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [id, vehiculo]);
 
   return (
     <div className="max-w-3xl mx-auto px-4 md:px-8 py-6 md:py-10 space-y-8 animate-in fade-in duration-500">
-
       {/* ── Header ── */}
       <div className="flex items-start gap-4">
         <button
           onClick={() => navigate("/admin/vehiculos")}
-          className="mt-0.5 p-2 hover:bg-muted dark:hover:bg-slate-800 rounded-xl transition-colors text-muted-foreground hover:text-foreground shrink-0"
-        >
+          className="mt-0.5 p-2 hover:bg-muted dark:hover:bg-slate-800 rounded-xl transition-colors text-muted-foreground hover:text-foreground shrink-0">
           <ArrowLeft size={18} />
         </button>
         <div className="flex items-center gap-3.5">
@@ -69,7 +103,10 @@ export default function VehiculoHistorial() {
               {t("vehiculos.historial_title", "Historial del vehículo")}
             </h1>
             <p className="text-muted-foreground text-xs md:text-sm font-medium mt-0.5">
-              {t("vehiculos.historial_subtitle", "Registro de cambios y eventos")}
+              {t(
+                "vehiculos.historial_subtitle",
+                "Registro de cambios y eventos",
+              )}
             </p>
           </div>
         </div>
@@ -79,7 +116,9 @@ export default function VehiculoHistorial() {
       {loading ? (
         <div className="flex items-center justify-center gap-3 py-10 text-muted-foreground">
           <Loader2 size={18} className="animate-spin" />
-          <span className="text-sm">{t("vehiculos.loading", "Cargando...")}</span>
+          <span className="text-sm">
+            {t("vehiculos.loading", "Cargando...")}
+          </span>
         </div>
       ) : vehiculo ? (
         <div className="bg-card dark:bg-slate-900/40 border border-border/60 rounded-3xl shadow-sm p-6">
@@ -93,7 +132,8 @@ export default function VehiculoHistorial() {
                   {vehiculo.placa}
                 </span>
                 {vehiculo.estado && (
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold ${estadoClass(vehiculo.estado)}`}>
+                  <span
+                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold ${estadoClass(vehiculo.estado)}`}>
                     {vehiculo.estado}
                   </span>
                 )}
@@ -119,7 +159,6 @@ export default function VehiculoHistorial() {
       <div className="bg-card dark:bg-slate-900/40 border border-border/60 rounded-3xl shadow-sm p-6">
         <AuditTimeline entidad="vehiculo" entidadId={Number(id)} />
       </div>
-
     </div>
   );
 }
