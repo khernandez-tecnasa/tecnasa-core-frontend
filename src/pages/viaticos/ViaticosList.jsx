@@ -20,6 +20,7 @@ import {
   MoreVertical,
   Receipt,
   Calendar,
+  History,
 } from "lucide-react";
 
 import {
@@ -384,6 +385,12 @@ export default function ViaticosList() {
           onClick={() => handleVerDetalle(v)}
           className="rounded-xl cursor-pointer gap-2 text-sm">
           <Eye size={13} /> Ver Detalle
+        </DropdownMenuItem>
+
+        <DropdownMenuItem
+          onClick={() => navigate(`/admin/viaticos/historial/${v.id}`, { state: { viatico: v } })}
+          className="rounded-xl cursor-pointer gap-2 text-sm">
+          <History size={13} /> Historial
         </DropdownMenuItem>
 
         {canExport && (

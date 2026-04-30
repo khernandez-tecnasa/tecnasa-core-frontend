@@ -9,8 +9,9 @@ import Usuarios    from "@/pages/Users/Users";
 import UsersList   from "@/pages/Users/UsersList";
 import UsersForm   from "@/pages/Users/UsersForm";
 import MyAccount from "@/pages/Users/MyAccount/MyAccount";
-import Vehiculos     from "@/pages/Vehiculos/Vehiculos";
-import VehiculosForm from "@/pages/Vehiculos/VehiculosForm";
+import Vehiculos          from "@/pages/Vehiculos/Vehiculos";
+import VehiculosForm      from "@/pages/Vehiculos/VehiculosForm";
+import VehiculoHistorial  from "@/pages/Vehiculos/VehiculoHistorial";
 import Register from "@/pages/Register/Register";
 import RegisterForm from "@/pages/Register/RegisterForm";
 // import Reservas from "@/pages/Register/Reservas";
@@ -53,27 +54,35 @@ import Notificaciones from "@/pages/Notificaciones/Notificaciones.jsx";
 import SettingsPage from "@/pages/Settings/SettingsPage";
 
 // Rutas
-import RutasList from "@/pages/rutas/RutasList.jsx";
-import RutasForm from "@/pages/rutas/RutasForm.jsx";
+import RutasList     from "@/pages/rutas/RutasList.jsx";
+import RutasForm     from "@/pages/rutas/RutasForm.jsx";
+import RutaHistorial from "@/pages/rutas/RutaHistorial.jsx";
 
 // Reservas
-import ReservasList from "@/pages/reservas/ReservasList.jsx";
-import ReservasForm from "@/pages/reservas/ReservasForm.jsx";
+import ReservasList     from "@/pages/reservas/ReservasList.jsx";
+import ReservasForm     from "@/pages/reservas/ReservasForm.jsx";
+import ReservaHistorial from "@/pages/reservas/ReservaHistorial.jsx";
 
 // Viaticos
-import ViaticosList from "@/pages/viaticos/ViaticosList.jsx";
-import ViaticosForm from "@/pages/viaticos/ViaticosForm.jsx";
+import ViaticosList     from "@/pages/viaticos/ViaticosList.jsx";
+import ViaticosForm     from "@/pages/viaticos/ViaticosForm.jsx";
+import ViaticoHistorial from "@/pages/viaticos/ViaticoHistorial.jsx";
 
 // liquidaciones
 import LiquidacionForm from "@/pages/viaticos/LiquidacionForm.jsx";
 
 // Peajes
-import PeajesList from "@/pages/peajes/PeajesList.jsx";
-import PeajesForm from "@/pages/peajes/PeajesForm.jsx";
+import PeajesList     from "@/pages/peajes/PeajesList.jsx";
+import PeajesForm     from "@/pages/peajes/PeajesForm.jsx";
+import PeajeHistorial from "@/pages/peajes/PeajeHistorial.jsx";
 import OperacionesPage from "@/pages/operaciones/OperacionesPage";
 
 // Roles
-import RolesList from "@/pages/Administration/Roles/RolesList.jsx";
+import RolesList    from "@/pages/Administration/Roles/RolesList.jsx";
+import RolHistorial from "@/pages/Administration/Roles/RolHistorial.jsx";
+
+// Usuarios historial
+import UsuarioHistorial from "@/pages/Users/UsuarioHistorial.jsx";
 
 export default function DashboardRoutes() {
   return (
@@ -91,6 +100,7 @@ export default function DashboardRoutes() {
           <Route index element={<UsersList />} />
           <Route path="new" element={<UsersForm />} />
           <Route path="edit/:id" element={<UsersForm />} />
+          <Route path="historial/:id" element={<UsuarioHistorial />} />
         </Route>
         <Route path="mi-cuenta" element={<MyAccount />} />
 
@@ -99,6 +109,7 @@ export default function DashboardRoutes() {
           <Route index element={<Vehiculos />} />
           <Route path="new" element={<VehiculosForm />} />
           <Route path="edit/:id" element={<VehiculosForm />} />
+          <Route path="historial/:id" element={<VehiculoHistorial />} />
         </Route>
         <Route path="panel-vehiculos" element={<OperacionesPage />} />
         <Route path="panel-vehiculos/register" element={<RegisterForm />} />
@@ -109,6 +120,7 @@ export default function DashboardRoutes() {
           <Route index element={<RutasList />} />
           <Route path="new" element={<RutasForm />} />
           <Route path="edit/:id" element={<RutasForm />} />
+          <Route path="historial/:id" element={<RutaHistorial />} />
         </Route>
 
         {/* Reservas */}
@@ -116,6 +128,7 @@ export default function DashboardRoutes() {
           <Route index element={<ReservasList />} />
           <Route path="new" element={<ReservasForm />} />
           <Route path="edit/:id" element={<ReservasForm />} />
+          <Route path="historial/:id" element={<ReservaHistorial />} />
         </Route>
 
         {/* Viaticos */}
@@ -123,6 +136,7 @@ export default function DashboardRoutes() {
           <Route index element={<ViaticosList />} />
           <Route path="new" element={<ViaticosForm />} />
           <Route path="edit/:id" element={<ViaticosForm />} />
+          <Route path="historial/:id" element={<ViaticoHistorial />} />
           <Route path=":id/liquidar" element={<LiquidacionForm />} />
         </Route>
 
@@ -131,10 +145,14 @@ export default function DashboardRoutes() {
           <Route index element={<PeajesList />} />
           <Route path="new" element={<PeajesForm />} />
           <Route path="edit/:id" element={<PeajesForm />} />
+          <Route path="historial/:id" element={<PeajeHistorial />} />
         </Route>
 
         {/* Roles */}
-        <Route path="roles" element={<RolesList />} />
+        <Route path="roles">
+          <Route index element={<RolesList />} />
+          <Route path="historial/:id" element={<RolHistorial />} />
+        </Route>
 
         {/* Administración */}
         <Route path="countries" element={<Countries />} />

@@ -1,5 +1,6 @@
 // src/pages/Administration/Roles/RolesList.jsx
 import { useEffect, useState, useCallback, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Plus,
   Trash2,
@@ -15,6 +16,7 @@ import {
   ChevronDown,
   ChevronRight,
   Save,
+  History,
 } from "lucide-react";
 
 import {
@@ -85,6 +87,7 @@ export default function RolesList() {
   const { showToast } = useToast();
   const { can } = useAuth();
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
 
   const canManage = can("asignar_permisos");
 
@@ -268,6 +271,11 @@ export default function RolesList() {
           onClick={() => openEdit(rol)}
           className="rounded-xl cursor-pointer gap-2 text-sm">
           <Edit3 size={13} /> Editar Rol
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => navigate(`historial/${rol.id}`, { state: { rol } })}
+          className="rounded-xl cursor-pointer gap-2 text-sm">
+          <History size={13} /> Historial
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem

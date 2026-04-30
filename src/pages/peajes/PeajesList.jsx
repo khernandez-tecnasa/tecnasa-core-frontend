@@ -11,6 +11,7 @@ import {
   AlertTriangle,
   MoreVertical,
   X,
+  History,
 } from "lucide-react";
 
 import { getPeajes, deletePeaje } from "@/services/peajes.service";
@@ -120,6 +121,12 @@ export default function PeajesList() {
             <Edit3 size={13} /> Editar
           </DropdownMenuItem>
         )}
+
+        <DropdownMenuItem
+          onClick={() => navigate(`/admin/peajes/historial/${p.id}`, { state: { peaje: p } })}
+          className="rounded-xl cursor-pointer gap-2 text-sm">
+          <History size={13} /> Historial
+        </DropdownMenuItem>
 
         {canDelete && (
           <>

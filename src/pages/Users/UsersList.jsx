@@ -14,6 +14,7 @@ import {
   KeyRound,
   UserCheck,
   UserX,
+  History,
 } from "lucide-react";
 
 import { useAuth } from "@/context/AuthContext";
@@ -214,6 +215,12 @@ export default function UsersList() {
               <Edit3 size={13} /> Editar
             </DropdownMenuItem>
           )}
+
+          <DropdownMenuItem
+            onClick={() => navigate(`historial/${user.id_usuario}`, { state: { usuario: user } })}
+            className="rounded-xl cursor-pointer gap-2 text-sm">
+            <History size={13} /> Historial
+          </DropdownMenuItem>
 
           {canAssignPerms && (
             <DropdownMenuItem
