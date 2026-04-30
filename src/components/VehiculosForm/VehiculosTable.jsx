@@ -1,5 +1,5 @@
 import { useMemo, useState, useCallback } from "react";
-import { ChevronUp, MoreVertical, Pencil, Trash2, RotateCcw, QrCode, Car } from "lucide-react";
+import { ChevronUp, MoreVertical, Pencil, Trash2, RotateCcw, QrCode, Car, History } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -68,6 +68,7 @@ export default function VehiculosTable({
   onDelete,
   onRestore,
   onShowQR,
+  onHistorial,
   canEdit = false,
   canDelete = false,
   canRestore = false,
@@ -103,7 +104,7 @@ export default function VehiculosTable({
 
   const isInactive = (v) => (v?.estado || "").toLowerCase() === "inactivo";
   const getStyle   = (id) => (typeof highlightStyle === "function" ? highlightStyle(id) : {});
-  const hasActions = (canEdit && onEdit) || (canDelete && onDelete) || (canRestore && onRestore) || (canQR && onShowQR);
+  const hasActions = (canEdit && onEdit) || (canDelete && onDelete) || (canRestore && onRestore) || (canQR && onShowQR) || Boolean(onHistorial);
 
   /* ── Actions dropdown ── */
   const ActionsMenu = ({ v }) => {
@@ -126,6 +127,15 @@ export default function VehiculosTable({
             >
               <Pencil size={13} />
               {t?.("vehiculos.edit", "Editar")}
+            </DropdownMenuItem>
+          )}
+          {onHistorial && (
+            <DropdownMenuItem
+              onClick={() => onHistorial(v)}
+              className="rounded-xl cursor-pointer gap-2 text-sm"
+            >
+              <History size={13} />
+              {t?.("vehiculos.historial", "Historial")}
             </DropdownMenuItem>
           )}
           {canQR && onShowQR && (

@@ -78,6 +78,7 @@ function StatePanel({
 export default function Vehiculos() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+
   const qrRef = useRef(null);
   const isMobile = useIsMobile(768);
 
@@ -179,6 +180,10 @@ export default function Vehiculos() {
       cancelled = true;
     };
   }, [isMobile]);
+
+  const handleHistorial = (vehiculo) => {
+    navigate(`/admin/vehiculos/historial/${vehiculo.id}`, { state: { vehiculo } });
+  };
 
   /* ── CRUD handlers ── */
   const handleAddVehiculo = () => {
@@ -649,6 +654,7 @@ export default function Vehiculos() {
             onDelete={handleDelete}
             onRestore={handleRestore}
             onShowQR={handleShowQR}
+            onHistorial={handleHistorial}
             canEdit={canEdit}
             canDelete={canDelete}
             canRestore={canRestore}
