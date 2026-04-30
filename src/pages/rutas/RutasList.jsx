@@ -14,6 +14,7 @@ import {
   Loader2,
   AlertTriangle,
   MoreVertical,
+  History,
 } from "lucide-react";
 import { MapContainer, TileLayer, Marker, Polyline } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
@@ -257,6 +258,12 @@ export default function RutasList() {
               <Edit3 size={13} /> Editar
             </DropdownMenuItem>
           )}
+
+          <DropdownMenuItem
+            onClick={() => navigate(`historial/${ruta.id}`, { state: { ruta } })}
+            className="rounded-xl cursor-pointer gap-2 text-sm">
+            <History size={13} /> Historial
+          </DropdownMenuItem>
 
           {canDelete && (
             <DropdownMenuItem

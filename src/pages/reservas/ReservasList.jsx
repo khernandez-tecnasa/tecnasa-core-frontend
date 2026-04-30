@@ -15,6 +15,7 @@ import {
   MoreVertical,
   AlertTriangle,
   Loader2,
+  History,
 } from "lucide-react";
 
 import FullCalendar from "@fullcalendar/react";
@@ -348,6 +349,12 @@ export default function ReservasList() {
             <Edit3 size={13} /> Editar
           </DropdownMenuItem>
         )}
+
+        <DropdownMenuItem
+          onClick={() => navigate(`/admin/reservas-vehiculos/historial/${r.id}`, { state: { reserva: r } })}
+          className="rounded-xl cursor-pointer gap-2 text-sm">
+          <History size={13} /> Historial
+        </DropdownMenuItem>
 
         {r.estado === "Reservado" && <DropdownMenuSeparator />}
 
