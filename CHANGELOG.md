@@ -1,4 +1,15 @@
-﻿## v2.8.0 - 2026-04-27
+﻿## v2.9.0 - 2026-04-30
+
+* chore(release): v2.9.0 (6e99fc2)
+* Merge pull request #6 from khernandez-tecnasa/feature/implement-module-audilog (aa19b59)
+* feat(audit): add AuditTimeline component and vehiculos historial page (48d22e8)
+* feat(audit): extend historial pages to all modules (f5881f3)
+* feat(audit): add AuditTimeline component and vehiculos historial page (9384b83)
+* docs(changelog): v2.8.0 (6c0bd60)
+
+**Comparacion:** https://github.com/khernandez-tecnasa/tecnasa-core-frontend/compare/v2.8.0...v2.9.0
+
+## v2.8.0 - 2026-04-27
 
 * chore(release): v2.8.0 (f829ee8)
 * Merge pull request #5 from khernandez-tecnasa/fix/general-bugfixes (d10e00e)
@@ -249,6 +260,7 @@
 - Full changelog: https://github.com/khernan14/AutoLog/compare/prod-2025-11-04...v1.0.0
 
 > Nota: si sigues **Conventional Commits** (`feat:`, `fix:`, `chore:`â€¦), herramientas como `conventional-changelog` te generan estas secciones solitas.
+
 
 
 
