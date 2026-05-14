@@ -1,4 +1,13 @@
-﻿## v2.9.0 - 2026-04-30
+﻿## v2.9.1 - 2026-05-14
+
+* chore(release): v2.9.1 (687fe99)
+* Merge pull request #8 from khernandez-tecnasa/fix/login-error-handling (cb4167f)
+* fix: improve login error handling with detailed server messages (a9d9b72)
+* docs(changelog): v2.9.0 (1247c52)
+
+**Comparacion:** https://github.com/khernandez-tecnasa/tecnasa-core-frontend/compare/v2.9.0...v2.9.1
+
+## v2.9.0 - 2026-04-30
 
 * chore(release): v2.9.0 (6e99fc2)
 * Merge pull request #6 from khernandez-tecnasa/feature/implement-module-audilog (aa19b59)
@@ -260,6 +269,7 @@
 - Full changelog: https://github.com/khernan14/AutoLog/compare/prod-2025-11-04...v1.0.0
 
 > Nota: si sigues **Conventional Commits** (`feat:`, `fix:`, `chore:`â€¦), herramientas como `conventional-changelog` te generan estas secciones solitas.
+
 
 
 
