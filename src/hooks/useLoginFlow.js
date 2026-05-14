@@ -119,7 +119,13 @@ export const useLoginFlow = () => {
 
       await handleLoginSuccess(data.rol);
     } catch (error) {
-      Swal.fire("Error", "Credenciales incorrectas", "error");
+      const message =
+        error.data?.error ||
+        error.data?.message ||
+        error.message ||
+        "Ocurrió un error";
+
+      Swal.fire("Error", message, "error");
     } finally {
       setLoading(false);
     }
