@@ -1,4 +1,24 @@
-﻿## v2.9.1 - 2026-05-14
+﻿## v2.10.0 - 2026-06-04
+
+* chore(release): v2.10.0 (1f27874)
+* Merge pull request #9 from khernandez-tecnasa/feature/reports-dashboard-backup (e04b5f8)
+* refactor(dashboard): remove DashboardVisual component (a475b7f)
+* chore: update claude settings and lockfile (5ca24a7)
+* feat(misc): improve services, UI components, and operaciones form (b59cc61)
+* feat(inventario): update Inventario pages and SoporteAdmin layout (ec186b4)
+* feat(help): redesign Help section and add User Manual page (344a916)
+* feat(nav): add Backup nav item to sidebar and improve auth context (e450a8a)
+* feat(backup): add Backup & Restore page with full UI flow (9f0a841)
+* feat(dashboard): complete redesign of Dashboard and Home pages (60e5632)
+* feat(reports): redesign existing report components and ReportsPage (4074345)
+* feat(reports): add 8 new report components (02deaa2)
+* feat(config): add report, dashboard, and backup endpoint definitions (3e10b3e)
+* fix(api): fix withQuery crash on relative URLs; add apiClient utility (454bc18)
+* docs(changelog): v2.9.1 (47c88ae)
+
+**Comparacion:** https://github.com/khernandez-tecnasa/tecnasa-core-frontend/compare/v2.9.1...v2.10.0
+
+## v2.9.1 - 2026-05-14
 
 * chore(release): v2.9.1 (687fe99)
 * Merge pull request #8 from khernandez-tecnasa/fix/login-error-handling (cb4167f)
@@ -269,6 +289,7 @@
 - Full changelog: https://github.com/khernan14/AutoLog/compare/prod-2025-11-04...v1.0.0
 
 > Nota: si sigues **Conventional Commits** (`feat:`, `fix:`, `chore:`â€¦), herramientas como `conventional-changelog` te generan estas secciones solitas.
+
 
 
 
