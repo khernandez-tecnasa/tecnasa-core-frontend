@@ -1,19 +1,67 @@
-import {
-  Modal,
-  ModalDialog,
-  ModalClose,
-  Typography,
-  Divider,
-  Stack,
-  Chip,
-  Sheet,
-  IconButton,
-} from "@mui/joy";
-import ImageList from "@mui/material/ImageList";
-import ImageListItem from "@mui/material/ImageListItem";
-import ZoomInIcon from "@mui/icons-material/ZoomIn";
+// src/components/ComponentsReport/RegisterReport/ReportDetailModal.jsx
 import { useState } from "react";
+import {
+  X,
+  ZoomIn,
+  Car,
+  User,
+  Calendar,
+  Gauge,
+  Fuel,
+  MessageSquare,
+  Images,
+} from "lucide-react";
 
+// ── Helpers ────────────────────────────────────────────────────────────────────
+const fmtDate = (d) => {
+  if (!d) return "N/A";
+  return new Date(d).toLocaleString("es-HN", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
+// ── Fila de detalle ────────────────────────────────────────────────────────────
+function DetailRow({ label, value, mono = false }) {
+  return (
+    <div className="flex flex-col gap-0.5">
+      <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">
+        {label}
+      </span>
+      <span className={`text-sm font-semibold text-foreground ${mono ? "font-mono" : ""}`}>
+        {value || "—"}
+      </span>
+    </div>
+  );
+}
+
+// ── Sección con encabezado ─────────────────────────────────────────────────────
+function Section({ icon: Icon, title, children, accent = "blue" }) {
+  const accentMap = {
+    blue: "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20",
+    emerald: "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20",
+    amber: "text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20",
+    violet: "text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-900/20",
+  };
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-2">
+        <div className={`p-1.5 rounded-lg ${accentMap[accent]}`}>
+          <Icon size={14} />
+        </div>
+        <span className="text-xs font-black uppercase tracking-wider text-foreground">
+          {title}
+        </span>
+      </div>
+      <div className="pl-1">{children}</div>
+    </div>
+  );
+}
+
+// ── Componente principal ───────────────────────────────────────────────────────
 export default function ReportDetailModal({ open, onClose, registro }) {
   const [zoomedImage, setZoomedImage] = useState(null);
 
@@ -33,169 +81,210 @@ export default function ReportDetailModal({ open, onClose, registro }) {
     images = [],
   } = registro;
 
-  const formatDate = (date) => (date ? new Date(date).toLocaleString() : "N/A");
+  if (!open) return null;
 
   return (
     <>
-      <Modal open={open} onClose={onClose}>
-        <ModalDialog
-          layout="center"
-          size="lg"
-          sx={{
-            borderRadius: "xl",
-            p: 3,
-            maxWidth: 800,
-            width: "90vw",
-            maxHeight: "90vh",
-            overflowY: "auto",
-            boxShadow: "lg",
-          }}>
-          <ModalClose />
-          <Typography level="h4" mb={1}>
-            Detalles del Registro - {vehiculo.placa || "Sin placa"}
-          </Typography>
-          <Divider />
+      {/* ── MODAL PRINCIPAL ── */}
+      <div
+        className="fixed inset-0 z-50 bg-black/40 dark:bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center p-0 md:p-6 animate-in fade-in duration-200"
+        onClick={onClose}>
+        <div
+          className="w-full max-w-2xl bg-card dark:bg-slate-900 rounded-t-3xl md:rounded-3xl shadow-2xl dark:shadow-black/50 border border-border/40 overflow-hidden animate-in slide-in-from-bottom md:zoom-in-95 duration-200"
+          onClick={(e) => e.stopPropagation()}>
 
-          {/* Info del reporte */}
-          <Stack spacing={1} mt={2}>
-            <Typography level="title-sm" color="primary">
-              Vehículo
-            </Typography>
-            <Typography level="body-sm">
-              {vehiculo.marca} {vehiculo.modelo}
-            </Typography>
+          {/* Header */}
+          <div className="flex items-center justify-between px-6 py-4 border-b border-border/40">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-blue-50 dark:bg-blue-900/20 ring-1 ring-blue-100 dark:ring-blue-900/40">
+                <Car size={16} className="text-blue-600 dark:text-blue-400" />
+              </div>
+              <div>
+                <h2 className="text-base font-black tracking-tight">
+                  Detalles del Registro
+                </h2>
+                <p className="text-xs text-muted-foreground font-medium">
+                  {vehiculo.placa || "Sin placa"}
+                  {(vehiculo.marca || vehiculo.modelo) && ` · ${[vehiculo.marca, vehiculo.modelo].filter(Boolean).join(" ")}`}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={onClose}
+              className="p-2 rounded-xl hover:bg-muted/60 dark:hover:bg-slate-800 transition-colors text-muted-foreground hover:text-foreground">
+              <X size={18} />
+            </button>
+          </div>
 
-            <Typography level="title-sm" color="primary" mt={1}>
-              Empleado
-            </Typography>
-            <Typography level="body-sm">
-              {empleado.nombre} ({empleado.puesto})
-            </Typography>
+          {/* Body — scrollable */}
+          <div className="overflow-y-auto max-h-[75vh] md:max-h-[70vh] px-6 py-5 space-y-6">
 
-            <Typography level="title-sm" color="primary" mt={1}>
-              Fechas
-            </Typography>
-            <Typography level="body-sm">
-              Salida: {formatDate(fecha_salida)}
-            </Typography>
-            <Typography level="body-sm">
-              Regreso: {formatDate(fecha_regreso)}
-            </Typography>
+            {/* Vehículo */}
+            <Section icon={Car} title="Vehículo" accent="blue">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                <DetailRow label="Placa" value={vehiculo.placa} mono />
+                <DetailRow label="Marca" value={vehiculo.marca} />
+                <DetailRow label="Modelo" value={vehiculo.modelo} />
+              </div>
+            </Section>
 
-            <Typography level="title-sm" color="primary" mt={1}>
-              Kilometraje
-            </Typography>
-            <Typography level="body-sm">Salida: {km_salida} km</Typography>
-            <Typography level="body-sm">
-              Regreso: {km_regreso ?? "-"} km{" "}
-            </Typography>
+            <div className="h-px bg-border/40" />
 
-            <Typography level="title-sm" color="primary" mt={1}>
-              Combustible
-            </Typography>
-            <Stack direction="row" spacing={1}>
-              <Chip size="sm">Salida: {combustible_salida ?? "-"}%</Chip>
-              <Chip size="sm">Regreso: {combustible_regreso ?? "-"}%</Chip>
-            </Stack>
+            {/* Empleado */}
+            <Section icon={User} title="Empleado" accent="violet">
+              <div className="grid grid-cols-2 gap-4">
+                <DetailRow label="Nombre" value={empleado.nombre} />
+                <DetailRow label="Puesto" value={empleado.puesto} />
+              </div>
+            </Section>
 
-            <Typography level="title-sm" color="primary" mt={1}>
-              Comentarios
-            </Typography>
-            <Typography level="body-sm">
-              Salida: {comentario_salida || "N/A"}
-            </Typography>
-            <Typography level="body-sm">
-              Regreso: {comentario_regreso || "N/A"}
-            </Typography>
-          </Stack>
+            <div className="h-px bg-border/40" />
 
-          {/* Galería de imágenes */}
-          {images.length > 0 && (
-            <>
-              <Divider sx={{ my: 2 }} />
-              <Typography level="title-sm" mb={1}>
-                Evidencias
-              </Typography>
-              <ImageList
-                cols={3}
-                gap={12}
-                sx={{
-                  width: "100%",
-                  m: 0,
-                  "@media (max-width: 600px)": {
-                    gridTemplateColumns: "repeat(2, 1fr)",
-                  },
-                }}>
-                {images.map((img, i) => (
-                  <ImageListItem
-                    key={i}
-                    sx={{
-                      position: "relative",
-                      borderRadius: "md",
-                      overflow: "hidden",
-                      cursor: "pointer",
-                      "&:hover .zoom-btn": {
-                        opacity: 1,
-                      },
-                    }}
-                    onClick={() => setZoomedImage(img.url)}>
-                    <img
-                      src={img.url}
-                      alt={`evidencia-${i}`}
-                      loading="lazy"
-                      style={{
-                        width: "100%",
-                        height: "auto",
-                        objectFit: "cover",
-                        borderRadius: 8,
-                      }}
-                    />
-                    <IconButton
-                      className="zoom-btn"
-                      size="sm"
-                      sx={{
-                        position: "absolute",
-                        top: 8,
-                        right: 8,
-                        bgcolor: "rgba(0,0,0,0.5)",
-                        color: "white",
-                        opacity: 0,
-                        transition: "opacity 0.2s",
-                      }}>
-                      <ZoomInIcon />
-                    </IconButton>
-                  </ImageListItem>
-                ))}
-              </ImageList>
-            </>
-          )}
-        </ModalDialog>
-      </Modal>
+            {/* Fechas */}
+            <Section icon={Calendar} title="Fechas" accent="emerald">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <DetailRow label="Fecha de Salida" value={fmtDate(fecha_salida)} />
+                <DetailRow
+                  label="Fecha de Regreso"
+                  value={fecha_regreso ? fmtDate(fecha_regreso) : "En curso"}
+                />
+              </div>
+            </Section>
 
-      {/* Imagen expandida */}
-      <Modal open={!!zoomedImage} onClose={() => setZoomedImage(null)}>
-        <ModalDialog
-          layout="center"
-          sx={{
-            maxWidth: "90vw",
-            maxHeight: "90vh",
-            p: 1,
-            borderRadius: "lg",
-            overflow: "hidden",
-          }}>
-          <ModalClose />
-          <img
-            src={zoomedImage}
-            alt="evidencia ampliada"
-            style={{
-              width: "100%",
-              height: "auto",
-              maxHeight: "85vh",
-              borderRadius: "lg",
-            }}
-          />
-        </ModalDialog>
-      </Modal>
+            <div className="h-px bg-border/40" />
+
+            {/* Kilometraje + Combustible */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <Section icon={Gauge} title="Kilometraje" accent="blue">
+                <div className="grid grid-cols-2 gap-4">
+                  <DetailRow label="Salida" value={km_salida != null ? `${km_salida} km` : null} mono />
+                  <DetailRow label="Regreso" value={km_regreso != null ? `${km_regreso} km` : null} mono />
+                </div>
+              </Section>
+
+              <Section icon={Fuel} title="Combustible" accent="amber">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Salida</span>
+                    <FuelBar value={combustible_salida} />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Regreso</span>
+                    <FuelBar value={combustible_regreso} />
+                  </div>
+                </div>
+              </Section>
+            </div>
+
+            <div className="h-px bg-border/40" />
+
+            {/* Comentarios */}
+            <Section icon={MessageSquare} title="Comentarios" accent="violet">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="flex flex-col gap-1">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Salida</span>
+                  <p className="text-sm text-muted-foreground bg-muted/40 dark:bg-slate-800/50 rounded-xl px-3 py-2 min-h-[2.5rem]">
+                    {comentario_salida || <span className="opacity-40 italic">Sin comentario</span>}
+                  </p>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Regreso</span>
+                  <p className="text-sm text-muted-foreground bg-muted/40 dark:bg-slate-800/50 rounded-xl px-3 py-2 min-h-[2.5rem]">
+                    {comentario_regreso || <span className="opacity-40 italic">Sin comentario</span>}
+                  </p>
+                </div>
+              </div>
+            </Section>
+
+            {/* Imágenes / evidencias */}
+            {images.length > 0 && (
+              <>
+                <div className="h-px bg-border/40" />
+                <Section icon={Images} title={`Evidencias (${images.length})`} accent="emerald">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {images.map((img, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setZoomedImage(img.url)}
+                        className="group relative aspect-square rounded-2xl overflow-hidden bg-muted border border-border/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50">
+                        <img
+                          src={img.url}
+                          alt={`evidencia-${i + 1}`}
+                          loading="lazy"
+                          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        />
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors duration-200 flex items-center justify-center">
+                          <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-2 rounded-full bg-white/90 dark:bg-slate-900/90">
+                            <ZoomIn size={16} className="text-foreground" />
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </Section>
+              </>
+            )}
+          </div>
+
+          {/* Footer */}
+          <div className="px-6 py-4 border-t border-border/40 flex justify-end">
+            <button
+              onClick={onClose}
+              className="px-5 py-2 rounded-2xl text-sm font-bold border border-border/60 bg-muted/40 hover:bg-muted transition-colors">
+              Cerrar
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* ── ZOOM DE IMAGEN ── */}
+      {zoomedImage && (
+        <div
+          className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-150"
+          onClick={() => setZoomedImage(null)}>
+          <div
+            className="relative max-w-4xl w-full animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={() => setZoomedImage(null)}
+              className="absolute -top-3 -right-3 z-10 p-2 rounded-full bg-card border border-border/40 shadow-lg hover:bg-muted transition-colors">
+              <X size={16} />
+            </button>
+            <img
+              src={zoomedImage}
+              alt="evidencia ampliada"
+              className="w-full h-auto max-h-[85vh] object-contain rounded-3xl"
+            />
+          </div>
+        </div>
+      )}
     </>
+  );
+}
+
+// ── Barra de combustible ───────────────────────────────────────────────────────
+function FuelBar({ value }) {
+  const pct = value != null ? Math.min(100, Math.max(0, Number(value))) : null;
+
+  const color =
+    pct == null ? "bg-muted"
+    : pct >= 60 ? "bg-emerald-500"
+    : pct >= 30 ? "bg-amber-500"
+    : "bg-rose-500";
+
+  if (pct == null) {
+    return <span className="text-sm font-semibold text-muted-foreground">—</span>;
+  }
+
+  return (
+    <div className="flex flex-col gap-1">
+      <span className="text-sm font-black">{pct}%</span>
+      <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+        <div
+          className={`h-full rounded-full transition-all duration-500 ${color}`}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+    </div>
   );
 }

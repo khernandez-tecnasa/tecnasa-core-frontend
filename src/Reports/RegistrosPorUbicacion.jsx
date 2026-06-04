@@ -1,37 +1,28 @@
-// src/pages/ComponentsReport/Registros/RegistrosPorUbicacion.jsx
+// src/Reports/RegistrosPorUbicacion.jsx
 import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  Box,
-  Sheet,
-  Typography,
-  Table,
-  Stack,
-  Button,
-  Input,
-  CircularProgress,
-  Alert,
-  IconButton,
-  Chip,
-  Divider,
-} from "@mui/joy";
-import { useTranslation } from "react-i18next"; // 👈 i18n
 import { useNavigate, useLocation } from "react-router-dom";
+import {
+  ArrowLeft,
+  Search,
+  X,
+  Download,
+  Loader2,
+  AlertCircle,
+  Calendar,
+  MapPin,
+  Car,
+  User,
+  ArrowRight,
+  Gauge,
+} from "lucide-react";
 
-// Iconos
-import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
-import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
-import DownloadRoundedIcon from "@mui/icons-material/DownloadRounded";
-import FilterListOffRoundedIcon from "@mui/icons-material/FilterListOffRounded";
-import CalendarTodayRoundedIcon from "@mui/icons-material/CalendarTodayRounded";
-import PlaceRoundedIcon from "@mui/icons-material/PlaceRounded";
-import ClearRoundedIcon from "@mui/icons-material/ClearRounded";
-
-// Componentes
 import PaginationLite from "@/components/common/PaginationLite";
 import ExportDialog from "@/components/Exports/ExportDialog";
 import { getRegistrosPorUbicacionReport } from "@/services/ReportServices";
+import { Button } from "@/components/ui/button";
+import useIsMobile from "@/hooks/useIsMobile";
 
-/* === Helpers === */
+// ── Helpers ────────────────────────────────────────────────────────────────────
 const debounced = (fn, ms = 250) => {
   let t;
   return (...args) => {
@@ -39,7 +30,18 @@ const debounced = (fn, ms = 250) => {
     t = setTimeout(() => fn(...args), ms);
   };
 };
-const fmtDateTime = (d) => (d ? new Date(d).toLocaleString() : "—");
+
+const fmtDateTime = (d) => {
+  if (!d) return "—";
+  return new Date(d).toLocaleString("es-HN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
 const fmtDateInput = (d) => {
   if (!d) return "";
   const pad = (n) => String(n).padStart(2, "0");
@@ -53,23 +55,28 @@ const addDays = (date, days) => {
   return d;
 };
 
+const RANGE_LABELS = {
+  all: "Todo",
+  today: "Hoy",
+  "7d": "7 días",
+  month: "Este mes",
+  custom: "Personalizado",
+};
+
+// ── Componente principal ───────────────────────────────────────────────────────
 export default function RegistrosPorUbicacion() {
-  const { t } = useTranslation();
   const navigate = useNavigate();
   const { search } = useLocation();
-  const qs = useMemo(() => new URLSearchParams(search), [search]);
+  const isMobile = useIsMobile();
 
-  // Filtros
+  const qs = useMemo(() => new URLSearchParams(search), [search]);
   const [query, setQuery] = useState(qs.get("q") || "");
   const [range, setRange] = useState(qs.get("range") || "all");
   const [from, setFrom] = useState(qs.get("from") || "");
   const [to, setTo] = useState(qs.get("to") || "");
-
-  // Paginación
   const [page, setPage] = useState(Number(qs.get("p") || 1));
-  const [rowsPerPage] = useState(10);
+  const rowsPerPage = 10;
 
-  // Data
   const [raw, setRaw] = useState([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState(null);
@@ -87,30 +94,26 @@ export default function RegistrosPorUbicacion() {
     window.history.replaceState(null, "", s ? `?${s}` : "");
   }, [query, page, range, from, to, search]);
 
-  // Presets Rango
+  // Presets de rango
   useEffect(() => {
     if (range === "custom") return;
     if (range === "all") {
-      setFrom("");
-      setTo("");
+      setFrom(""); setTo("");
     } else if (range === "today") {
-      const d = todayStr();
-      setFrom(d);
-      setTo(d);
+      const d = todayStr(); setFrom(d); setTo(d);
     } else if (range === "7d") {
       const now = new Date();
       setFrom(fmtDateInput(addDays(now, -6)));
       setTo(todayStr());
     } else if (range === "month") {
       const now = new Date();
-      const startMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      setFrom(fmtDateInput(startMonth));
+      setFrom(fmtDateInput(new Date(now.getFullYear(), now.getMonth(), 1)));
       setTo(todayStr());
     }
     setPage(1);
   }, [range]);
 
-  // Carga
+  // Carga de datos
   useEffect(() => {
     (async () => {
       setLoading(true);
@@ -123,22 +126,19 @@ export default function RegistrosPorUbicacion() {
         setRaw(Array.isArray(data) ? data : []);
       } catch (e) {
         console.error(e);
-        setErr(t("reports.errors.load_failed"));
+        setErr("Error al cargar el reporte. Intenta nuevamente.");
       } finally {
         setLoading(false);
       }
     })();
-  }, [from, to, t]);
+  }, [from, to]);
 
-  // Búsqueda
+  // Búsqueda con debounce
   const onChangeQuery = useRef(
-    debounced((v) => {
-      setPage(1);
-      setQuery(v);
-    }, 250)
+    debounced((v) => { setPage(1); setQuery(v); }, 250)
   ).current;
 
-  // Filtrado Front
+  // Filtrado frontend
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     const fromTs = from ? new Date(from + "T00:00:00").getTime() : null;
@@ -152,11 +152,9 @@ export default function RegistrosPorUbicacion() {
           .some((s) => s.includes(q));
 
       if (!textOk) return false;
-
       if (!fromTs && !toTs) return true;
-      const salidaTs = r.fecha_salida
-        ? new Date(r.fecha_salida).getTime()
-        : null;
+
+      const salidaTs = r.fecha_salida ? new Date(r.fecha_salida).getTime() : null;
       if (!salidaTs) return false;
       if (fromTs && salidaTs < fromTs) return false;
       if (toTs && salidaTs > toTs) return false;
@@ -172,386 +170,397 @@ export default function RegistrosPorUbicacion() {
     return filtered.slice(start, start + rowsPerPage);
   }, [filtered, pageSafe, rowsPerPage]);
 
-  // Limpiar filtros
+  const hasFilters = query || range !== "all";
+
   const clearFilters = () => {
-    setQuery("");
-    setRange("all");
-    setFrom("");
-    setTo("");
-    setPage(1);
+    setQuery(""); setRange("all"); setFrom(""); setTo(""); setPage(1);
   };
 
-  // Export config
+  // Columnas de exportación
   const columnsExport = [
-    {
-      label: "#",
-      key: "__rownum",
-      get: (_row, i) => (pageSafe - 1) * rowsPerPage + i + 1,
-    },
-    { label: t("reports.columns.employee"), key: "nombre_empleado" },
-    { label: t("reports.columns.vehicle"), key: "vehiculo" },
-    { label: t("reports.columns.location_out"), key: "ubicacion_salida" },
-    { label: t("reports.columns.location_in"), key: "ubicacion_regreso" },
-    {
-      label: t("reports.columns.departure_date"),
-      key: "fecha_salida",
-      get: (r) => fmtDateTime(r.fecha_salida),
-    },
-    {
-      label: t("reports.columns.return_date"),
-      key: "fecha_regreso",
-      get: (r) => fmtDateTime(r.fecha_regreso),
-    },
-    { label: t("reports.columns.km_out"), key: "km_salida" },
-    { label: t("reports.columns.km_in"), key: "km_regreso" },
+    { label: "#",                get: (_r, i) => (pageSafe - 1) * rowsPerPage + i + 1 },
+    { label: "Empleado",         key: "nombre_empleado" },
+    { label: "Vehículo",         key: "vehiculo" },
+    { label: "Ubicación Salida", key: "ubicacion_salida" },
+    { label: "Ubicación Regreso",key: "ubicacion_regreso" },
+    { label: "Fecha Salida",     get: (r) => fmtDateTime(r.fecha_salida) },
+    { label: "Fecha Regreso",    get: (r) => fmtDateTime(r.fecha_regreso) },
+    { label: "Km Salida",        key: "km_salida" },
+    { label: "Km Regreso",       key: "km_regreso" },
   ];
 
   const filenameBase = `ubicacion_registros_${from || "all"}_${to || "all"}`;
 
-  // --- Render ---
-  if (loading) {
-    return (
-      <Box
-        sx={{
-          py: 10,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          gap: 2,
-        }}>
-        <CircularProgress size="lg" thickness={3} />
-        <Typography level="body-md" color="neutral">
-          {t("common.loading")}
-        </Typography>
-      </Box>
-    );
-  }
-
-  if (err) {
-    return (
-      <Box sx={{ maxWidth: 1200, mx: "auto", p: 2 }}>
-        <Alert color="danger" variant="soft">
-          {err}
-        </Alert>
-      </Box>
-    );
-  }
-
   return (
-    <Box sx={{ maxWidth: 1400, mx: "auto", px: { xs: 2, md: 4 }, py: 3 }}>
-      {/* --- HEADER --- */}
-      <Stack
-        direction={{ xs: "column", md: "row" }}
-        alignItems={{ md: "center" }}
-        justifyContent="space-between"
-        mb={3}
-        spacing={2}>
-        <Stack direction="row" alignItems="center" spacing={1}>
-          <IconButton
+    <div className="max-w-7xl mx-auto px-4 md:px-8 py-6 md:py-10 space-y-6 animate-in fade-in duration-500">
+
+      {/* ── HEADER ── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3.5">
+          <button
             onClick={() => navigate("/admin/reports")}
-            variant="plain"
-            color="neutral">
-            <ArrowBackRoundedIcon />
-          </IconButton>
-          <Box>
-            <Typography level="h2" fontSize="lg" fontWeight="lg">
-              {t("reports.report_items.ubicacion_vehiculo.title")}
-            </Typography>
-            <Typography level="body-sm" color="neutral">
-              {t("reports.total_records", { count: filtered.length })}
-            </Typography>
-          </Box>
-        </Stack>
+            className="p-2 rounded-2xl hover:bg-muted/60 dark:hover:bg-slate-800 transition-colors text-muted-foreground hover:text-foreground shrink-0">
+            <ArrowLeft size={18} />
+          </button>
+
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-2xl bg-rose-500/10 dark:bg-rose-500/15 ring-1 ring-rose-500/20 dark:ring-rose-500/30 shadow-sm shadow-rose-500/10 shrink-0">
+              <MapPin size={20} className="text-rose-600 dark:text-rose-400" />
+            </div>
+            <div>
+              <h1 className="text-xl md:text-2xl font-black tracking-tight leading-none">
+                Registros por Ubicación
+              </h1>
+              <p className="text-muted-foreground text-xs font-medium mt-0.5">
+                {loading
+                  ? "Cargando..."
+                  : `${filtered.length} registro${filtered.length !== 1 ? "s" : ""} encontrado${filtered.length !== 1 ? "s" : ""}`}
+              </p>
+            </div>
+          </div>
+        </div>
 
         <Button
-          variant="solid"
-          color="primary"
-          startDecorator={<DownloadRoundedIcon />}
           onClick={() => setOpenExport(true)}
-          disabled={filtered.length === 0}>
-          {t("reports.actions.export")}
+          disabled={filtered.length === 0 || loading}
+          className="rounded-2xl px-5 h-10 font-bold shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all duration-200 gap-2 shrink-0 disabled:opacity-50">
+          <Download size={15} />
+          <span className="hidden sm:inline">Exportar</span>
         </Button>
-      </Stack>
+      </div>
 
-      {/* --- FILTERS BAR --- */}
-      <Sheet
-        variant="outlined"
-        sx={{
-          p: 2,
-          borderRadius: "lg",
-          mb: 3,
-          boxShadow: "sm",
-          bgcolor: "background.surface",
-        }}>
-        <Stack
-          direction={{ xs: "column", lg: "row" }}
-          spacing={2}
-          alignItems={{ lg: "center" }}>
-          {/* Buscador */}
-          <Input
-            placeholder={t("reports.search_placeholder")}
-            startDecorator={<SearchRoundedIcon />}
-            value={query}
+      {/* ── BARRA DE FILTROS ── */}
+      <div className="bg-card dark:bg-slate-900/40 border border-border/60 rounded-3xl p-4 space-y-3 shadow-sm">
+        {/* Buscador */}
+        <div className="relative group">
+          <Search
+            size={15}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/50 group-focus-within:text-primary transition-colors pointer-events-none"
+          />
+          <input
+            type="text"
+            placeholder="Buscar por empleado, vehículo o ubicación..."
+            defaultValue={query}
             onChange={(e) => onChangeQuery(e.target.value)}
-            sx={{ minWidth: 240, flex: 1 }}
-            endDecorator={
-              query && (
-                <IconButton
-                  size="sm"
-                  variant="plain"
-                  color="neutral"
-                  onClick={() => setQuery("")}>
-                  <ClearRoundedIcon />
-                </IconButton>
-              )
-            }
+            className="w-full bg-muted/40 dark:bg-slate-800/50 border border-border/50 rounded-2xl pl-9 pr-10 py-2.5 text-sm outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/15 focus:bg-card transition-all placeholder:text-muted-foreground/50"
           />
+          {query && (
+            <button
+              onClick={() => { setQuery(""); setPage(1); }}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/50 hover:text-foreground transition-colors">
+              <X size={14} />
+            </button>
+          )}
+        </div>
 
-          <Divider
-            orientation="vertical"
-            sx={{ display: { xs: "none", lg: "block" }, height: 24 }}
-          />
-
-          {/* Rango de Fechas */}
-          <Stack
-            direction="row"
-            spacing={1}
-            alignItems="center"
-            sx={{ overflowX: "auto", pb: { xs: 1, lg: 0 } }}>
-            <CalendarTodayRoundedIcon
-              sx={{ color: "text.tertiary", fontSize: 20 }}
-            />
-            {["all", "today", "7d", "month", "custom"].map((r) => (
-              <Chip
+        {/* Rango de fechas */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground shrink-0">
+            <Calendar size={13} />
+            Período
+          </div>
+          <div className="flex gap-1.5 flex-wrap">
+            {Object.entries(RANGE_LABELS).map(([r, label]) => (
+              <button
                 key={r}
-                variant={range === r ? "solid" : "soft"}
-                color={range === r ? "primary" : "neutral"}
                 onClick={() => setRange(r)}
-                sx={{
-                  cursor: "pointer",
-                  fontWeight: range === r ? "lg" : "md",
-                }}>
-                {t(`reports.ranges.${r}`)}
-              </Chip>
+                className={`px-3 py-1 rounded-full text-xs font-bold border transition-all duration-150 ${
+                  range === r
+                    ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                    : "bg-muted/50 dark:bg-slate-800 border-border/50 text-muted-foreground hover:bg-muted dark:hover:bg-slate-700 hover:text-foreground"
+                }`}>
+                {label}
+              </button>
             ))}
-          </Stack>
+          </div>
 
-          {range === "custom" && (
-            <Stack direction="row" spacing={1} alignItems="center">
-              <Input
-                type="date"
-                size="sm"
-                value={from}
-                onChange={(e) => setFrom(e.target.value)}
-                sx={{ width: 130 }}
-              />
-              <Typography level="body-sm">-</Typography>
-              <Input
-                type="date"
-                size="sm"
-                value={to}
-                onChange={(e) => setTo(e.target.value)}
-                sx={{ width: 130 }}
-              />
-            </Stack>
+          {hasFilters && (
+            <button
+              onClick={clearFilters}
+              className="ml-auto text-[11px] font-semibold text-muted-foreground hover:text-rose-500 transition-colors flex items-center gap-1">
+              <X size={11} />
+              Limpiar
+            </button>
           )}
+        </div>
 
-          {(query || range !== "all") && (
-            <Button
-              variant="plain"
-              color="danger"
-              size="sm"
-              onClick={clearFilters}>
-              {t("reports.actions.clear_filters")}
-            </Button>
-          )}
-        </Stack>
-      </Sheet>
-
-      {/* --- DATA TABLE --- */}
-      <Sheet
-        variant="outlined"
-        sx={{
-          borderRadius: "lg",
-          boxShadow: "sm",
-          overflow: "hidden",
-          bgcolor: "background.surface",
-        }}>
-        <Box sx={{ overflowX: "auto" }}>
-          <Table
-            aria-label={t("reports.report_items.ubicacion_vehiculo.title")}
-            hoverRow
-            stickyHeader
-            sx={{
-              "--TableCell-paddingX": "12px",
-              "--TableCell-paddingY": "10px",
-              "& thead th": {
-                bgcolor: "background.level1",
-                color: "text.tertiary",
-                fontWeight: "md",
-                textTransform: "uppercase",
-                fontSize: "xs",
-                letterSpacing: "0.05em",
-                borderBottom: "1px solid",
-                borderColor: "divider",
-                whiteSpace: "nowrap", // Evitar saltos de línea en encabezados largos
-              },
-              "& tbody tr:last-child td": { borderBottom: 0 },
-            }}>
-            <thead>
-              <tr>
-                <th style={{ width: 60, textAlign: "center" }}>#</th>
-                <th>{t("reports.columns.employee")}</th>
-                <th>{t("reports.columns.vehicle")}</th>
-                <th>{t("reports.columns.location_out")}</th>
-                <th>{t("reports.columns.location_in")}</th>
-                <th>{t("reports.columns.departure_date")}</th>
-                <th>{t("reports.columns.return_date")}</th>
-                <th style={{ textAlign: "right" }}>
-                  {t("reports.columns.km_out")}
-                </th>
-                <th style={{ textAlign: "right" }}>
-                  {t("reports.columns.km_in")}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {pageItems.length > 0 ? (
-                pageItems.map((r, i) => {
-                  const globalIndex = (pageSafe - 1) * rowsPerPage + i + 1;
-
-                  return (
-                    <tr key={`${r.id || i}`}>
-                      <td
-                        style={{
-                          textAlign: "center",
-                          color: "var(--joy-palette-text-tertiary)",
-                        }}>
-                        {globalIndex}
-                      </td>
-                      <td>
-                        <Typography fontWeight="md">
-                          {r.nombre_empleado || "—"}
-                        </Typography>
-                      </td>
-                      <td>{r.vehiculo || "—"}</td>
-
-                      {/* Ubicaciones destacadas con icono */}
-                      <td>
-                        {r.ubicacion_salida ? (
-                          <Stack
-                            direction="row"
-                            spacing={1}
-                            alignItems="center">
-                            <PlaceRoundedIcon
-                              fontSize="small"
-                              sx={{ color: "primary.400", opacity: 0.7 }}
-                            />
-                            <span>{r.ubicacion_salida}</span>
-                          </Stack>
-                        ) : (
-                          "—"
-                        )}
-                      </td>
-                      <td>
-                        {r.ubicacion_regreso ? (
-                          <Stack
-                            direction="row"
-                            spacing={1}
-                            alignItems="center">
-                            <PlaceRoundedIcon
-                              fontSize="small"
-                              sx={{ color: "success.400", opacity: 0.7 }}
-                            />
-                            <span>{r.ubicacion_regreso}</span>
-                          </Stack>
-                        ) : (
-                          "—"
-                        )}
-                      </td>
-
-                      <td>{fmtDateTime(r.fecha_salida)}</td>
-                      <td>{fmtDateTime(r.fecha_regreso)}</td>
-                      <td
-                        style={{ textAlign: "right", fontFamily: "monospace" }}>
-                        {r.km_salida ?? "—"}
-                      </td>
-                      <td
-                        style={{ textAlign: "right", fontFamily: "monospace" }}>
-                        {r.km_regreso ?? "—"}
-                      </td>
-                    </tr>
-                  );
-                })
-              ) : (
-                <tr>
-                  <td
-                    colSpan={9}
-                    style={{ textAlign: "center", padding: "40px" }}>
-                    <Box
-                      sx={{
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
-                        gap: 1,
-                        color: "neutral.400",
-                      }}>
-                      <FilterListOffRoundedIcon sx={{ fontSize: 40 }} />
-                      <Typography level="body-sm">
-                        {t("reports.no_data_desc")}
-                      </Typography>
-                    </Box>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </Table>
-        </Box>
-
-        {/* --- FOOTER PAGINATION --- */}
-        {pageItems.length > 0 && (
-          <Box
-            sx={{
-              p: 2,
-              borderTop: "1px solid",
-              borderColor: "divider",
-              bgcolor: "background.surface",
-            }}>
-            <Stack
-              direction={{ xs: "column", sm: "row" }}
-              justifyContent="space-between"
-              alignItems="center"
-              spacing={2}>
-              <Typography level="body-sm" color="neutral">
-                {t("reports.showing_page", {
-                  page: pageSafe,
-                  total: totalPages,
-                })}
-              </Typography>
-              <PaginationLite
-                page={pageSafe}
-                count={totalPages}
-                onChange={setPage}
-                size="sm"
-              />
-            </Stack>
-          </Box>
+        {/* Inputs fecha personalizada */}
+        {range === "custom" && (
+          <div className="flex items-center gap-2 flex-wrap pt-1">
+            <span className="text-xs text-muted-foreground font-medium">Desde</span>
+            <input
+              type="date"
+              value={from}
+              onChange={(e) => { setFrom(e.target.value); setPage(1); }}
+              className="bg-muted/40 dark:bg-slate-800/50 border border-border/50 rounded-xl px-3 py-1.5 text-sm outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/15 transition-all"
+            />
+            <span className="text-xs text-muted-foreground font-medium">Hasta</span>
+            <input
+              type="date"
+              value={to}
+              onChange={(e) => { setTo(e.target.value); setPage(1); }}
+              className="bg-muted/40 dark:bg-slate-800/50 border border-border/50 rounded-xl px-3 py-1.5 text-sm outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/15 transition-all"
+            />
+          </div>
         )}
-      </Sheet>
+      </div>
 
-      {/* --- EXPORT MODAL --- */}
+      {/* ── CONTENIDO ── */}
+      {loading ? (
+        <div className="flex flex-col items-center justify-center gap-4 py-24">
+          <div className="w-12 h-12 rounded-2xl bg-rose-500/10 dark:bg-rose-500/15 flex items-center justify-center">
+            <Loader2 size={22} className="animate-spin text-rose-500" />
+          </div>
+          <p className="text-sm text-muted-foreground font-medium">Cargando registros...</p>
+        </div>
+      ) : err ? (
+        <div className="bg-rose-50 dark:bg-rose-900/10 border border-rose-200 dark:border-rose-900/30 rounded-3xl p-6 flex items-start gap-3">
+          <AlertCircle size={18} className="text-rose-500 shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-bold text-rose-700 dark:text-rose-400">Error al cargar</p>
+            <p className="text-xs text-rose-600 dark:text-rose-500 mt-0.5">{err}</p>
+          </div>
+        </div>
+      ) : (
+        <div className="bg-card dark:bg-slate-900/40 border border-border/60 rounded-3xl shadow-sm overflow-hidden">
+
+          {pageItems.length === 0 ? (
+            /* Estado vacío */
+            <div className="flex flex-col items-center justify-center gap-4 py-20">
+              <div className="w-16 h-16 rounded-3xl bg-muted/50 dark:bg-slate-800/50 flex items-center justify-center">
+                <MapPin size={28} className="text-muted-foreground/40" />
+              </div>
+              <div className="text-center">
+                <p className="font-bold text-sm">Sin resultados</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {query
+                    ? `No hay registros que coincidan con "${query}"`
+                    : "No hay datos para el período seleccionado"}
+                </p>
+              </div>
+              {hasFilters && (
+                <button
+                  onClick={clearFilters}
+                  className="text-xs font-semibold text-primary hover:underline">
+                  Ver todos los registros
+                </button>
+              )}
+            </div>
+          ) : isMobile ? (
+            /* ── MOBILE: tarjetas ricas ── */
+            <div className="divide-y divide-border/50">
+              {pageItems.map((r, i) => {
+                const pos = (pageSafe - 1) * rowsPerPage + i + 1;
+                return (
+                  <div
+                    key={r.id || i}
+                    className="p-4 hover:bg-muted/20 dark:hover:bg-slate-800/30 transition-colors space-y-3">
+
+                    {/* Cabecera: número + empleado + vehículo */}
+                    <div className="flex items-start gap-3">
+                      <span className="text-xs font-black text-muted-foreground/50 w-5 text-right shrink-0 pt-0.5">
+                        {pos}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <div className="flex items-center gap-1.5">
+                            <User size={12} className="text-muted-foreground/60 shrink-0" />
+                            <p className="text-sm font-bold truncate">{r.nombre_empleado || "—"}</p>
+                          </div>
+                          {r.vehiculo && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold font-mono bg-muted/60 dark:bg-slate-800 border border-border/50">
+                              <Car size={10} className="text-muted-foreground/60" />
+                              {r.vehiculo}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Ruta: salida → regreso */}
+                        <div className="flex items-center gap-1.5 mt-2 text-xs">
+                          <div className="flex items-center gap-1 text-rose-600 dark:text-rose-400 min-w-0">
+                            <MapPin size={11} className="shrink-0" />
+                            <span className="truncate font-medium">{r.ubicacion_salida || "—"}</span>
+                          </div>
+                          <ArrowRight size={11} className="text-muted-foreground/40 shrink-0" />
+                          <div className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 min-w-0">
+                            <MapPin size={11} className="shrink-0" />
+                            <span className="truncate font-medium">{r.ubicacion_regreso || "En curso"}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Fechas y km */}
+                    <div className="grid grid-cols-2 gap-2 ml-8">
+                      <div className="bg-muted/40 dark:bg-slate-800/50 rounded-xl px-3 py-2 space-y-0.5">
+                        <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/50">Salida</p>
+                        <p className="text-[11px] font-semibold text-foreground">{fmtDateTime(r.fecha_salida)}</p>
+                        {r.km_salida != null && (
+                          <p className="text-[10px] font-mono text-muted-foreground flex items-center gap-1">
+                            <Gauge size={9} /> {r.km_salida} km
+                          </p>
+                        )}
+                      </div>
+                      <div className="bg-muted/40 dark:bg-slate-800/50 rounded-xl px-3 py-2 space-y-0.5">
+                        <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/50">Regreso</p>
+                        <p className="text-[11px] font-semibold text-foreground">{fmtDateTime(r.fecha_regreso)}</p>
+                        {r.km_regreso != null && (
+                          <p className="text-[10px] font-mono text-muted-foreground flex items-center gap-1">
+                            <Gauge size={9} /> {r.km_regreso} km
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            /* ── DESKTOP: tabla ancha ── */
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[900px]">
+                <thead>
+                  <tr className="border-b border-border/60 bg-muted/20 dark:bg-slate-800/30">
+                    {[
+                      ["#",                "w-12 text-center"],
+                      ["Empleado",         "text-left"],
+                      ["Vehículo",         "text-left"],
+                      ["Ubicación Salida", "text-left"],
+                      ["Ubicación Regreso","text-left"],
+                      ["Fecha Salida",     "text-left whitespace-nowrap"],
+                      ["Fecha Regreso",    "text-left whitespace-nowrap"],
+                      ["Km Salida",        "text-right"],
+                      ["Km Regreso",       "text-right"],
+                    ].map(([label, cls]) => (
+                      <th key={label} className={`px-4 py-3.5 ${cls}`}>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70">
+                          {label}
+                        </span>
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {pageItems.map((r, i) => {
+                    const pos = (pageSafe - 1) * rowsPerPage + i + 1;
+                    return (
+                      <tr
+                        key={r.id || i}
+                        className="border-b border-border/30 last:border-0 hover:bg-muted/20 dark:hover:bg-slate-800/20 transition-colors group">
+
+                        {/* # */}
+                        <td className="px-4 py-3.5 text-center">
+                          <span className="text-xs font-semibold text-muted-foreground">{pos}</span>
+                        </td>
+
+                        {/* Empleado */}
+                        <td className="px-4 py-3.5">
+                          <div className="flex items-center gap-2">
+                            <div className="w-7 h-7 rounded-lg bg-muted/60 dark:bg-slate-800 group-hover:bg-rose-100 dark:group-hover:bg-rose-900/20 flex items-center justify-center shrink-0 transition-colors">
+                              <User size={13} className="text-muted-foreground group-hover:text-rose-500 transition-colors" />
+                            </div>
+                            <span className="text-sm font-bold whitespace-nowrap">
+                              {r.nombre_empleado || "—"}
+                            </span>
+                          </div>
+                        </td>
+
+                        {/* Vehículo */}
+                        <td className="px-4 py-3.5">
+                          {r.vehiculo ? (
+                            <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-xl text-xs font-bold font-mono bg-muted/60 dark:bg-slate-800 border border-border/50">
+                              <Car size={11} className="text-muted-foreground/60" />
+                              {r.vehiculo}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground/40 text-xs">—</span>
+                          )}
+                        </td>
+
+                        {/* Ubicación salida */}
+                        <td className="px-4 py-3.5 max-w-[160px]">
+                          {r.ubicacion_salida ? (
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <MapPin size={12} className="text-rose-500 shrink-0" />
+                              <span className="text-xs font-medium truncate">{r.ubicacion_salida}</span>
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground/40 text-xs">—</span>
+                          )}
+                        </td>
+
+                        {/* Ubicación regreso */}
+                        <td className="px-4 py-3.5 max-w-[160px]">
+                          {r.ubicacion_regreso ? (
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <MapPin size={12} className="text-emerald-500 shrink-0" />
+                              <span className="text-xs font-medium truncate">{r.ubicacion_regreso}</span>
+                            </div>
+                          ) : (
+                            <span className="text-[10px] font-semibold text-amber-500">En curso</span>
+                          )}
+                        </td>
+
+                        {/* Fecha salida */}
+                        <td className="px-4 py-3.5">
+                          <span className="text-xs text-muted-foreground whitespace-nowrap">
+                            {fmtDateTime(r.fecha_salida)}
+                          </span>
+                        </td>
+
+                        {/* Fecha regreso */}
+                        <td className="px-4 py-3.5">
+                          <span className="text-xs text-muted-foreground whitespace-nowrap">
+                            {fmtDateTime(r.fecha_regreso)}
+                          </span>
+                        </td>
+
+                        {/* Km salida */}
+                        <td className="px-4 py-3.5 text-right">
+                          <span className="text-xs font-mono text-foreground">
+                            {r.km_salida ?? "—"}
+                          </span>
+                        </td>
+
+                        {/* Km regreso */}
+                        <td className="px-4 py-3.5 text-right">
+                          <span className="text-xs font-mono text-foreground">
+                            {r.km_regreso ?? "—"}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* Footer con paginación */}
+          {pageItems.length > 0 && (
+            <div className="px-5 py-3.5 border-t border-border/40 flex items-center justify-between gap-4 bg-muted/10 dark:bg-slate-800/20">
+              <p className="text-xs text-muted-foreground font-medium">
+                Página {pageSafe} de {totalPages} · {filtered.length} registro{filtered.length !== 1 ? "s" : ""}
+              </p>
+              <PaginationLite page={pageSafe} count={totalPages} onChange={setPage} size="sm" />
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── EXPORT ── */}
       <ExportDialog
         open={openExport}
         onClose={() => setOpenExport(false)}
         rows={filtered}
         pageRows={pageItems}
         columns={columnsExport}
-        defaultTitle={t("reports.report_items.ubicacion_vehiculo.title")}
+        defaultTitle="Registros por Ubicación"
         defaultSheetName="Ubicaciones"
         defaultFilenameBase={filenameBase}
-        defaultOrientation="landscape" // Landscape porque son muchas columnas
+        defaultOrientation="landscape"
         includeGeneratedStamp
       />
-    </Box>
+    </div>
   );
 }
