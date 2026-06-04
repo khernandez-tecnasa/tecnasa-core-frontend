@@ -1,4 +1,6 @@
 // services/api.js
+import { apiFetch } from "../utils/apiClient";
+
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
 
 async function request(
@@ -27,7 +29,7 @@ async function request(
     init.body = JSON.stringify(body);
   }
 
-  const res = await fetch(url.toString(), init);
+  const res = await apiFetch(url.toString(), init);
 
   const isJson = (res.headers.get("content-type") || "").includes(
     "application/json"

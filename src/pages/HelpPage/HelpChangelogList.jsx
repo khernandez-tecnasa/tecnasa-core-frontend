@@ -1,64 +1,71 @@
 // src/pages/HelpPage/HelpChangelogList.jsx
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams, Link } from "react-router-dom";
-import {
-  Box,
-  Typography,
-  Stack,
-  Select,
-  Option,
-  Chip,
-  Sheet,
-  Skeleton,
-  Divider,
-  Button,
-} from "@mui/joy";
-import PushPinRoundedIcon from "@mui/icons-material/PushPinRounded";
+import { useSearchParams, useNavigate, Link as RouterLink } from "react-router-dom";
+import { Megaphone, Pin, AlertTriangle, X, ArrowRight, Clock, ArrowLeft } from "lucide-react";
 import { listChangelogs } from "@/services/help.api";
 import PaginationLite from "@/components/common/PaginationLite.jsx";
 
-/* Mapa de colores por tipo */
-const TYPE_COLOR = {
-  Added: "success",
-  Changed: "warning",
-  Fixed: "primary",
-  Removed: "neutral",
-  Deprecated: "neutral",
-  Security: "danger",
-  Performance: "success",
+/* Colores por tipo */
+const TYPE_CLASSES = {
+  Added:       "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
+  Changed:     "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+  Fixed:       "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+  Removed:     "bg-neutral-100 text-neutral-600 dark:bg-neutral-800/50 dark:text-neutral-400",
+  Deprecated:  "bg-neutral-100 text-neutral-600 dark:bg-neutral-800/50 dark:text-neutral-400",
+  Security:    "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400",
+  Performance: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
 };
 
-const dotBg = (type) =>
-  TYPE_COLOR[type] ? `${TYPE_COLOR[type]}.solidBg` : "neutral.solidBg";
+const DOT_CLASSES = {
+  Added:       "bg-emerald-500",
+  Changed:     "bg-amber-500",
+  Fixed:       "bg-blue-500",
+  Removed:     "bg-neutral-400",
+  Deprecated:  "bg-neutral-400",
+  Security:    "bg-rose-500",
+  Performance: "bg-emerald-500",
+};
 
-/* Fecha corta */
+function TypeBadge({ type }) {
+  const cls = TYPE_CLASSES[type] || "bg-muted/60 text-muted-foreground";
+  return (
+    <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${cls}`}>
+      {type}
+    </span>
+  );
+}
+
 function fmtDate(d) {
   try {
-    return new Date(d).toLocaleDateString(undefined, {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  } catch {
-    return String(d || "");
-  }
+    return new Date(d).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+  } catch { return String(d || ""); }
 }
+
+const TYPES = ["Added", "Changed", "Fixed", "Removed", "Deprecated", "Security", "Performance"];
+const AUDIENCES = [
+  { value: "all",       label: "Todos" },
+  { value: "admins",    label: "Admins" },
+  { value: "customers", label: "Clientes" },
+  { value: "internal",  label: "Interno" },
+];
 
 export default function HelpChangelogList() {
   const [sp, setSp] = useSearchParams();
+  const navigate = useNavigate();
 
-  const page = Math.max(1, Number(sp.get("page") || 1));
-  const limit = Math.min(30, Math.max(6, Number(sp.get("limit") || 12)));
-  const type = sp.get("type") || "";
-  const audience = sp.get("audience") || "";
+  const page       = Math.max(1, Number(sp.get("page") || 1));
+  const limit      = Math.min(30, Math.max(6, Number(sp.get("limit") || 12)));
+  const type       = sp.get("type") || "";
+  const audience   = sp.get("audience") || "";
   const pinnedOnly = sp.get("pinned") === "1";
 
   const [loading, setLoading] = useState(true);
-  const [items, setItems] = useState([]);
-  const [total, setTotal] = useState(0);
-  const [error, setError] = useState(null);
+  const [items, setItems]     = useState([]);
+  const [total, setTotal]     = useState(0);
+  const [error, setError]     = useState(null);
 
   const totalPages = Math.max(1, Math.ceil((total || 0) / limit));
+  const filtersActive = useMemo(() => Boolean(type || audience || pinnedOnly), [type, audience, pinnedOnly]);
 
   useEffect(() => {
     (async () => {
@@ -66,8 +73,7 @@ export default function HelpChangelogList() {
       setError(null);
       try {
         const res = await listChangelogs({
-          page,
-          limit,
+          page, limit,
           type: type || undefined,
           audience: audience || undefined,
           pinned: pinnedOnly ? 1 : undefined,
@@ -85,203 +91,157 @@ export default function HelpChangelogList() {
 
   const setParam = (k, v) => {
     const next = new URLSearchParams(sp);
-    if (v === "" || v === undefined || v === null) next.delete(k);
-    else next.set(k, String(v));
+    if (v === "" || v == null) next.delete(k); else next.set(k, String(v));
     if (k !== "page") next.delete("page");
     setSp(next, { replace: true });
   };
 
-  const handleTogglePinned = () => {
-    setParam("pinned", pinnedOnly ? "" : "1");
+  const clearFilters = () => {
+    const next = new URLSearchParams();
+    next.set("page", "1");
+    setSp(next, { replace: true });
   };
 
-  const filtersActive = useMemo(
-    () => Boolean(type || audience || pinnedOnly),
-    [type, audience, pinnedOnly]
-  );
-
   return (
-    <Box sx={{ pb: 6 }}>
-      {/* Encabezado */}
-      <Sheet
-        variant="plain"
-        sx={{
-          borderBottom: "1px solid",
-          borderColor: "neutral.outlinedBorder",
-          bgcolor: "background.body",
-        }}>
-        <Box
-          sx={{
-            maxWidth: 1120,
-            mx: "auto",
-            px: { xs: 2, md: 3 },
-            py: { xs: 4, md: 5 },
-          }}>
-          <Stack spacing={2}>
-            <Typography
-              level="h1"
-              sx={{ fontSize: { xs: 26, md: 32 }, fontWeight: 800 }}>
+    <div className="max-w-7xl mx-auto px-4 md:px-8 py-6 md:py-10 space-y-6 animate-in fade-in duration-500">
+
+      {/* HEADER */}
+      <div className="space-y-3">
+        <RouterLink
+          to="/admin/help"
+          className="inline-flex items-center gap-1.5 text-sm font-bold text-muted-foreground hover:text-foreground transition-colors">
+          <ArrowLeft size={15} /> Centro de ayuda
+        </RouterLink>
+        <div className="flex items-center gap-3.5">
+          <div className="p-2.5 rounded-2xl bg-primary/10 dark:bg-primary/15 ring-1 ring-primary/20 shrink-0">
+            <Megaphone size={22} className="text-primary" />
+          </div>
+          <div>
+            <h1 className="text-2xl md:text-3xl font-black tracking-tight leading-none">
               Novedades y anuncios
-            </Typography>
+            </h1>
+            <p className="text-muted-foreground text-xs md:text-sm font-medium mt-0.5">
+              Cambios, mejoras y actualizaciones del sistema
+            </p>
+          </div>
+        </div>
+      </div>
 
-            {/* Filtros */}
-            <Stack
-              direction={{ xs: "column", sm: "row" }}
-              spacing={1}
-              alignItems={{ xs: "stretch", sm: "center" }}
-              sx={{ flexWrap: "wrap" }}>
-              <Select
-                placeholder="Tipo"
-                value={type || null}
-                onChange={(_, v) => setParam("type", v || "")}
-                sx={{ minWidth: 180 }}>
-                <Option value="">Todos</Option>
-                <Option value="Added">Added</Option>
-                <Option value="Changed">Changed</Option>
-                <Option value="Fixed">Fixed</Option>
-                <Option value="Removed">Removed</Option>
-                <Option value="Deprecated">Deprecated</Option>
-                <Option value="Security">Security</Option>
-                <Option value="Performance">Performance</Option>
-              </Select>
+      {/* FILTROS */}
+      <div className="flex flex-wrap items-center gap-2">
+        {/* Tipo */}
+        <select
+          value={type}
+          onChange={(e) => setParam("type", e.target.value)}
+          className="h-9 px-3 rounded-xl border border-border/60 bg-card text-sm outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/15 transition-all cursor-pointer">
+          <option value="">Todos los tipos</option>
+          {TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+        </select>
 
-              <Select
-                placeholder="Audiencia"
-                value={audience || null}
-                onChange={(_, v) => setParam("audience", v || "")}
-                sx={{ minWidth: 180 }}>
-                <Option value="">Todos</Option>
-                <Option value="all">Todos</Option>
-                <Option value="admins">Admins</Option>
-                <Option value="customers">Clientes</Option>
-                <Option value="internal">Interno</Option>
-              </Select>
+        {/* Audiencia */}
+        <select
+          value={audience}
+          onChange={(e) => setParam("audience", e.target.value)}
+          className="h-9 px-3 rounded-xl border border-border/60 bg-card text-sm outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/15 transition-all cursor-pointer">
+          <option value="">Toda la audiencia</option>
+          {AUDIENCES.map((a) => <option key={a.value} value={a.value}>{a.label}</option>)}
+        </select>
 
-              <Chip
-                variant={pinnedOnly ? "solid" : "soft"}
-                color={pinnedOnly ? "success" : "neutral"}
-                onClick={handleTogglePinned}
-                startDecorator={<PushPinRoundedIcon fontSize="sm" />}
-                sx={{ borderRadius: "999px", cursor: "pointer" }}>
-                {pinnedOnly ? "Solo fijados" : "Incluir fijados"}
-              </Chip>
+        {/* Fijados */}
+        <button
+          onClick={() => setParam("pinned", pinnedOnly ? "" : "1")}
+          className={`inline-flex items-center gap-1.5 h-9 px-3 rounded-xl border text-sm font-bold transition-all ${
+            pinnedOnly
+              ? "bg-primary/10 border-primary/30 text-primary"
+              : "bg-card border-border/60 text-muted-foreground hover:border-primary/30"
+          }`}>
+          <Pin size={13} /> {pinnedOnly ? "Solo fijados" : "Fijados"}
+        </button>
 
-              {filtersActive && (
-                <Button
-                  size="sm"
-                  variant="plain"
-                  onClick={() => {
-                    const next = new URLSearchParams();
-                    next.set("page", "1");
-                    setSp(next, { replace: true });
-                  }}>
-                  Limpiar filtros
-                </Button>
-              )}
-            </Stack>
-          </Stack>
-        </Box>
-      </Sheet>
+        {filtersActive && (
+          <button
+            onClick={clearFilters}
+            className="inline-flex items-center gap-1.5 h-9 px-3 rounded-xl text-sm font-bold text-muted-foreground hover:text-foreground transition-colors">
+            <X size={13} /> Limpiar filtros
+          </button>
+        )}
 
-      {/* Lista estilo timeline */}
-      <Box sx={{ maxWidth: 1120, mx: "auto", px: { xs: 2, md: 3 }, mt: 3 }}>
-        {loading ? (
-          <Stack spacing={2}>
-            {Array.from({ length: 6 }).map((_, i) => (
-              <Stack
-                key={i}
-                direction="row"
-                spacing={1.25}
-                alignItems="flex-start">
-                <Skeleton
-                  variant="circular"
-                  width={10}
-                  height={10}
-                  sx={{ mt: "7px" }}
-                />
-                <Box sx={{ flex: 1 }}>
-                  <Skeleton level="title-sm" width="60%" />
-                  <Skeleton level="body-xs" width="30%" />
-                  <Skeleton level="body-sm" width="90%" />
-                </Box>
-              </Stack>
-            ))}
-          </Stack>
-        ) : error ? (
-          <Sheet
-            variant="soft"
-            color="danger"
-            sx={{ p: 2, borderRadius: "md" }}>
-            <Typography>{error}</Typography>
-          </Sheet>
-        ) : items.length === 0 ? (
-          <Typography color="neutral">No hay novedades.</Typography>
-        ) : (
-          <>
-            <Stack spacing={1.5}>
-              {items.map((c, idx) => (
-                <Box key={c.id}>
-                  <Stack direction="row" spacing={1.25} alignItems="flex-start">
-                    <Box
-                      sx={{
-                        width: 10,
-                        height: 10,
-                        borderRadius: "99px",
-                        mt: "7px",
-                        bgcolor: dotBg(c.type),
-                        flexShrink: 0,
-                      }}
-                    />
-                    <Box sx={{ flex: 1, minWidth: 0 }}>
-                      <Stack direction="row" spacing={1} alignItems="center">
-                        <Typography
-                          component={Link}
-                          to={`/admin/help/changelog/${encodeURIComponent(
-                            c.slug || c.id
-                          )}`}
-                          level="title-sm"
-                          sx={{
-                            textDecoration: "none",
-                            "&:hover": { textDecoration: "underline" },
-                          }}>
-                          {c.title}
-                        </Typography>
-                        {c.pinned ? (
-                          <Chip
-                            size="sm"
-                            variant="soft"
-                            color="success"
-                            startDecorator={
-                              <PushPinRoundedIcon fontSize="sm" />
-                            }>
-                            Fijado
-                          </Chip>
-                        ) : null}
-                      </Stack>
+        {!loading && (
+          <span className="text-xs text-muted-foreground/70 font-medium ml-auto">
+            <span className="font-bold text-foreground">{total}</span> novedad{total !== 1 ? "es" : ""}
+          </span>
+        )}
+      </div>
 
-                      <Typography
-                        level="body-xs"
-                        color="neutral"
-                        sx={{ mt: 0.25 }}>
-                        {c.date ? fmtDate(c.date) : ""} • {c.type}
-                        {c.audience ? ` • ${c.audience}` : ""}
-                      </Typography>
-
-                      {c.description ? (
-                        <Typography level="body-sm" sx={{ mt: 0.5 }}>
-                          {c.description}
-                        </Typography>
-                      ) : null}
-                    </Box>
-                  </Stack>
-
-                  {idx < items.length - 1 && <Divider sx={{ mt: 1.25 }} />}
-                </Box>
+      {/* CONTENIDO */}
+      {loading ? (
+        <div className="bg-card dark:bg-slate-900/40 border border-border/60 rounded-3xl shadow-sm overflow-hidden divide-y divide-border/40">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="flex gap-4 px-6 py-5 animate-pulse">
+              <div className="w-2.5 h-2.5 rounded-full bg-muted/60 dark:bg-slate-700 mt-1.5 shrink-0" />
+              <div className="flex-1 space-y-2">
+                <div className="h-4 bg-muted/60 dark:bg-slate-700/60 rounded-lg w-3/5" />
+                <div className="h-3 bg-muted/40 dark:bg-slate-700/40 rounded-lg w-2/5" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : error ? (
+        <div className="flex items-center gap-3 p-4 bg-rose-50 dark:bg-rose-900/20 border border-rose-200/60 rounded-2xl">
+          <AlertTriangle size={18} className="text-rose-500 shrink-0" />
+          <p className="text-sm text-rose-700 dark:text-rose-300">{error}</p>
+        </div>
+      ) : items.length === 0 ? (
+        <div className="bg-card dark:bg-slate-900/40 border border-border/60 rounded-3xl flex flex-col items-center justify-center gap-3 py-20">
+          <div className="w-14 h-14 rounded-3xl bg-muted/50 dark:bg-slate-800/50 flex items-center justify-center">
+            <Megaphone size={26} className="text-muted-foreground/30" />
+          </div>
+          <p className="font-bold text-sm">No hay novedades</p>
+          <p className="text-xs text-muted-foreground">
+            {filtersActive ? "Prueba ajustando los filtros" : "Vuelve pronto para ver las últimas actualizaciones"}
+          </p>
+        </div>
+      ) : (
+        <>
+          <div className="bg-card dark:bg-slate-900/40 border border-border/60 rounded-3xl shadow-sm overflow-hidden">
+            <div className="divide-y divide-border/40">
+              {items.map((c) => (
+                <button
+                  key={c.id}
+                  onClick={() => navigate(`/admin/help/changelog/${encodeURIComponent(c.slug || c.id)}`)}
+                  className="w-full flex items-start gap-4 px-6 py-5 text-left hover:bg-muted/20 dark:hover:bg-slate-800/20 transition-colors group">
+                  <div className={`w-2.5 h-2.5 rounded-full mt-1.5 shrink-0 ${DOT_CLASSES[c.type] || "bg-muted-foreground/40"}`} />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="font-bold text-sm group-hover:text-primary transition-colors">
+                        {c.title}
+                      </p>
+                      {c.pinned && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
+                          <Pin size={9} /> Fijado
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 mt-1 flex-wrap">
+                      {c.type && <TypeBadge type={c.type} />}
+                      <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+                        <Clock size={10} />
+                        {c.date ? fmtDate(c.date) : ""}
+                        {c.audience ? ` · ${c.audience}` : ""}
+                      </span>
+                    </div>
+                    {c.description && (
+                      <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2">{c.description}</p>
+                    )}
+                  </div>
+                  <ArrowRight size={14} className="text-muted-foreground/40 shrink-0 mt-1 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
+                </button>
               ))}
-            </Stack>
+            </div>
+          </div>
 
-            {/* Paginación */}
-            <Stack alignItems="center" sx={{ mt: 2 }}>
+          {totalPages > 1 && (
+            <div className="flex flex-col items-center gap-2">
               <PaginationLite
                 page={page}
                 count={totalPages}
@@ -290,13 +250,11 @@ export default function HelpChangelogList() {
                 boundaryCount={1}
                 showFirstLast={false}
               />
-              <Typography level="body-xs" color="neutral" sx={{ mt: 0.5 }}>
-                Página {page} de {totalPages}
-              </Typography>
-            </Stack>
-          </>
-        )}
-      </Box>
-    </Box>
+              <p className="text-xs text-muted-foreground/60">Página {page} de {totalPages}</p>
+            </div>
+          )}
+        </>
+      )}
+    </div>
   );
 }

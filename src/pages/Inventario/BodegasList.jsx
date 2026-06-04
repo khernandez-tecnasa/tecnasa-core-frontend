@@ -1,52 +1,27 @@
-// src/pages/Bodegas/Bodegas.jsx
-import { useEffect, useState, useCallback, useMemo, useRef } from "react";
-import { useTranslation } from "react-i18next"; // 👈 i18n
+// src/pages/Inventario/BodegasList.jsx
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useFormik } from "formik";
 import * as yup from "yup";
 import { useNavigate, useSearchParams } from "react-router-dom";
-
 import {
-  Box,
-  Typography,
-  Stack,
-  Button,
-  Sheet,
-  Table,
-  Input,
-  IconButton,
-  Modal,
-  ModalDialog,
-  ModalClose,
-  FormControl,
-  FormLabel,
-  Divider,
-  CircularProgress,
-  Select,
-  Option,
-  Tooltip,
-  Dropdown,
-  Menu,
-  MenuButton,
-  MenuItem,
-  Chip,
-  Link,
-} from "@mui/joy";
-
-// Iconos
-import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
-import AddRoundedIcon from "@mui/icons-material/AddRounded";
-import ClearIcon from "@mui/icons-material/Clear";
-import EditRoundedIcon from "@mui/icons-material/EditRounded";
-import MoreHorizRoundedIcon from "@mui/icons-material/MoreHorizRounded";
-import WarehouseRoundedIcon from "@mui/icons-material/WarehouseRounded"; // Icono empty
-import ErrorOutlineRoundedIcon from "@mui/icons-material/ErrorOutlineRounded";
-import RestartAltRoundedIcon from "@mui/icons-material/RestartAlt";
+  Warehouse,
+  Plus,
+  Search,
+  X,
+  Pencil,
+  AlertCircle,
+  RotateCcw,
+  MapPin,
+  ChevronRight,
+  Loader2,
+  MoreVertical,
+} from "lucide-react";
 
 // Hooks & Context
 import { useAuth } from "../../context/AuthContext";
 import { useToast } from "../../context/ToastContext";
-import StatusCard from "../../components/common/StatusCard";
 import useRowFocusHighlight from "../../hooks/useRowFocusHighlight";
+import useIsMobile from "../../hooks/useIsMobile";
 
 // Services
 import {
@@ -66,21 +41,30 @@ const normalize = (val) =>
 
 // Validación
 const validationSchema = yup.object({
-  nombre: yup
-    .string()
-    .trim()
-    .min(2, "Mínimo 2 caracteres")
-    .required("Requerido"),
+  nombre: yup.string().trim().min(2, "Mínimo 2 caracteres").required("Requerido"),
   descripcion: yup.string().nullable(),
   id_ciudad: yup.string().required("Selecciona una ciudad"),
 });
 
-export default function Bodegas() {
-  const { t } = useTranslation();
+function Field({ label, error, required, children }) {
+  return (
+    <div className="flex flex-col gap-1">
+      <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+        {label}
+        {required && <span className="text-rose-500 ml-0.5">*</span>}
+      </label>
+      {children}
+      {error && <p className="text-xs text-rose-500">{error}</p>}
+    </div>
+  );
+}
+
+export default function BodegasList() {
   const { showToast } = useToast();
   const { userData, checkingSession, hasPermiso } = useAuth();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const isMobile = useIsMobile(768);
 
   // --- Permisos ---
   const isAdmin = userData?.rol?.toLowerCase() === "admin";
@@ -115,7 +99,6 @@ export default function Bodegas() {
       setLoading(false);
       return;
     }
-
     setLoading(true);
     setError(null);
     try {
@@ -126,16 +109,16 @@ export default function Bodegas() {
       setRows(Array.isArray(bodegasData) ? bodegasData : []);
       setCitiesList(Array.isArray(citiesData) ? citiesData : []);
     } catch (err) {
-      const msg = err?.message || t("common.unknown_error");
+      const msg = err?.message || "";
       setError(
         /failed to fetch|network/i.test(msg)
-          ? t("common.network_error")
-          : t("warehouses.errors.load_failed")
+          ? "Error de conexión. Verifica tu red."
+          : "No se pudieron cargar las bodegas."
       );
     } finally {
       setLoading(false);
     }
-  }, [checkingSession, canView, t]);
+  }, [checkingSession, canView]);
 
   useEffect(() => {
     loadData();
@@ -173,13 +156,14 @@ export default function Bodegas() {
 
   // --- Acciones ---
   const handleNew = () => {
-    if (!canCreate) return showToast(t("common.no_permission"), "warning");
+    if (!canCreate) return showToast("Sin permiso", "warning");
     setEditing(null);
     setOpenModal(true);
   };
 
-  const handleEdit = (bodega) => {
-    if (!canEdit) return showToast(t("common.no_permission"), "warning");
+  const handleEdit = (bodega, e) => {
+    e?.stopPropagation();
+    if (!canEdit) return showToast("Sin permiso", "warning");
     setEditing(bodega);
     setOpenModal(true);
   };
@@ -198,19 +182,18 @@ export default function Bodegas() {
         descripcion: values.descripcion?.trim() || null,
         id_ciudad: values.id_ciudad,
       };
-
       try {
         if (editing) {
           await updateBodega(editing.id, payload);
-          showToast(t("warehouses.success.updated"), "success");
+          showToast("Bodega actualizada correctamente", "success");
         } else {
           await createBodega(payload);
-          showToast(t("warehouses.success.created"), "success");
+          showToast("Bodega creada correctamente", "success");
         }
         setOpenModal(false);
         loadData();
       } catch (e) {
-        showToast(e?.message || t("warehouses.errors.save_failed"), "danger");
+        showToast(e?.message || "Error al guardar la bodega", "danger");
       } finally {
         setSubmitting(false);
       }
@@ -228,7 +211,7 @@ export default function Bodegas() {
     }
   }, [openModal, editing]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // --- Render Status ---
+  // --- View State ---
   const viewState = checkingSession
     ? "checking"
     : !canView
@@ -242,342 +225,385 @@ export default function Bodegas() {
     : "data";
 
   return (
-    <Box
-      component="main"
-      sx={{
-        px: { xs: 2, md: 4 },
-        py: 3,
-        maxWidth: 1200,
-        mx: "auto",
-        minHeight: "100vh",
-      }}>
-      {/* HEADER */}
-      <Stack
-        direction={{ xs: "column", sm: "row" }}
-        justifyContent="space-between"
-        alignItems={{ xs: "stretch", sm: "center" }}
-        spacing={2}
-        mb={3}>
-        <Box>
-          <Typography level="h3" fontSize="xl2" fontWeight="lg">
-            {t("warehouses.title")}
-          </Typography>
-          <Typography level="body-sm" color="neutral">
-            {t("warehouses.subtitle")}
-          </Typography>
-        </Box>
-        {canCreate && (
-          <Button
-            startDecorator={<AddRoundedIcon />}
-            onClick={handleNew}
-            variant="solid"
-            color="primary">
-            {t("warehouses.actions.new")}
-          </Button>
-        )}
-      </Stack>
+    <div className="animate-in fade-in duration-500 flex flex-col gap-6 w-full max-w-[1200px] mx-auto">
+      {/* ── HEADER ── */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-xl bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400">
+            <Warehouse className="w-5 h-5" />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold text-neutral-900 dark:text-neutral-100">
+              Bodegas
+            </h1>
+            <p className="text-sm text-neutral-500 dark:text-neutral-400">
+              Gestión de almacenes y ubicaciones de inventario
+            </p>
+          </div>
+        </div>
 
-      {/* TOOLBAR */}
-      <Box sx={{ mb: 3 }}>
-        <Input
-          placeholder={t("warehouses.search_placeholder")}
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          startDecorator={<SearchRoundedIcon />}
-          endDecorator={
-            search && (
-              <IconButton
-                size="sm"
-                variant="plain"
-                onClick={() => setSearch("")}>
-                <ClearIcon />
-              </IconButton>
-            )
-          }
-          sx={{ maxWidth: 400 }}
-        />
-      </Box>
-
-      {/* CONTENT TABLE */}
-      <Sheet
-        variant="outlined"
-        sx={{
-          borderRadius: "lg",
-          overflow: "hidden",
-          bgcolor: "background.surface",
-          minHeight: "auto",
-        }}>
-        {viewState === "loading" && (
-          <Box display="flex" justifyContent="center" py={10}>
-            <CircularProgress />
-          </Box>
-        )}
-
-        {viewState === "error" && (
-          <Box p={4} display="flex" justifyContent="center">
-            <StatusCard
-              color="danger"
-              icon={<ErrorOutlineRoundedIcon />}
-              title={t("common.error_title")}
-              description={error}
-              actions={
-                <Button
-                  startDecorator={<RestartAltRoundedIcon />}
-                  onClick={loadData}
-                  variant="soft">
-                  {t("common.retry")}
-                </Button>
-              }
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Search */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none" />
+            <input
+              type="text"
+              placeholder="Buscar bodegas..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9 pr-8 py-2 rounded-xl text-sm border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-amber-500 w-[220px] sm:w-[260px] transition"
             />
-          </Box>
-        )}
-
-        {viewState === "empty" && (
-          <Box p={4} display="flex" justifyContent="center">
-            <StatusCard
-              color="neutral"
-              icon={<WarehouseRoundedIcon />}
-              title={t("warehouses.empty.title")}
-              description={t("warehouses.empty.desc")}
-            />
-          </Box>
-        )}
-
-        {viewState === "data" && (
-          <>
-            <Table
-              stickyHeader
-              hoverRow
-              sx={{
-                "--TableCell-paddingX": "24px",
-                "--TableCell-paddingY": "12px",
-                "& thead th": {
-                  bgcolor: "background.level1",
-                  color: "text.tertiary",
-                  fontWeight: "md",
-                  textTransform: "uppercase",
-                  fontSize: "xs",
-                  letterSpacing: "0.05em",
-                },
-              }}>
-              <thead>
-                <tr>
-                  <th style={{ width: "30%" }}>
-                    {t("warehouses.columns.name")}
-                  </th>
-                  <th style={{ width: "25%" }}>
-                    {t("warehouses.columns.city")}
-                  </th>
-                  <th style={{ width: "35%" }}>
-                    {t("warehouses.columns.description")}
-                  </th>
-                  <th style={{ width: "10%", textAlign: "right" }}></th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((r) => {
-                  const isHighlighted = r.id === highlightId;
-                  return (
-                    <tr
-                      key={r.id}
-                      ref={isHighlighted ? focusedRef : null}
-                      onClick={() => handleRowClick(r.id)}
-                      style={{
-                        cursor: "pointer",
-                        backgroundColor: isHighlighted
-                          ? "var(--joy-palette-primary-50)"
-                          : undefined,
-                      }}>
-                      <td>
-                        <Typography
-                          fontWeight="lg"
-                          level="title-sm"
-                          component={Link}
-                          to={`/inventario/bodegas/${r.id}`}
-                          sx={{
-                            textDecoration: "none",
-                            color: "text.primary",
-                            "&:hover": {
-                              color: "primary.500",
-                              textDecoration: "none",
-                            },
-                          }}>
-                          {r.nombre}
-                        </Typography>
-                      </td>
-                      <td>
-                        {r.ciudad ? (
-                          <Chip size="sm" variant="soft" color="primary">
-                            {r.ciudad}
-                          </Chip>
-                        ) : (
-                          "—"
-                        )}
-                      </td>
-                      <td>
-                        <Typography
-                          level="body-sm"
-                          noWrap
-                          sx={{ maxWidth: 300, color: "text.secondary" }}>
-                          {r.descripcion || "—"}
-                        </Typography>
-                      </td>
-                      <td style={{ textAlign: "right" }}>
-                        <Dropdown>
-                          <MenuButton
-                            onClick={(e) => e.stopPropagation()} // Evitar navegación al abrir menú
-                            slots={{ root: IconButton }}
-                            slotProps={{
-                              root: {
-                                variant: "plain",
-                                color: "neutral",
-                                size: "sm",
-                              },
-                            }}>
-                            <MoreHorizRoundedIcon />
-                          </MenuButton>
-                          <Menu placement="bottom-end">
-                            {canEdit && (
-                              <MenuItem
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleEdit(r);
-                                }}>
-                                <EditRoundedIcon /> {t("common.actions.edit")}
-                              </MenuItem>
-                            )}
-                          </Menu>
-                        </Dropdown>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </Table>
-            {filtered.length === 0 && (
-              <Box sx={{ width: "100%", textAlign: "center", py: 8 }}>
-                <Typography level="h4" color="neutral">
-                  🔍 {t("common.no_data_title")}
-                </Typography>
-                <Typography level="body-md">
-                  {t("common.no_data_desc")}
-                </Typography>
-                <Button
-                  variant="soft"
-                  sx={{ mt: 2 }}
-                  onClick={() => {
-                    setSearch("");
-                  }}>
-                  {t("common.clear_filters")}
-                </Button>
-              </Box>
+            {search && (
+              <button
+                onClick={() => setSearch("")}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 transition">
+                <X className="w-4 h-4" />
+              </button>
             )}
-          </>
-        )}
-      </Sheet>
+          </div>
 
-      {/* MODAL CREAR/EDITAR */}
-      <Modal
-        open={openModal}
-        onClose={() => !formik.isSubmitting && setOpenModal(false)}>
-        <ModalDialog sx={{ width: { xs: "100%", sm: 450 } }}>
-          <Stack
-            direction="row"
-            alignItems="center"
-            justifyContent="space-between"
-            mb={1}>
-            <Typography level="h4">
-              {editing
-                ? t("warehouses.edit_title")
-                : t("warehouses.create_title")}
-            </Typography>
-            <ModalClose
-              disabled={formik.isSubmitting}
-              onClick={() => setOpenModal(false)}
-            />
-          </Stack>
-          <Divider />
+          {canCreate && (
+            <button
+              onClick={handleNew}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-amber-500 hover:bg-amber-600 text-white transition shadow-sm">
+              <Plus className="w-4 h-4" />
+              Nueva bodega
+            </button>
+          )}
+        </div>
+      </div>
 
-          <form onSubmit={formik.handleSubmit}>
-            <Stack spacing={2} mt={2}>
-              <FormControl
-                error={formik.touched.nombre && Boolean(formik.errors.nombre)}
-                required>
-                <FormLabel>{t("warehouses.form.name")}</FormLabel>
-                <Input
-                  autoFocus
-                  name="nombre"
-                  value={formik.values.nombre}
-                  onChange={formik.handleChange}
-                  onBlur={() => formik.setFieldTouched("nombre", true)}
-                  disabled={formik.isSubmitting}
-                />
-                {formik.touched.nombre && formik.errors.nombre && (
-                  <Typography level="body-xs" color="danger">
-                    {formik.errors.nombre}
-                  </Typography>
-                )}
-              </FormControl>
+      {/* ── VIEW STATES ── */}
+      {viewState === "checking" && (
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="w-8 h-8 animate-spin text-amber-500" />
+        </div>
+      )}
+      {viewState === "no-permission" && (
+        <div className="flex flex-col items-center gap-3 py-20 text-center">
+          <Warehouse className="w-10 h-10 text-neutral-300 dark:text-neutral-600" />
+          <p className="font-semibold text-neutral-700 dark:text-neutral-200">Sin permiso</p>
+          <p className="text-sm text-neutral-500">Contacta al administrador.</p>
+        </div>
+      )}
+      {viewState === "error" && (
+        <div className="flex flex-col items-center gap-3 py-20 text-center">
+          <AlertCircle className="w-10 h-10 text-rose-400" />
+          <p className="font-semibold text-neutral-700 dark:text-neutral-200">Error al cargar</p>
+          <p className="text-sm text-neutral-500">{error}</p>
+          <button
+            onClick={loadData}
+            className="mt-2 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-sm font-medium transition">
+            <RotateCcw className="w-4 h-4" /> Reintentar
+          </button>
+        </div>
+      )}
+      {viewState === "loading" && (
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="w-8 h-8 animate-spin text-amber-500" />
+        </div>
+      )}
+      {viewState === "empty" && (
+        <div className="flex flex-col items-center gap-3 py-20 text-center">
+          <Warehouse className="w-10 h-10 text-neutral-300 dark:text-neutral-600" />
+          <p className="font-semibold text-neutral-700 dark:text-neutral-300">Sin bodegas registradas</p>
+          <p className="text-sm text-neutral-500">Crea la primera bodega para comenzar.</p>
+          {canCreate && (
+            <button
+              onClick={handleNew}
+              className="mt-2 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold transition">
+              <Plus className="w-4 h-4" /> Nueva bodega
+            </button>
+          )}
+        </div>
+      )}
 
-              <FormControl>
-                <FormLabel>{t("warehouses.form.description")}</FormLabel>
-                <Input
-                  name="descripcion"
-                  value={formik.values.descripcion}
-                  onChange={formik.handleChange}
-                  onBlur={() => formik.setFieldTouched("descripcion", true)}
-                  disabled={formik.isSubmitting}
-                />
-              </FormControl>
+      {/* ── DATA VIEW (Table / Cards) ── */}
+      {(viewState === "data" || (viewState !== "checking" && viewState !== "no-permission" && viewState !== "error" && viewState !== "loading" && viewState !== "empty" && search)) && (
+        <div className="rounded-3xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 overflow-hidden shadow-sm">
+          {filtered.length === 0 ? (
+            <div className="py-16 text-center">
+              <p className="text-2xl mb-2">🔍</p>
+              <p className="font-semibold text-neutral-700 dark:text-neutral-200">Sin resultados</p>
+              <p className="text-sm text-neutral-500 mt-1">No hay bodegas que coincidan.</p>
+              <button
+                onClick={() => setSearch("")}
+                className="mt-3 text-sm text-amber-600 hover:underline">
+                Limpiar búsqueda
+              </button>
+            </div>
+          ) : isMobile ? (
+            /* 📱 MOBILE VIEW (CARDS) */
+            <div className="divide-y divide-neutral-100 dark:divide-neutral-700">
+              {filtered.map((r) => {
+                const isHighlighted = r.id === highlightId;
+                return (
+                  <div
+                    key={r.id}
+                    ref={isHighlighted ? focusedRef : null}
+                    onClick={() => handleRowClick(r.id)}
+                    className={`p-4 flex items-center gap-3 cursor-pointer transition-colors ${
+                      isHighlighted
+                        ? "bg-amber-50 dark:bg-amber-900/20"
+                        : "hover:bg-neutral-50 dark:hover:bg-neutral-750"
+                    }`}>
+                    <div className="w-10 h-10 shrink-0 rounded-xl bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center">
+                      <Warehouse className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-sm text-neutral-800 dark:text-neutral-100 truncate">
+                        {r.nombre}
+                      </p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        {r.ciudad ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+                            <MapPin className="w-3 h-3" />
+                            {r.ciudad}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-neutral-400">—</span>
+                        )}
+                        {r.descripcion && (
+                          <span className="text-xs text-neutral-400 truncate max-w-[150px]">
+                            {r.descripcion}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      {canEdit && (
+                        <button
+                          onClick={(e) => handleEdit(r, e)}
+                          title="Editar"
+                          className="p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-400">
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                      )}
+                      <ChevronRight className="w-4 h-4 text-neutral-300 dark:text-neutral-600" />
+                    </div>
+                  </div>
+                );
+              })}
+              {/* Footer counter */}
+              <div className="px-5 py-3 border-t border-neutral-100 dark:border-neutral-700">
+                <span className="text-xs text-neutral-500 dark:text-neutral-400">
+                  {filtered.length === rows.length
+                    ? `${rows.length} bodega${rows.length !== 1 ? "s" : ""}`
+                    : `${filtered.length} de ${rows.length} bodegas`}
+                </span>
+              </div>
+            </div>
+          ) : (
+            /* 💻 DESKTOP VIEW (TABLE) */
+            <>
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-neutral-100 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800/60">
+                    <th className="px-5 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+                      Nombre
+                    </th>
+                    <th className="px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+                      Ciudad
+                    </th>
+                    <th className="px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+                      Descripción
+                    </th>
+                    <th className="px-3 py-2.5 pr-5 text-right text-[11px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+                      Acciones
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-neutral-100 dark:divide-neutral-700">
+                  {filtered.map((r) => {
+                    const isHighlighted = r.id === highlightId;
+                    return (
+                      <tr
+                        key={r.id}
+                        ref={isHighlighted ? focusedRef : null}
+                        onClick={() => handleRowClick(r.id)}
+                        className={`group cursor-pointer transition-colors ${
+                          isHighlighted
+                            ? "bg-amber-50 dark:bg-amber-900/20"
+                            : "hover:bg-neutral-50 dark:hover:bg-neutral-750"
+                        }`}>
+                        <td className="px-5 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center flex-shrink-0">
+                              <Warehouse className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                            </div>
+                            <span className="font-semibold text-sm text-neutral-800 dark:text-neutral-100 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                              {r.nombre}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-3 py-4">
+                          {r.ciudad ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+                              <MapPin className="w-3 h-3" />
+                              {r.ciudad}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-neutral-400">—</span>
+                          )}
+                        </td>
+                        <td className="px-3 py-4">
+                          <span className="text-sm text-neutral-500 dark:text-neutral-400 line-clamp-1 max-w-[300px]">
+                            {r.descripcion || "—"}
+                          </span>
+                        </td>
+                        <td className="px-3 py-4 pr-5">
+                          <div className="flex items-center justify-end gap-2">
+                            {canEdit && (
+                              <button
+                                onClick={(e) => handleEdit(r, e)}
+                                title="Editar"
+                                className="opacity-60 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-400">
+                                <Pencil className="w-4 h-4" />
+                              </button>
+                            )}
+                            <ChevronRight className="w-4 h-4 text-neutral-300 dark:text-neutral-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+              {/* Footer counter */}
+              {filtered.length > 0 && (
+                <div className="px-5 py-3 border-t border-neutral-100 dark:border-neutral-700">
+                  <span className="text-xs text-neutral-500 dark:text-neutral-400">
+                    {filtered.length === rows.length
+                      ? `${rows.length} bodega${rows.length !== 1 ? "s" : ""}`
+                      : `${filtered.length} de ${rows.length} bodegas`}
+                  </span>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
 
-              <FormControl
-                error={
-                  formik.touched.id_ciudad && Boolean(formik.errors.id_ciudad)
-                }
-                required>
-                <FormLabel>{t("warehouses.form.city")}</FormLabel>
-                <Select
-                  name="id_ciudad"
-                  value={formik.values.id_ciudad}
-                  onChange={(_, value) =>
-                    formik.setFieldValue("id_ciudad", value)
-                  }
-                  onBlur={() => formik.setFieldTouched("id_ciudad", true)}
-                  placeholder={t("warehouses.form.select_city")}
-                  disabled={formik.isSubmitting}>
-                  {citiesList.map((city) => (
-                    <Option key={city.id} value={String(city.id)}>
-                      {city.ciudad}
-                    </Option>
-                  ))}
-                </Select>
-                {formik.touched.id_ciudad && formik.errors.id_ciudad && (
-                  <Typography level="body-xs" color="danger">
-                    {formik.errors.id_ciudad}
-                  </Typography>
-                )}
-              </FormControl>
+      {/* ══════════════════════════════════════════
+          MODAL CREAR / EDITAR (Responsive)
+      ══════════════════════════════════════════ */}
+      {openModal && (
+        <div className="fixed inset-0 z-50">
+          <div
+            className="absolute inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
+            onClick={() => !formik.isSubmitting && setOpenModal(false)}
+          />
+          <div
+            className={[
+              "absolute z-50 bg-white dark:bg-neutral-900 shadow-2xl border border-neutral-200 dark:border-neutral-700 flex flex-col animate-in duration-300",
+              isMobile
+                ? "inset-x-0 bottom-0 h-[92vh] rounded-t-3xl border-b-0 slide-in-from-bottom"
+                : "left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md rounded-3xl zoom-in-95",
+            ].join(" ")}
+            onClick={(e) => e.stopPropagation()}>
+            {/* Header */}
+            <div className="flex-none flex items-center justify-between px-6 py-4 border-b border-neutral-100 dark:border-neutral-800">
+              <div className="flex items-center gap-2">
+                <Warehouse className="w-4 h-4 text-amber-500" />
+                <h2 className="font-semibold text-neutral-900 dark:text-neutral-100">
+                  {editing ? "Editar bodega" : "Nueva bodega"}
+                </h2>
+              </div>
+              <button
+                onClick={() => !formik.isSubmitting && setOpenModal(false)}
+                disabled={formik.isSubmitting}
+                className="p-1.5 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-500 transition disabled:opacity-50">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
 
-              <Stack
-                direction="row"
-                justifyContent="flex-end"
-                spacing={1}
-                mt={1}>
-                <Button
-                  variant="plain"
-                  color="neutral"
+            {/* Form */}
+            <form onSubmit={formik.handleSubmit} className="flex-1 flex flex-col min-h-0">
+              <div className="flex-1 overflow-y-auto overscroll-contain px-6 py-5 flex flex-col gap-4">
+                <Field
+                  label="Nombre"
+                  required
+                  error={formik.touched.nombre && formik.errors.nombre}>
+                  <input
+                    autoFocus
+                    name="nombre"
+                    value={formik.values.nombre}
+                    onChange={formik.handleChange}
+                    onBlur={() => formik.setFieldTouched("nombre", true)}
+                    disabled={formik.isSubmitting}
+                    placeholder="Ej. Bodega Central"
+                    className={`w-full px-3 py-2 rounded-xl border text-sm bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 focus:outline-none focus:ring-2 transition disabled:opacity-50 ${
+                      formik.touched.nombre && formik.errors.nombre
+                        ? "border-rose-400 focus:ring-rose-500"
+                        : "border-neutral-200 dark:border-neutral-700 focus:ring-amber-500"
+                    }`}
+                  />
+                </Field>
+
+                <Field
+                  label="Descripción"
+                  error={formik.touched.descripcion && formik.errors.descripcion}>
+                  <input
+                    name="descripcion"
+                    value={formik.values.descripcion}
+                    onChange={formik.handleChange}
+                    onBlur={() => formik.setFieldTouched("descripcion", true)}
+                    disabled={formik.isSubmitting}
+                    placeholder="Descripción opcional"
+                    className="w-full px-3 py-2 rounded-xl border border-neutral-200 dark:border-neutral-700 text-sm bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-amber-500 transition disabled:opacity-50"
+                  />
+                </Field>
+
+                <Field
+                  label="Ciudad"
+                  required
+                  error={formik.touched.id_ciudad && formik.errors.id_ciudad}>
+                  <select
+                    name="id_ciudad"
+                    value={formik.values.id_ciudad}
+                    onChange={(e) =>
+                      formik.setFieldValue("id_ciudad", e.target.value)
+                    }
+                    onBlur={() => formik.setFieldTouched("id_ciudad", true)}
+                    disabled={formik.isSubmitting}
+                    className={`w-full px-3 py-2 rounded-xl border text-sm bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 transition disabled:opacity-50 ${
+                      formik.touched.id_ciudad && formik.errors.id_ciudad
+                        ? "border-rose-400 focus:ring-rose-500"
+                        : "border-neutral-200 dark:border-neutral-700 focus:ring-amber-500"
+                    }`}>
+                    <option value="">Seleccionar ciudad...</option>
+                    {citiesList.map((city) => (
+                      <option key={city.id} value={String(city.id)}>
+                        {city.ciudad}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+              </div>
+
+              {/* Footer */}
+              <div className="flex-none flex items-center justify-end gap-3 px-6 py-4 border-t border-neutral-100 dark:border-neutral-800">
+                <button
+                  type="button"
                   onClick={() => setOpenModal(false)}
-                  disabled={formik.isSubmitting}>
-                  {t("common.actions.cancel")}
-                </Button>
-                <Button type="submit" loading={formik.isSubmitting}>
-                  {t("common.actions.save")}
-                </Button>
-              </Stack>
-            </Stack>
-          </form>
-        </ModalDialog>
-      </Modal>
-    </Box>
+                  disabled={formik.isSubmitting}
+                  className="px-4 py-2 rounded-xl text-sm font-medium border border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition disabled:opacity-50">
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={formik.isSubmitting}
+                  className="inline-flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold bg-amber-500 hover:bg-amber-600 text-white transition disabled:opacity-60">
+                  {formik.isSubmitting && (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  )}
+                  {editing ? "Guardar cambios" : "Crear bodega"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

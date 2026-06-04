@@ -42,6 +42,7 @@ import HelpTutorialDetail from "@/pages/HelpPage/HelpTutorialDetail.jsx";
 import HelpStatusPage from "@/pages/HelpPage/HelpStatusPage.jsx";
 import HelpChangelogList from "@/pages/HelpPage/HelpChangelogList.jsx";
 import HelpChangelogDetail from "@/pages/HelpPage/HelpChangelogDetail.jsx";
+import HelpManualPage from "@/pages/HelpPage/HelpManualPage.jsx";
 
 // === Help Center (admin) ===
 import FAQsAdminPage from "@/pages/SoporteAdmin/FAQsAdminPage.jsx";
@@ -76,6 +77,7 @@ import PeajesList     from "@/pages/peajes/PeajesList.jsx";
 import PeajesForm     from "@/pages/peajes/PeajesForm.jsx";
 import PeajeHistorial from "@/pages/peajes/PeajeHistorial.jsx";
 import OperacionesPage from "@/pages/operaciones/OperacionesPage";
+import BackupRestorePage from "@/pages/Backup/BackupRestorePage";
 
 // Roles
 import RolesList    from "@/pages/Administration/Roles/RolesList.jsx";
@@ -165,6 +167,7 @@ export default function DashboardRoutes() {
         />
         <Route path="reports" element={<ReportsRouter />} />
         <Route path="configuraciones" element={<SettingsPage />} />
+        <Route path="backup" element={<BackupRestorePage />} />
 
         {/* Clientes */}
         <Route path="clientes" element={<ClientesList />} />
@@ -196,6 +199,7 @@ export default function DashboardRoutes() {
             <Route index element={<HelpChangelogList />} />
             <Route path=":slug" element={<HelpChangelogDetail />} />
           </Route>
+          <Route path="manual" element={<HelpManualPage />} />
         </Route>
 
         {/* Help Center (admin) */}

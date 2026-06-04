@@ -77,7 +77,7 @@ export const endpoints = {
   updateGroupUser: `${API_BASE_URL}/grupo-usuarios/`,
   deleteGroupUser: `${API_BASE_URL}/grupo-usuarios/`,
 
-  // REPORTES
+  // REPORTES — Existentes
   getRegisterReport: `${API_BASE_URL}/reports/registros/`,
   getEmpleadosMasSalidas: `${API_BASE_URL}/reports/reportes/empleados-mas-salidas`,
   getKilometrajePorEmpleado: `${API_BASE_URL}/reports/reportes/kilometraje-por-empleado`,
@@ -85,11 +85,26 @@ export const endpoints = {
   getRegistrosPorUbicacion: `${API_BASE_URL}/reports/reportes/registros-por-ubicacion`,
   getConsumoCombustibleVehiculo: `${API_BASE_URL}/reports/reportes/consumo-combustible-vehiculo`,
 
-  // Home
+  // REPORTES — Nuevos
+  getViajesDuracion: `${API_BASE_URL}/reports/reportes/viajes-duracion`,
+  getActividadSemanal: `${API_BASE_URL}/reports/reportes/actividad-semanal`,
+  getReservasEstado: `${API_BASE_URL}/reports/reportes/reservas-estado`,
+  getReservasPorEmpleado: `${API_BASE_URL}/reports/reportes/reservas-empleado`,
+  getViaticosEstado: `${API_BASE_URL}/reports/reportes/viaticos-estado`,
+  getViaticosEmpleados: `${API_BASE_URL}/reports/reportes/viaticos-empleados`,
+  getViaticosporTipo: `${API_BASE_URL}/reports/reportes/viaticos-tipo`,
+  getActivosEstado: `${API_BASE_URL}/reports/reportes/activos-estado`,
+  getBodegasOcupacion: `${API_BASE_URL}/reports/reportes/bodegas-ocupacion`,
+
+  // Home / Dashboard legacy
   getTotalEmpleados: `${API_BASE_URL}/reports/reportes/total-empleados`,
   getTotalVehiculos: `${API_BASE_URL}/reports/reportes/total-vehiculos`,
   getVehiculosEnUso: `${API_BASE_URL}/reports/reportes/vehiculos-en-uso`,
   getVehiculosEnMantenimiento: `${API_BASE_URL}/reports/reportes/vehiculos-en-mantenimiento`,
+
+  // Dashboard nuevos
+  getDashboardKpis:  `${API_BASE_URL}/reports/reportes/dashboard-kpis`,
+  getActividad7Dias: `${API_BASE_URL}/reports/reportes/actividad-7dias`,
 
   // HELP (PUBLIC)
   helpFaqs: `${API_BASE_URL}/help/faqs`,
@@ -203,6 +218,13 @@ export const endpoints = {
   operacionesSalida: `${API_BASE_URL}/operaciones/salida`,
   operacionesRegreso: `${API_BASE_URL}/operaciones/regreso`,
   getOperacionActiva: `${API_BASE_URL}/operaciones/activa/`,
+
+  // BACKUP
+  backupManual: `${API_BASE_URL}/backup/manual`,
+  backupDownload: `${API_BASE_URL}/backup/download`,
+  backupList: `${API_BASE_URL}/backup/list`,
+  backupRestoreInit: `${API_BASE_URL}/backup/restore/init`,
+  backupRestoreExecute: `${API_BASE_URL}/backup/restore/execute`,
 
   // ajustes / settings
   getSettings: `${API_BASE_URL}/settings/`,

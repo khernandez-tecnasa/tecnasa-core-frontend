@@ -1,0 +1,1341 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Manual de Usuario — Tecnasa Core</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Segoe UI",system-ui,-apple-system,sans-serif;font-size:10pt;line-height:1.65;color:#374151;background:#fff}
+.cover{page-break-after:always;background:#1E3A5F;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:4rem 3rem}
+.cover h1{font-size:36pt;font-weight:800;color:#fff;margin-bottom:.5rem;border:none!important;padding:0!important}
+.cover h1::after{display:none!important}
+.cover-sub{font-size:15pt;color:#BFDBFE;margin-bottom:2rem}
+.cover-divider{width:80px;height:3px;background:#2563EB;border-radius:2px;margin:1.5rem auto}
+.cover-version{font-size:10pt;color:#93C5FD;margin-bottom:.5rem}
+.cover-desc{font-size:9pt;color:#60A5FA;max-width:400px}
+.content{max-width:800px;margin:0 auto;padding:1.5cm 2cm}
+h1{font-size:18pt;font-weight:800;color:#1E3A5F;margin-top:2rem;margin-bottom:.5rem;padding-bottom:.4rem;border-bottom:2.5px solid #1E3A5F;page-break-after:avoid}
+h2{font-size:13pt;font-weight:700;color:#2563EB;margin-top:1.8rem;margin-bottom:.5rem;page-break-after:avoid}
+h3{font-size:11pt;font-weight:700;color:#1E3A5F;margin-top:1.4rem;margin-bottom:.4rem;font-style:italic;page-break-after:avoid}
+h4{font-size:10pt;font-weight:700;color:#374151;margin-top:1rem;margin-bottom:.3rem;page-break-after:avoid}
+p{margin-bottom:.6rem;text-align:justify}
+ul,ol{margin:.4rem 0 .8rem 1.5rem}
+li{margin-bottom:.25rem}
+code{font-family:"Cascadia Code","Fira Code",Consolas,monospace;font-size:8.5pt;background:#F1F5F9;color:#1E293B;padding:1px 5px;border-radius:4px;border:1px solid #CBD5E1}
+pre{background:#F8FAFC;border:1px solid #CBD5E1;border-left:3px solid #2563EB;border-radius:6px;padding:.8rem 1rem;margin:.5rem 0 1rem;overflow-x:auto;page-break-inside:avoid}
+pre code{font-size:8pt;background:none;border:none;padding:0;color:#1F2937}
+table{width:100%;border-collapse:collapse;margin:.5rem 0 1rem;font-size:9pt;page-break-inside:avoid}
+thead tr{background:#1E3A5F;color:#fff}
+thead th{padding:7px 10px;text-align:left;font-weight:600;font-size:8.5pt}
+tbody tr:nth-child(even){background:#F9FAFB}
+tbody tr:nth-child(odd){background:#fff}
+td{padding:6px 10px;border-bottom:1px solid #E5E7EB;vertical-align:top}
+.note{background:#FFFBEB;border:1px solid #F59E0B;border-left:4px solid #F59E0B;border-radius:6px;padding:.6rem .9rem;margin:.5rem 0 1rem;font-size:9pt;color:#92400E;page-break-inside:avoid}
+.note-label{font-weight:700}
+.section-hr{border:none;border-top:1px solid #E5E7EB;margin:1.2rem 0}
+.print-hint{background:#DBEAFE;border:1px solid #2563EB;border-radius:8px;padding:1rem 1.5rem;margin:1.5rem 0;font-size:9.5pt;color:#1E3A5F}
+.print-hint strong{display:block;margin-bottom:.3rem}
+@media print{.print-hint{display:none}.cover{background:#1E3A5F!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}thead tr{background:#1E3A5F!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}tbody tr:nth-child(even){background:#F9FAFB!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}h1,h2,h3,h4{page-break-after:avoid}table,pre,.note{page-break-inside:avoid}}
+@page{size:A4;margin:2.2cm 1.8cm 2cm}
+</style>
+</head>
+<body>
+<div class="cover">
+<h1>TECNASA CORE</h1>
+<div class="cover-sub">Manual de Usuario</div>
+<div class="cover-divider"></div>
+<div class="cover-version">Versión 2.9.1 &nbsp;·&nbsp; Junio 2026</div>
+<div class="cover-desc">Sistema integral de gestión de flota, operaciones,<br>viáticos e inventario</div>
+</div>
+<div class="content">
+<div class="print-hint">
+<strong>📄 ¿Cómo guardar como PDF?</strong>
+Presiona <strong>Ctrl + P</strong> → destino <strong>&quot;Guardar como PDF&quot;</strong> → activa <strong>&quot;Gráficos de fondo&quot;</strong> → <strong>Guardar</strong>.
+</div>
+<h1>Manual de Usuario — Tecnasa Core</h1>
+
+<p><strong>Versión:</strong> 2.9.1</p>
+<p><strong>Última actualización:</strong> Junio 2026</p>
+
+<hr class="section-hr">
+
+<h2>Tabla de Contenidos</h2>
+
+<ol>
+<li style="margin-left:0px">Introducción</li>
+<li style="margin-left:0px">Acceso al Sistema</li>
+</ol>
+<ul>
+<li style="margin-left:24px">Inicio de Sesión</li>
+<li style="margin-left:24px">Recuperación de Contraseña</li>
+<li style="margin-left:24px">Autenticación en Dos Pasos (2FA)</li>
+</ul>
+<ol>
+<li style="margin-left:0px">Navegación General</li>
+</ol>
+<ul>
+<li style="margin-left:24px">Barra lateral</li>
+<li style="margin-left:24px">Búsqueda Global</li>
+<li style="margin-left:24px">Notificaciones</li>
+</ul>
+<ol>
+<li style="margin-left:0px">Módulo: Inicio y Dashboard</li>
+<li style="margin-left:0px">Módulo: Vehículos</li>
+</ol>
+<ul>
+<li style="margin-left:24px">Lista de Vehículos</li>
+<li style="margin-left:24px">Crear / Editar Vehículo</li>
+<li style="margin-left:24px">Código QR del Vehículo</li>
+<li style="margin-left:24px">Historial del Vehículo</li>
+</ul>
+<ol>
+<li style="margin-left:0px">Módulo: Panel de Operaciones</li>
+<li style="margin-left:0px">Módulo: Rutas</li>
+<li style="margin-left:0px">Módulo: Reservas de Vehículos</li>
+<li style="margin-left:0px">Módulo: Viáticos</li>
+<li style="margin-left:0px">Módulo: Peajes</li>
+<li style="margin-left:0px">Módulo: Clientes / Compañías</li>
+<li style="margin-left:0px">Módulo: Inventario</li>
+</ol>
+<ul>
+<li style="margin-left:32px">Bodegas</li>
+<li style="margin-left:32px">Activos</li>
+</ul>
+<ol>
+<li style="margin-left:0px">Módulo: Reportes</li>
+<li style="margin-left:0px">Módulo: Usuarios</li>
+<li style="margin-left:0px">Módulo: Roles y Permisos</li>
+<li style="margin-left:0px">Módulo: Ubicaciones</li>
+<li style="margin-left:0px">Módulo: Estacionamientos</li>
+<li style="margin-left:0px">Módulo: Grupos de Notificación</li>
+<li style="margin-left:0px">Módulo: Centro de Ayuda</li>
+<li style="margin-left:0px">Mi Cuenta</li>
+<li style="margin-left:0px">Configuración</li>
+<li style="margin-left:0px">Sistema de Permisos</li>
+<li style="margin-left:0px">Preguntas Frecuentes</li>
+</ol>
+
+<hr class="section-hr">
+
+<h2>1. Introducción</h2>
+
+<p><strong>Tecnasa Core</strong> es un sistema de gestión empresarial que centraliza el control de vehículos, operaciones de campo, viáticos, inventario y logística. Está diseñado para organizaciones que necesitan llevar un registro detallado del uso de su flota vehicular, los gastos de sus colaboradores, y el movimiento de sus activos.</p>
+
+<h3>¿Qué puedo hacer con Tecnasa Core?</h3>
+
+<ul>
+<li style="margin-left:0px">Registrar la salida y regreso de vehículos mediante códigos QR</li>
+<li style="margin-left:0px">Gestionar reservas de vehículos con un calendario interactivo</li>
+<li style="margin-left:0px">Controlar gastos y viáticos de empleados</li>
+<li style="margin-left:0px">Administrar rutas y peajes asociados</li>
+<li style="margin-left:0px">Llevar un inventario de activos por bodega</li>
+<li style="margin-left:0px">Gestionar información de clientes y sus sitios</li>
+<li style="margin-left:0px">Visualizar reportes y estadísticas de uso</li>
+<li style="margin-left:0px">Administrar usuarios, roles y permisos del sistema</li>
+</ul>
+
+<div class="note"><span class="note-label">Nota:</span> <strong>Nota sobre permisos:</strong> No todas las funciones están disponibles para todos los usuarios. A lo largo de este manual se indica cuando una acción requiere un permiso especial. Si no ve un botón o sección que se describe aquí, es posible que su rol no tenga acceso a esa función. Contacte al administrador del sistema para solicitar acceso.</div>
+
+<hr class="section-hr">
+
+<h2>2. Acceso al Sistema</h2>
+
+<h3>2.1 Inicio de Sesión</h3>
+
+<p>Para ingresar al sistema:</p>
+
+<ol>
+<li style="margin-left:0px">Abra el navegador y acceda a la URL de la aplicación.</li>
+<li style="margin-left:0px">Se mostrará la pantalla de inicio de sesión.</li>
+<li style="margin-left:0px">Ingrese su <strong>correo electrónico</strong> en el campo correspondiente.</li>
+<li style="margin-left:0px">Ingrese su <strong>contraseña</strong>.</li>
+<li style="margin-left:0px">Haga clic en el botón <strong>Iniciar sesión</strong>.</li>
+</ol>
+
+<p>Si las credenciales son correctas, será redirigido automáticamente a la página de inicio.</p>
+
+<div class="note"><span class="note-label">Nota:</span> Si su cuenta tiene la <strong>autenticación en dos pasos (2FA)</strong> activada, se le pedirá un código adicional antes de ingresar. Ver sección 2.3.</div>
+
+<h3>2.2 Recuperación de Contraseña</h3>
+
+<p>Si olvidó su contraseña:</p>
+
+<ol>
+<li style="margin-left:0px">En la pantalla de inicio de sesión, haga clic en <strong>"¿Olvidó su contraseña?"</strong>.</li>
+<li style="margin-left:0px">Ingrese su correo electrónico registrado.</li>
+<li style="margin-left:0px">Haga clic en <strong>Enviar enlace</strong>.</li>
+<li style="margin-left:0px">Revise su bandeja de entrada (y la carpeta de spam).</li>
+<li style="margin-left:0px">Abra el correo recibido y haga clic en el enlace de recuperación.</li>
+<li style="margin-left:0px">En la nueva pantalla, ingrese su <strong>nueva contraseña</strong> y confírmela.</li>
+<li style="margin-left:0px">Haga clic en <strong>Restablecer contraseña</strong>.</li>
+<li style="margin-left:0px">Será redirigido al inicio de sesión con su nueva contraseña activa.</li>
+</ol>
+
+<div class="note"><span class="note-label">Nota:</span> El enlace de recuperación tiene una validez limitada. Si expiró, repita el proceso desde el paso 1.</div>
+
+<h3>2.3 Autenticación en Dos Pasos (2FA)</h3>
+
+<p>Si el administrador habilitó la autenticación en dos pasos para su cuenta:</p>
+
+<ol>
+<li style="margin-left:0px">Después de ingresar sus credenciales, aparecerá un campo adicional solicitando un <strong>código de verificación</strong>.</li>
+<li style="margin-left:0px">Abra su aplicación de autenticación (Google Authenticator, Authy, etc.) o revise su correo/SMS.</li>
+<li style="margin-left:0px">Ingrese el código de 6 dígitos mostrado.</li>
+<li style="margin-left:0px">Haga clic en <strong>Verificar</strong>.</li>
+</ol>
+
+<div class="note"><span class="note-label">Nota:</span> Puede configurar o deshabilitar el 2FA desde <strong>Mi Cuenta &gt; Seguridad</strong> si tiene los permisos necesarios.</div>
+
+<hr class="section-hr">
+
+<h2>3. Navegación General</h2>
+
+<h3>3.1 Barra lateral</h3>
+
+<p>La barra lateral izquierda es el menú principal del sistema. Está organizada en secciones:</p>
+
+<table>
+<thead>
+<tr><th>Sección</th><th>Módulos incluidos</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>General</strong></td><td>Inicio, Dashboard, Vehículos, Panel de operaciones, Reportes</td></tr>
+<tr><td><strong>Logística</strong></td><td>Rutas, Reservas, Viáticos, Peajes</td></tr>
+<tr><td><strong>Gestión</strong></td><td>Clientes, Países, Ciudades, Estacionamientos</td></tr>
+<tr><td><strong>Inventario</strong></td><td>Bodegas, Activos</td></tr>
+<tr><td><strong>Sistema</strong></td><td>Usuarios, Roles, Notificaciones, Grupos</td></tr>
+<tr><td><strong>Soporte</strong></td><td>Centro de ayuda, FAQs, Tutoriales, Novedades, Estado de servicios</td></tr>
+<tr><td><strong>Configuración</strong></td><td>Configuraciones generales, Mi cuenta</td></tr>
+</tbody>
+</table>
+
+<div class="note"><span class="note-label">Nota:</span> Solo verá en el menú las secciones y módulos para los que tiene permiso de acceso.</div>
+
+<p>Para colapsar o expandir la barra lateral, haga clic en el ícono de menú (☰) en la parte superior.</p>
+
+<p>En dispositivos móviles, la navegación principal se mueve a una barra inferior.</p>
+
+<h3>3.2 Búsqueda Global (Ctrl+K)</h3>
+
+<p>Puede buscar cualquier elemento del sistema de forma rápida:</p>
+
+<ol>
+<li style="margin-left:0px">Presione <strong>Ctrl + K</strong> (o haga clic en el ícono de búsqueda en el encabezado).</li>
+<li style="margin-left:0px">Escriba el término que desea buscar (nombre de vehículo, usuario, ruta, etc.).</li>
+<li style="margin-left:0px">Los resultados aparecerán agrupados por tipo de entidad.</li>
+<li style="margin-left:0px">Haga clic en un resultado para navegar directamente a ese registro.</li>
+</ol>
+
+<h3>3.3 Notificaciones</h3>
+
+<p>El ícono de campana en el encabezado muestra sus notificaciones activas. Haga clic en él para ver el listado. Las notificaciones le informan sobre eventos importantes como aprobaciones de viáticos, reservas confirmadas, entre otros.</p>
+
+<hr class="section-hr">
+
+<h2>4. Módulo: Inicio y Dashboard</h2>
+
+<p><strong>Ruta:</strong> <code>/admin/home</code> y <code>/admin/dashboard</code></p>
+
+<h3>Inicio (Home)</h3>
+
+<p>La página de inicio muestra:</p>
+
+<ul>
+<li style="margin-left:0px"><strong>Widget de clima:</strong> Temperatura y condición climática actual de la ubicación configurada.</li>
+<li style="margin-left:0px"><strong>Reloj en vivo:</strong> Hora actual según la zona horaria configurada en su cuenta.</li>
+<li style="margin-left:0px"><strong>Novedades:</strong> Últimas actualizaciones y cambios publicados por el equipo de soporte.</li>
+</ul>
+
+<h3>Dashboard</h3>
+
+<p>El dashboard presenta estadísticas generales del sistema en forma de tarjetas y gráficos, como:</p>
+
+<ul>
+<li style="margin-left:0px">Cantidad de vehículos activos</li>
+<li style="margin-left:0px">Operaciones recientes</li>
+<li style="margin-left:0px">Reservas vigentes</li>
+<li style="margin-left:0px">Actividad general</li>
+</ul>
+
+<div class="note"><span class="note-label">Nota:</span> <strong>Permiso requerido:</strong> <code>ver_dashboard</code></div>
+
+<hr class="section-hr">
+
+<h2>5. Módulo: Vehículos</h2>
+
+<p><strong>Ruta:</strong> <code>/admin/vehiculos</code></p>
+<p><strong>Permiso para ver:</strong> <code>ver_vehiculos</code> o <code>gestionar_vehiculos</code></p>
+
+<p>Este módulo permite administrar toda la flota vehicular de la organización.</p>
+
+<h3>5.1 Lista de Vehículos</h3>
+
+<p>Al ingresar al módulo verá una tabla con todos los vehículos registrados. La tabla incluye:</p>
+
+<ul>
+<li style="margin-left:0px">Placa del vehículo</li>
+<li style="margin-left:0px">Marca y modelo</li>
+<li style="margin-left:0px">Año</li>
+<li style="margin-left:0px">Estado (Activo / Inactivo)</li>
+<li style="margin-left:0px">Ubicación actual (si está registrada)</li>
+<li style="margin-left:0px">Acciones disponibles</li>
+</ul>
+
+<p><strong>Opciones de búsqueda y filtro:</strong></p>
+
+<ul>
+<li style="margin-left:0px"><strong>Buscador:</strong> Filtra vehículos por placa, marca o modelo en tiempo real.</li>
+<li style="margin-left:0px"><strong>Filtro de estado:</strong> Puede ver solo vehículos activos, inactivos, o todos.</li>
+</ul>
+
+<p><strong>Botones y acciones en la tabla:</strong></p>
+
+<table>
+<thead>
+<tr><th>Botón / Acción</th><th>Descripción</th><th>Permiso requerido</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Nuevo vehículo</strong></td><td>Abre el formulario para registrar un vehículo</td><td><code>crear_vehiculo</code></td></tr>
+<tr><td><strong>Ver</strong> (ícono ojo)</td><td>Abre los detalles del vehículo</td><td><code>ver_vehiculos</code></td></tr>
+<tr><td><strong>Editar</strong> (ícono lápiz)</td><td>Abre el formulario de edición</td><td><code>editar_vehiculo</code></td></tr>
+<tr><td><strong>Generar QR</strong></td><td>Genera el código QR del vehículo</td><td><code>crear_QR</code></td></tr>
+<tr><td><strong>Inactivar</strong></td><td>Desactiva el vehículo del sistema</td><td><code>eliminar_vehiculo</code></td></tr>
+<tr><td><strong>Restaurar</strong></td><td>Reactiva un vehículo inactivo</td><td><code>restaurar_usuario</code></td></tr>
+<tr><td><strong>Ver historial</strong></td><td>Muestra el historial de cambios del vehículo</td><td><code>ver_vehiculos</code></td></tr>
+</tbody>
+</table>
+
+<div class="note"><span class="note-label">Nota:</span> Si un vehículo tiene un registro de salida pendiente (sin regreso registrado), el sistema mostrará una alerta al intentar inactivarlo.</div>
+
+<h3>5.2 Crear / Editar Vehículo</h3>
+
+<p>Al hacer clic en <strong>Nuevo vehículo</strong> o <strong>Editar</strong>, se abre un formulario con los siguientes campos:</p>
+
+<table>
+<thead>
+<tr><th>Campo</th><th>Obligatorio</th><th>Descripción</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Placa</strong></td><td>Sí</td><td>Identificador único del vehículo. Ej: <code>ABC-123</code></td></tr>
+<tr><td><strong>Marca</strong></td><td>Sí</td><td>Fabricante del vehículo. Ej: <code>Toyota</code></td></tr>
+<tr><td><strong>Modelo</strong></td><td>Sí</td><td>Nombre del modelo. Ej: <code>Corolla 2022</code></td></tr>
+<tr><td><strong>Estado</strong></td><td>Sí</td><td>Estado actual: <code>Disponible</code>, <code>En Uso</code>, <code>En Mantenimiento</code>, <code>Reservado</code> o <code>Inactivo</code></td></tr>
+<tr><td><strong>Ubicación actual</strong></td><td>Sí</td><td>Selección de la lista de ubicaciones registradas en el sistema</td></tr>
+</tbody>
+</table>
+
+<p>Para guardar:</p>
+
+<ol>
+<li style="margin-left:0px">Complete los cinco campos obligatorios.</li>
+<li style="margin-left:0px">Haga clic en <strong>Crear vehículo</strong> (o <strong>Guardar cambios</strong> si está editando).</li>
+<li style="margin-left:0px">Si algún campo obligatorio está vacío, el formulario marcará el error sin permitir el envío.</li>
+<li style="margin-left:0px">Al guardar correctamente, el sistema regresa a la lista de vehículos.</li>
+</ol>
+
+<h3>5.3 Código QR del Vehículo</h3>
+
+<p>Cada vehículo tiene un código QR único que permite registrar salidas y regresos sin necesidad de buscar el vehículo manualmente.</p>
+
+<p>Para generar y usar el QR:</p>
+
+<ol>
+<li style="margin-left:0px">En la lista de vehículos, haga clic en el ícono de <strong>QR</strong> del vehículo deseado.</li>
+<li style="margin-left:0px">Aparecerá un modal con el código QR generado.</li>
+<li style="margin-left:0px">Puede:</li>
+</ol>
+<ul>
+<li style="margin-left:24px"><strong>Descargar</strong> el QR como imagen PNG.</li>
+<li style="margin-left:24px"><strong>Copiar el enlace</strong> directo del QR.</li>
+<li style="margin-left:24px"><strong>Probar el enlace</strong> para verificar que funciona correctamente.</li>
+</ul>
+<ol>
+<li style="margin-left:0px">Imprima el QR y colóquelo en el vehículo (tablero, llave, etc.).</li>
+<li style="margin-left:0px">Al escanear el QR con un dispositivo móvil, se abrirá directamente el formulario de registro de uso de ese vehículo.</li>
+</ol>
+
+<div class="note"><span class="note-label">Nota:</span> <strong>Permiso requerido para generar QR:</strong> <code>crear_QR</code></div>
+
+<h3>5.4 Historial del Vehículo</h3>
+
+<p>Permite ver todos los cambios realizados al registro de un vehículo a lo largo del tiempo. Muestra:</p>
+
+<ul>
+<li style="margin-left:0px">Fecha y hora del cambio</li>
+<li style="margin-left:0px">Usuario que realizó el cambio</li>
+<li style="margin-left:0px">Campos modificados (valor anterior y valor nuevo)</li>
+</ul>
+
+<hr class="section-hr">
+
+<h2>6. Módulo: Operaciones de Flota (Registro de Uso)</h2>
+
+<p><strong>Ruta:</strong> <code>/admin/panel-vehiculos</code></p>
+<p><strong>Permiso para ver:</strong> <code>ver_vehiculos</code></p>
+<p><strong>Permiso para registrar:</strong> <code>registrar_uso</code></p>
+
+<p>Este es el módulo central del sistema. Permite registrar la <strong>salida</strong> y el <strong>regreso</strong> de los vehículos de la flota. Cada vez que un empleado saca o devuelve un vehículo, debe registrarlo aquí.</p>
+
+<h3>¿Cómo funciona?</h3>
+
+<p>El módulo detecta automáticamente si el usuario tiene una salida activa (vehículo que salió y aún no ha regresado):</p>
+
+<table>
+<thead>
+<tr><th>Indicador</th><th>Estado</th><th>Qué muestra</th></tr>
+</thead>
+<tbody>
+<tr><td>Verde — "Sistema Disponible"</td><td>Sin salida activa</td><td>Formulario de <strong>Registro de Salida</strong></td></tr>
+<tr><td>Azul — "Sistema En Uso"</td><td>Con salida activa</td><td>Formulario de <strong>Registro de Regreso</strong></td></tr>
+</tbody>
+</table>
+
+<div class="note"><span class="note-label">Nota:</span> <strong>Importante:</strong> Cada usuario solo puede tener una salida activa a la vez. Primero debe registrar el regreso del vehículo actual antes de poder sacar otro.</div>
+
+<hr class="section-hr">
+
+<h3>6.1 Registrar Salida de Vehículo</h3>
+
+<p>Cuando el indicador está en <strong>verde</strong>, el sistema está listo para registrar una nueva salida.</p>
+
+<p><strong>Paso 1 — Seleccionar la unidad</strong></p>
+
+<p>Se muestra un selector con los vehículos disponibles para el usuario. Cada opción indica el estado del vehículo:</p>
+
+<ul>
+<li style="margin-left:0px"><code>ABC-123 — Disponible</code> → puede seleccionarlo</li>
+<li style="margin-left:0px"><code>XYZ-789 — Reservado para ti</code> → tiene una reserva activa a su nombre, puede usarlo</li>
+<li style="margin-left:0px">Vehículos en uso o reservados para otro empleado <strong>no aparecen</strong> en la lista</li>
+</ul>
+
+<div class="note"><span class="note-label">Nota:</span> Al seleccionar el vehículo, si tiene una reserva activa, aparece una alerta naranja indicando el motivo y fechas de la reserva.</div>
+
+<p><strong>Paso 2 — Revisar datos del último registro (autorrelleno)</strong></p>
+
+<p>Si el vehículo tiene registros anteriores, el sistema carga automáticamente el último kilómetro, nivel de combustible y punto de control registrados. Estos campos aparecen bloqueados (solo lectura) para que el nuevo registro parta desde ese punto.</p>
+
+<p><strong>Paso 3 — Estado Técnico</strong></p>
+
+<table>
+<thead>
+<tr><th>Campo</th><th>Obligatorio</th><th>Descripción</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Odómetro (KM)</strong></td><td>Sí</td><td>Lectura actual del cuentakilómetros. Si hay registro anterior, se llena automáticamente</td></tr>
+<tr><td><strong>Punto de Control</strong></td><td>Sí</td><td>Ubicación desde donde sale el vehículo. Se selecciona de la lista de estacionamientos</td></tr>
+<tr><td><strong>Combustible (%)</strong></td><td>No</td><td>Nivel de combustible actual (0 a 100%). Si hay registro anterior, se llena automáticamente</td></tr>
+<tr><td><strong>Observaciones</strong></td><td>No</td><td>Novedades técnicas o estéticas del vehículo antes de salir</td></tr>
+</tbody>
+</table>
+
+<div class="note"><span class="note-label">Nota:</span> <strong>Permiso requerido para ver el Punto de Control:</strong> <code>ver_estacionamientos</code>. Sin este permiso la lista de puntos aparece vacía.</div>
+
+<p><strong>Paso 4 — Evidencia fotográfica</strong></p>
+
+<p>Es obligatorio subir <strong>al menos 1 foto</strong> del vehículo antes de salir (máximo 4 fotos, hasta 6 MB cada una). En dispositivos móviles puede usar directamente la cámara.</p>
+
+<p><strong>Paso 5 — Confirmar</strong></p>
+
+<p>Haga clic en <strong>Confirmar Salida</strong>. El sistema registra la fecha y hora exacta del momento del envío.</p>
+
+<p><strong>Validaciones al registrar salida:</strong></p>
+
+<ul>
+<li style="margin-left:0px">El vehículo debe estar disponible (no en uso ni reservado para otro).</li>
+<li style="margin-left:0px">El odómetro no puede ser menor al último registrado para ese vehículo.</li>
+<li style="margin-left:0px">Se requiere al menos una foto.</li>
+<li style="margin-left:0px">El punto de control es obligatorio.</li>
+</ul>
+
+<hr class="section-hr">
+
+<h3>6.2 Registrar Regreso de Vehículo</h3>
+
+<p>Cuando el indicador está en <strong>azul</strong>, significa que el usuario tiene un vehículo en uso. El formulario cambia automáticamente al modo de regreso.</p>
+
+<p>En la parte superior se muestran los <strong>datos de la salida</strong> como referencia:</p>
+<ul>
+<li style="margin-left:0px">KM registrado al salir</li>
+<li style="margin-left:0px">Combustible al salir</li>
+<li style="margin-left:0px">Punto de control de salida</li>
+</ul>
+
+<p><strong>Campos del regreso:</strong></p>
+
+<table>
+<thead>
+<tr><th>Campo</th><th>Obligatorio</th><th>Descripción</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Odómetro (KM)</strong></td><td>Sí</td><td>Lectura actual al regresar. Debe ser igual o mayor al KM de salida</td></tr>
+<tr><td><strong>Punto de Control</strong></td><td>Sí</td><td>Ubicación a donde regresa el vehículo</td></tr>
+<tr><td><strong>Combustible (%)</strong></td><td>No</td><td>Nivel de combustible al regresar</td></tr>
+<tr><td><strong>Observaciones</strong></td><td>No</td><td>Novedades técnicas o incidencias del viaje</td></tr>
+</tbody>
+</table>
+
+<p>Debajo del campo de KM el sistema muestra el <strong>recorrido estimado</strong> (diferencia entre KM de regreso y de salida) en tiempo real.</p>
+
+<p><strong>Paso final:</strong> Suba las fotos del vehículo al regreso y haga clic en <strong>Confirmar Retorno</strong>.</p>
+
+<p><strong>Validaciones al registrar regreso:</strong></p>
+
+<ul>
+<li style="margin-left:0px">El KM de regreso no puede ser menor al KM de salida.</li>
+<li style="margin-left:0px">Si la diferencia supera 1,000 km, el sistema muestra una advertencia para verificar los datos.</li>
+<li style="margin-left:0px">Se requiere al menos una foto.</li>
+</ul>
+
+<hr class="section-hr">
+
+<h3>6.3 Acceso por código QR</h3>
+
+<p>Cada vehículo tiene un código QR único (generado desde el módulo de Vehículos). Al escanear el QR con un dispositivo móvil, el sistema abre directamente el formulario de operaciones preseleccionando ese vehículo, sin necesidad de buscarlo manualmente.</p>
+
+<p>Esta es la forma más rápida de registrar una salida o regreso en campo.</p>
+
+<hr class="section-hr">
+
+<h3>6.4 Permisos del módulo</h3>
+
+<table>
+<thead>
+<tr><th>Acción</th><th>Permiso requerido</th></tr>
+</thead>
+<tbody>
+<tr><td>Ver el módulo</td><td><code>ver_vehiculos</code></td></tr>
+<tr><td>Ver la lista de puntos de control</td><td><code>ver_estacionamientos</code></td></tr>
+<tr><td>Registrar salida o regreso</td><td><code>registrar_uso</code></td></tr>
+</tbody>
+</table>
+
+<hr class="section-hr">
+
+<h2>7. Módulo: Rutas</h2>
+
+<p><strong>Ruta:</strong> <code>/admin/rutas</code></p>
+<p><strong>Permiso para ver:</strong> <code>read_ruta</code> o <code>gestionar_rutas</code></p>
+
+<p>Permite gestionar las rutas que utilizan los vehículos, incluyendo la visualización en mapa y los peajes asociados.</p>
+
+<p><strong>Vista principal:</strong></p>
+
+<p>La lista de rutas muestra el nombre, descripción, cantidad de peajes asociados y el estado de cada ruta.</p>
+
+<p><strong>Botones y acciones:</strong></p>
+
+<table>
+<thead>
+<tr><th>Botón / Acción</th><th>Descripción</th><th>Permiso requerido</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Nueva ruta</strong></td><td>Abre el formulario de creación</td><td><code>create_ruta</code></td></tr>
+<tr><td><strong>Ver en mapa</strong></td><td>Muestra la ruta en el mapa interactivo</td><td><code>read_ruta</code></td></tr>
+<tr><td><strong>Ver peajes</strong></td><td>Lista los peajes de esa ruta</td><td><code>read_ruta</code></td></tr>
+<tr><td><strong>Editar</strong></td><td>Abre el formulario de edición</td><td><code>update_ruta</code></td></tr>
+<tr><td><strong>Eliminar</strong></td><td>Elimina la ruta</td><td><code>delete_ruta</code></td></tr>
+<tr><td><strong>Ver historial</strong></td><td>Muestra los cambios históricos de la ruta</td><td><code>read_ruta</code></td></tr>
+</tbody>
+</table>
+
+<p><strong>Para crear una ruta:</strong></p>
+
+<ol>
+<li style="margin-left:0px">Haga clic en <strong>Nueva ruta</strong>.</li>
+<li style="margin-left:0px">Ingrese el <strong>nombre</strong> de la ruta.</li>
+<li style="margin-left:0px">Añada una <strong>descripción</strong> opcional.</li>
+<li style="margin-left:0px">En el mapa interactivo, coloque los marcadores de inicio y fin de la ruta.</li>
+<li style="margin-left:0px">Asocie los <strong>peajes</strong> que correspondan a esta ruta.</li>
+<li style="margin-left:0px">Haga clic en <strong>Guardar</strong>.</li>
+</ol>
+
+<p><strong>Vista de mapa:</strong></p>
+
+<p>El mapa utiliza OpenStreetMap y permite:</p>
+<ul>
+<li style="margin-left:0px">Ver la trayectoria de la ruta</li>
+<li style="margin-left:0px">Identificar los puntos de peaje</li>
+<li style="margin-left:0px">Calcular distancias aproximadas</li>
+</ul>
+
+<hr class="section-hr">
+
+<h2>8. Módulo: Reservas de Vehículos</h2>
+
+<p><strong>Ruta:</strong> <code>/admin/reservas-vehiculos</code></p>
+<p><strong>Permiso para ver:</strong> <code>read_reserva</code> o <code>gestionar_reservas</code></p>
+
+<p>Permite a los usuarios reservar vehículos para fechas específicas, evitando conflictos de disponibilidad.</p>
+
+<p><strong>Vistas disponibles:</strong></p>
+
+<ul>
+<li style="margin-left:0px"><strong>Vista de tabla:</strong> Lista todas las reservas con filtros y búsqueda.</li>
+<li style="margin-left:0px"><strong>Vista de calendario:</strong> Muestra las reservas en un calendario mensual/semanal.</li>
+</ul>
+
+<p>Puede alternar entre vistas con los botones en la parte superior derecha.</p>
+
+<p><strong>Estados de una reserva:</strong></p>
+
+<table>
+<thead>
+<tr><th>Estado</th><th>Descripción</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Pendiente</strong></td><td>La reserva fue creada pero aún no aprobada</td></tr>
+<tr><td><strong>Aprobada</strong></td><td>La reserva fue confirmada por un responsable</td></tr>
+<tr><td><strong>Cancelada</strong></td><td>La reserva fue cancelada</td></tr>
+</tbody>
+</table>
+
+<p><strong>Botones y acciones:</strong></p>
+
+<table>
+<thead>
+<tr><th>Botón / Acción</th><th>Descripción</th><th>Permiso requerido</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Nueva reserva</strong></td><td>Abre el formulario de creación</td><td><code>create_reserva</code></td></tr>
+<tr><td><strong>Editar</strong></td><td>Modifica los datos de la reserva</td><td><code>update_reserva</code></td></tr>
+<tr><td><strong>Iniciar</strong></td><td>Marca la reserva como en uso</td><td><code>update_reserva</code></td></tr>
+<tr><td><strong>Finalizar</strong></td><td>Cierra la reserva activa</td><td><code>update_reserva</code></td></tr>
+<tr><td><strong>Cancelar</strong></td><td>Cancela la reserva</td><td><code>delete_reserva</code></td></tr>
+<tr><td><strong>Ver historial</strong></td><td>Muestra el historial de cambios</td><td><code>read_reserva</code></td></tr>
+</tbody>
+</table>
+
+<p><strong>Para crear una reserva:</strong></p>
+
+<ol>
+<li style="margin-left:0px">Haga clic en <strong>Nueva reserva</strong>.</li>
+<li style="margin-left:0px">Seleccione el <strong>vehículo</strong> deseado.</li>
+<li style="margin-left:0px">Ingrese la <strong>fecha y hora de inicio</strong> de la reserva.</li>
+<li style="margin-left:0px">Ingrese la <strong>fecha y hora de fin</strong> estimada.</li>
+<li style="margin-left:0px">Añada el <strong>propósito</strong> o motivo de la reserva.</li>
+<li style="margin-left:0px">Haga clic en <strong>Guardar</strong>.</li>
+<li style="margin-left:0px">La reserva quedará en estado <strong>Pendiente</strong> hasta ser aprobada.</li>
+</ol>
+
+<div class="note"><span class="note-label">Nota:</span> Si el vehículo ya tiene una reserva activa en el rango de fechas seleccionado, el sistema mostrará una advertencia de conflicto.</div>
+
+<hr class="section-hr">
+
+<h2>9. Módulo: Viáticos</h2>
+
+<p><strong>Ruta:</strong> <code>/admin/viaticos</code></p>
+<p><strong>Permiso para ver:</strong> <code>read_viatico</code> o <code>gestionar_viaticos</code></p>
+
+<p>El módulo de viáticos permite registrar, gestionar y liquidar los gastos de viaje de los colaboradores.</p>
+
+<p><strong>Flujo de un viático:</strong></p>
+
+<pre><code>Borrador → Pendiente (enviado a revisión) → Aprobado / Rechazado → Liquidado</code></pre>
+
+<p><strong>Estados de un viático:</strong></p>
+
+<table>
+<thead>
+<tr><th>Estado</th><th>Descripción</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Borrador</strong></td><td>Creado pero no enviado a revisión</td></tr>
+<tr><td><strong>Pendiente</strong></td><td>Enviado para aprobación</td></tr>
+<tr><td><strong>Aprobado</strong></td><td>Aprobado por el responsable</td></tr>
+<tr><td><strong>Rechazado</strong></td><td>Rechazado; puede editarse y re-enviarse</td></tr>
+<tr><td><strong>Cancelado</strong></td><td>Cancelado por el creador o un administrador</td></tr>
+<tr><td><strong>Finalizado</strong></td><td>El viático fue completado</td></tr>
+<tr><td><strong>Liquidado</strong></td><td>Los gastos fueron formalmente liquidados</td></tr>
+</tbody>
+</table>
+
+<p><strong>Filtros disponibles:</strong></p>
+
+<ul>
+<li style="margin-left:0px"><strong>Activos:</strong> Muestra los viáticos en proceso (Borrador, Pendiente, Aprobado).</li>
+<li style="margin-left:0px"><strong>Liquidados:</strong> Muestra los viáticos en estado Liquidado.</li>
+<li style="margin-left:0px"><strong>Todos:</strong> Muestra todos los registros sin importar el estado.</li>
+</ul>
+
+<p><strong>Botones y acciones:</strong></p>
+
+<table>
+<thead>
+<tr><th>Botón / Acción</th><th>Descripción</th><th>Permiso requerido</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Nuevo viático</strong></td><td>Crea un nuevo viático</td><td><code>create_viatico</code></td></tr>
+<tr><td><strong>Editar</strong></td><td>Modifica el viático (solo en Borrador)</td><td><code>update_viatico</code></td></tr>
+<tr><td><strong>Enviar a revisión</strong></td><td>Cambia el estado a Pendiente</td><td><code>enviar_revision_viatico</code></td></tr>
+<tr><td><strong>Aprobar</strong></td><td>Aprueba el viático en revisión</td><td><code>aprobar_viatico</code></td></tr>
+<tr><td><strong>Rechazar</strong></td><td>Rechaza el viático con un motivo</td><td><code>rechazar_viatico</code></td></tr>
+<tr><td><strong>Liquidar</strong></td><td>Registra la liquidación del viático</td><td><code>liquidar_viatico</code></td></tr>
+<tr><td><strong>Cancelar</strong></td><td>Cancela el viático</td><td><code>delete_viatico</code></td></tr>
+<tr><td><strong>Exportar a Excel</strong></td><td>Descarga los viáticos filtrados en Excel</td><td><code>read_viatico</code></td></tr>
+<tr><td><strong>Ver historial</strong></td><td>Muestra el historial de cambios</td><td><code>read_viatico</code></td></tr>
+</tbody>
+</table>
+
+<p><strong>Para crear un viático:</strong></p>
+
+<ol>
+<li style="margin-left:0px">Haga clic en <strong>Nuevo viático</strong>.</li>
+<li style="margin-left:0px">Complete los datos generales:</li>
+</ol>
+<ul>
+<li style="margin-left:24px"><strong>Título</strong> o descripción del viático</li>
+<li style="margin-left:24px"><strong>Fecha de inicio y fin</strong> del período</li>
+<li style="margin-left:24px"><strong>Destino</strong> del viaje</li>
+<li style="margin-left:24px"><strong>Moneda</strong></li>
+</ul>
+<ol>
+<li style="margin-left:0px">Añada los <strong>gastos</strong> individuales (hospedaje, alimentación, transporte, etc.) con sus montos y comprobantes.</li>
+<li style="margin-left:0px">Haga clic en <strong>Guardar</strong> para crear el viático en estado Borrador.</li>
+<li style="margin-left:0px">Cuando esté listo, haga clic en <strong>Enviar a revisión</strong>.</li>
+</ol>
+
+<p><strong>Para liquidar un viático aprobado:</strong></p>
+
+<div class="note"><span class="note-label">Nota:</span> <strong>Permiso requerido:</strong> <code>liquidar_viatico</code></div>
+
+<ol>
+<li style="margin-left:0px">Localice el viático con estado Aprobado.</li>
+<li style="margin-left:0px">Haga clic en <strong>Liquidar</strong>.</li>
+<li style="margin-left:0px">Complete el formulario de liquidación con el detalle de pagos.</li>
+<li style="margin-left:0px">Haga clic en <strong>Confirmar liquidación</strong>.</li>
+</ol>
+
+<hr class="section-hr">
+
+<h2>10. Módulo: Peajes</h2>
+
+<p><strong>Ruta:</strong> <code>/admin/peajes</code></p>
+<p><strong>Permiso para ver:</strong> <code>read_peaje</code> o <code>gestionar_peajes</code></p>
+
+<p>Gestiona los puntos de peaje asociados a las rutas de la organización.</p>
+
+<p><strong>Información de un peaje:</strong></p>
+
+<ul>
+<li style="margin-left:0px">Nombre del peaje</li>
+<li style="margin-left:0px">Ubicación</li>
+<li style="margin-left:0px">Tarifa</li>
+<li style="margin-left:0px">Rutas a las que pertenece</li>
+</ul>
+
+<p><strong>Botones y acciones:</strong></p>
+
+<table>
+<thead>
+<tr><th>Botón / Acción</th><th>Descripción</th><th>Permiso requerido</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Nuevo peaje</strong></td><td>Crea un nuevo punto de peaje</td><td><code>create_peaje</code></td></tr>
+<tr><td><strong>Editar</strong></td><td>Modifica los datos del peaje</td><td><code>update_peaje</code></td></tr>
+<tr><td><strong>Eliminar</strong></td><td>Elimina el peaje</td><td><code>delete_peaje</code></td></tr>
+<tr><td><strong>Ver historial</strong></td><td>Muestra el historial de cambios</td><td><code>read_peaje</code></td></tr>
+</tbody>
+</table>
+
+<hr class="section-hr">
+
+<h2>11. Módulo: Clientes / Compañías</h2>
+
+<p><strong>Ruta:</strong> <code>/admin/clientes</code></p>
+<p><strong>Permiso para ver:</strong> <code>ver_companias</code> o <code>gestionar_companias</code></p>
+
+<p>Permite gestionar la información de los clientes o compañías que trabajan con la organización.</p>
+
+<p><strong>Vista principal:</strong></p>
+
+<p>La tabla muestra el logo, nombre, estado (Activo/Inactivo) y acciones disponibles de cada cliente.</p>
+
+<p><strong>Botones y acciones:</strong></p>
+
+<table>
+<thead>
+<tr><th>Botón / Acción</th><th>Descripción</th><th>Permiso requerido</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Nuevo cliente</strong></td><td>Crea una nueva compañía</td><td><code>crear_companias</code></td></tr>
+<tr><td><strong>Ver detalle</strong></td><td>Abre la vista detallada del cliente</td><td><code>ver_companias</code></td></tr>
+<tr><td><strong>Editar</strong></td><td>Modifica los datos del cliente</td><td><code>crear_companias</code></td></tr>
+<tr><td><strong>Inactivar</strong></td><td>Desactiva al cliente</td><td><code>crear_companias</code></td></tr>
+</tbody>
+</table>
+
+<p><strong>Detalle de un cliente:</strong></p>
+
+<p>Al hacer clic en <strong>Ver detalle</strong>, se abre una vista con pestañas:</p>
+
+<ul>
+<li style="margin-left:0px"><strong>Información general:</strong> Datos básicos (nombre, RUC/NIT, dirección, contacto, logo).</li>
+<li style="margin-left:0px"><strong>Contratos:</strong> Contratos asociados al cliente y sus fechas de vigencia.</li>
+<li style="margin-left:0px"><strong>Sitios:</strong> Sucursales o ubicaciones del cliente.</li>
+<li style="margin-left:0px"><strong>Activos:</strong> Activos del inventario asignados a este cliente.</li>
+</ul>
+
+<hr class="section-hr">
+
+<h2>12. Módulo: Inventario</h2>
+
+<h3>12.1 Bodegas</h3>
+
+<p><strong>Ruta:</strong> <code>/admin/inventario/bodegas</code></p>
+<p><strong>Permiso para ver:</strong> <code>ver_bodegas</code> o <code>gestionar_bodegas</code></p>
+
+<p>Las bodegas son los contenedores físicos donde se almacenan los activos.</p>
+
+<p><strong>Botones y acciones:</strong></p>
+
+<table>
+<thead>
+<tr><th>Botón / Acción</th><th>Descripción</th><th>Permiso requerido</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Nueva bodega</strong></td><td>Crea una nueva bodega</td><td><code>crear_bodegas</code></td></tr>
+<tr><td><strong>Editar</strong></td><td>Modifica los datos de la bodega</td><td><code>editar_bodegas</code></td></tr>
+<tr><td><strong>Ver detalle</strong></td><td>Abre la bodega con sus activos y movimientos</td><td><code>ver_bodegas</code></td></tr>
+</tbody>
+</table>
+
+<p><strong>Detalle de una bodega:</strong></p>
+
+<ul>
+<li style="margin-left:0px">Lista de activos dentro de la bodega</li>
+<li style="margin-left:0px">Historial de movimientos (entradas y salidas)</li>
+<li style="margin-left:0px">Estadísticas de ocupación</li>
+</ul>
+
+<p><strong>Filtros:</strong> Puede filtrar bodegas por ciudad.</p>
+
+<h3>12.2 Activos</h3>
+
+<p><strong>Ruta:</strong> <code>/admin/inventario/activos</code></p>
+<p><strong>Permiso para ver:</strong> <code>gestionar_activos</code></p>
+
+<p>Gestiona todos los activos físicos de la organización (equipos, herramientas, mobiliario, etc.).</p>
+
+<p><strong>Opciones de búsqueda y filtro:</strong></p>
+
+<ul>
+<li style="margin-left:0px">Búsqueda por nombre o código del activo</li>
+<li style="margin-left:0px">Filtro por bodega</li>
+<li style="margin-left:0px">Filtro por cliente</li>
+<li style="margin-left:0px">Filtro por estado del activo</li>
+</ul>
+
+<p><strong>Botones y acciones:</strong></p>
+
+<table>
+<thead>
+<tr><th>Botón / Acción</th><th>Descripción</th><th>Permiso requerido</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Nuevo activo</strong></td><td>Crea un nuevo activo</td><td><code>crear_activos</code></td></tr>
+<tr><td><strong>Importar activos</strong></td><td>Carga masiva desde archivo</td><td><code>crear_activos</code></td></tr>
+<tr><td><strong>Editar</strong></td><td>Modifica los datos del activo</td><td><code>gestionar_activos</code></td></tr>
+<tr><td><strong>Mover activo</strong></td><td>Transfiere el activo a otra bodega</td><td><code>gestionar_activos</code></td></tr>
+<tr><td><strong>Ver historial</strong></td><td>Muestra el historial de movimientos</td><td><code>gestionar_activos</code></td></tr>
+</tbody>
+</table>
+
+<p><strong>Para mover un activo:</strong></p>
+
+<ol>
+<li style="margin-left:0px">Haga clic en <strong>Mover activo</strong> (ícono de transferencia).</li>
+<li style="margin-left:0px">Seleccione la <strong>bodega destino</strong>.</li>
+<li style="margin-left:0px">Ingrese la <strong>fecha del movimiento</strong>.</li>
+<li style="margin-left:0px">Añada <strong>notas</strong> u observaciones del traslado.</li>
+<li style="margin-left:0px">Haga clic en <strong>Confirmar movimiento</strong>.</li>
+</ol>
+
+<p><strong>Para importar activos masivamente:</strong></p>
+
+<ol>
+<li style="margin-left:0px">Haga clic en <strong>Importar activos</strong>.</li>
+<li style="margin-left:0px">Descargue la plantilla de Excel disponible.</li>
+<li style="margin-left:0px">Complete la plantilla con los datos de los activos.</li>
+<li style="margin-left:0px">Cargue el archivo completado.</li>
+<li style="margin-left:0px">Revise la vista previa del import.</li>
+<li style="margin-left:0px">Confirme la importación.</li>
+</ol>
+
+<hr class="section-hr">
+
+<h2>13. Módulo: Reportes</h2>
+
+<p><strong>Ruta:</strong> <code>/admin/reports</code></p>
+<p><strong>Permiso para ver:</strong> <code>ver_reportes</code></p>
+
+<p>Este módulo centraliza los reportes estadísticos del uso del sistema.</p>
+
+<p><strong>Reportes disponibles:</strong></p>
+
+<table>
+<thead>
+<tr><th>Reporte</th><th>Descripción</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Registros de entrada/salida</strong></td><td>Historial completo de operaciones de vehículos en un período</td></tr>
+<tr><td><strong>Empleados con más salidas</strong></td><td>Ranking de usuarios con mayor cantidad de viajes</td></tr>
+<tr><td><strong>Kilometraje por empleado</strong></td><td>Distancia total recorrida por cada usuario</td></tr>
+<tr><td><strong>Vehículos más utilizados</strong></td><td>Ranking de vehículos por frecuencia de uso</td></tr>
+<tr><td><strong>Registros por ubicación</strong></td><td>Operaciones agrupadas por lugar de salida/llegada</td></tr>
+<tr><td><strong>Consumo de combustible</strong></td><td>Consumo por vehículo en el período seleccionado</td></tr>
+</tbody>
+</table>
+
+<p><strong>Para generar un reporte:</strong></p>
+
+<ol>
+<li style="margin-left:0px">Seleccione el <strong>tipo de reporte</strong> deseado.</li>
+<li style="margin-left:0px">Configure los <strong>filtros</strong>:</li>
+</ol>
+<ul>
+<li style="margin-left:24px">Rango de fechas (inicio y fin)</li>
+<li style="margin-left:24px">Vehículos específicos (opcional)</li>
+<li style="margin-left:24px">Usuarios específicos (opcional)</li>
+</ul>
+<ol>
+<li style="margin-left:0px">Haga clic en <strong>Generar reporte</strong>.</li>
+<li style="margin-left:0px">El sistema mostrará los resultados en una tabla con gráficos.</li>
+<li style="margin-left:0px">Haga clic en <strong>Exportar a Excel</strong> para descargar los datos.</li>
+</ol>
+
+<hr class="section-hr">
+
+<h2>14. Módulo: Usuarios</h2>
+
+<p><strong>Ruta:</strong> <code>/admin/usuarios</code></p>
+<p><strong>Permiso para ver:</strong> <code>ver_usuarios</code> o <code>gestionar_usuarios</code></p>
+
+<p>Permite administrar las cuentas de los colaboradores que tienen acceso al sistema.</p>
+
+<p><strong>Información mostrada en la tabla:</strong></p>
+
+<ul>
+<li style="margin-left:0px">Nombre completo</li>
+<li style="margin-left:0px">Correo electrónico</li>
+<li style="margin-left:0px">Rol asignado</li>
+<li style="margin-left:0px">Estado (Activo / Inactivo)</li>
+<li style="margin-left:0px">Fecha de creación</li>
+</ul>
+
+<p><strong>Botones y acciones:</strong></p>
+
+<table>
+<thead>
+<tr><th>Botón / Acción</th><th>Descripción</th><th>Permiso requerido</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Nuevo usuario</strong></td><td>Crea una nueva cuenta de usuario</td><td><code>crear_usuario</code></td></tr>
+<tr><td><strong>Editar</strong></td><td>Modifica los datos del usuario</td><td><code>editar_usuario</code></td></tr>
+<tr><td><strong>Ver historial</strong></td><td>Muestra el historial de auditoría</td><td><code>ver_usuarios</code></td></tr>
+<tr><td><strong>Inactivar</strong></td><td>Deshabilita el acceso del usuario</td><td><code>eliminar_usuario</code></td></tr>
+<tr><td><strong>Restaurar</strong></td><td>Reactiva un usuario inactivo</td><td><code>restaurar_usuario</code></td></tr>
+<tr><td><strong>Asignar permisos</strong></td><td>Abre el panel de permisos del usuario</td><td><code>asignar_permisos</code></td></tr>
+</tbody>
+</table>
+
+<p><strong>Para crear un usuario:</strong></p>
+
+<ol>
+<li style="margin-left:0px">Haga clic en <strong>Nuevo usuario</strong>.</li>
+<li style="margin-left:0px">Complete los datos:</li>
+</ol>
+<ul>
+<li style="margin-left:24px"><strong>Nombre</strong> y <strong>apellido</strong> (requeridos)</li>
+<li style="margin-left:24px"><strong>Correo electrónico</strong> (requerido, debe ser único)</li>
+<li style="margin-left:24px"><strong>Contraseña</strong> temporal (requerida)</li>
+<li style="margin-left:24px"><strong>Rol</strong> (requerido)</li>
+<li style="margin-left:24px"><strong>Teléfono</strong> (opcional)</li>
+<li style="margin-left:24px"><strong>Foto de perfil</strong> (opcional)</li>
+</ul>
+<ol>
+<li style="margin-left:0px">Haga clic en <strong>Guardar</strong>.</li>
+<li style="margin-left:0px">El sistema enviará un correo de bienvenida con las credenciales al nuevo usuario.</li>
+</ol>
+
+<div class="note"><span class="note-label">Nota:</span> <strong>Nota:</strong> Solo los usuarios con el permiso <code>asignar_permisos</code> pueden asignar roles y permisos individualmente.</div>
+
+<hr class="section-hr">
+
+<h2>15. Módulo: Roles y Permisos</h2>
+
+<p><strong>Ruta:</strong> <code>/admin/roles</code></p>
+<p><strong>Permiso requerido:</strong> <code>asignar_permisos</code> (solo administradores)</p>
+
+<p>Este módulo permite definir los roles del sistema y los permisos que tiene cada rol. Es fundamental para controlar qué puede hacer cada usuario.</p>
+
+<p><strong>Vista principal:</strong></p>
+
+<p>La tabla muestra los roles disponibles con la cantidad de permisos asignados a cada uno.</p>
+
+<p><strong>Botones y acciones:</strong></p>
+
+<table>
+<thead>
+<tr><th>Botón / Acción</th><th>Descripción</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Nuevo rol</strong></td><td>Crea un nuevo rol</td></tr>
+<tr><td><strong>Editar</strong></td><td>Modifica el nombre del rol</td></tr>
+<tr><td><strong>Asignar permisos</strong></td><td>Abre el panel de configuración de permisos del rol</td></tr>
+<tr><td><strong>Eliminar</strong></td><td>Elimina el rol (si no tiene usuarios asignados)</td></tr>
+<tr><td><strong>Ver historial</strong></td><td>Muestra los cambios históricos del rol</td></tr>
+</tbody>
+</table>
+
+<p><strong>Para asignar permisos a un rol:</strong></p>
+
+<ol>
+<li style="margin-left:0px">Haga clic en el ícono de permisos del rol deseado.</li>
+<li style="margin-left:0px">Se mostrará la lista de permisos agrupados por módulo (Usuarios, Vehículos, Rutas, etc.).</li>
+<li style="margin-left:0px">Active o desactive los permisos usando los toggles o checkboxes.</li>
+<li style="margin-left:0px">Los cambios se aplican automáticamente.</li>
+</ol>
+
+<div class="note"><span class="note-label">Nota:</span> <strong>Precaución:</strong> Modificar los permisos de un rol afecta a todos los usuarios que tienen ese rol asignado. Proceda con cuidado.</div>
+
+<hr class="section-hr">
+
+<h2>16. Módulo: Ubicaciones</h2>
+
+<h3>Países</h3>
+
+<p><strong>Ruta:</strong> <code>/admin/countries</code></p>
+<p><strong>Permiso para ver:</strong> <code>ver_paises</code> o <code>gestionar_paises</code></p>
+
+<table>
+<thead>
+<tr><th>Acción</th><th>Permiso requerido</th></tr>
+</thead>
+<tbody>
+<tr><td>Ver países</td><td><code>ver_paises</code></td></tr>
+<tr><td>Crear país</td><td><code>crear_paises</code></td></tr>
+<tr><td>Editar país</td><td><code>editar_paises</code></td></tr>
+<tr><td>Eliminar país</td><td><code>eliminar_paises</code></td></tr>
+</tbody>
+</table>
+
+<h3>Ciudades</h3>
+
+<p><strong>Ruta:</strong> <code>/admin/cities</code></p>
+<p><strong>Permiso requerido:</strong> <code>gestionar_ciudades</code></p>
+
+<p>Las ciudades están asociadas a un país. Al crear una ciudad debe seleccionar el país al que pertenece.</p>
+
+<hr class="section-hr">
+
+<h2>17. Módulo: Estacionamientos</h2>
+
+<p><strong>Ruta:</strong> <code>/admin/parkings</code></p>
+<p><strong>Permiso para ver:</strong> <code>gestionar_estacionamientos</code> o <code>ver_estacionamientos</code></p>
+
+<p>Permite registrar los estacionamientos disponibles para los vehículos de la flota.</p>
+
+<p><strong>Información de un estacionamiento:</strong></p>
+
+<ul>
+<li style="margin-left:0px">Nombre</li>
+<li style="margin-left:0px">Dirección</li>
+<li style="margin-left:0px">Ciudad</li>
+<li style="margin-left:0px">Capacidad (cantidad de espacios)</li>
+<li style="margin-left:0px">Estado (Activo / Inactivo)</li>
+</ul>
+
+<table>
+<thead>
+<tr><th>Acción</th><th>Permiso requerido</th></tr>
+</thead>
+<tbody>
+<tr><td>Crear estacionamiento</td><td><code>crear_estacionamientos</code></td></tr>
+<tr><td>Editar estacionamiento</td><td><code>gestionar_estacionamientos</code></td></tr>
+</tbody>
+</table>
+
+<hr class="section-hr">
+
+<h2>18. Módulo: Grupos de Notificación</h2>
+
+<p><strong>Ruta:</strong> <code>/admin/notificacion-grupos</code></p>
+
+<p>Permite crear grupos de usuarios para enviarles notificaciones conjuntas sobre eventos del sistema.</p>
+
+<p><strong>Botones y acciones:</strong></p>
+
+<table>
+<thead>
+<tr><th>Botón / Acción</th><th>Descripción</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Nuevo grupo</strong></td><td>Crea un nuevo grupo de notificación</td></tr>
+<tr><td><strong>Editar</strong></td><td>Modifica el nombre o descripción del grupo</td></tr>
+<tr><td><strong>Agregar usuarios</strong></td><td>Incorpora usuarios al grupo</td></tr>
+<tr><td><strong>Remover usuario</strong></td><td>Elimina un usuario del grupo</td></tr>
+<tr><td><strong>Eliminar grupo</strong></td><td>Elimina el grupo completo</td></tr>
+</tbody>
+</table>
+
+<p><strong>Para crear un grupo:</strong></p>
+
+<ol>
+<li style="margin-left:0px">Haga clic en <strong>Nuevo grupo</strong>.</li>
+<li style="margin-left:0px">Ingrese el <strong>nombre</strong> del grupo.</li>
+<li style="margin-left:0px">Añada una <strong>descripción</strong> opcional.</li>
+<li style="margin-left:0px">Seleccione los <strong>usuarios</strong> que pertenecerán al grupo.</li>
+<li style="margin-left:0px">Haga clic en <strong>Guardar</strong>.</li>
+</ol>
+
+<hr class="section-hr">
+
+<h2>19. Módulo: Centro de Ayuda</h2>
+
+<p><strong>Ruta:</strong> <code>/admin/help</code></p>
+
+<p>El Centro de Ayuda está disponible para todos los usuarios y contiene recursos de soporte.</p>
+
+<p><strong>Secciones disponibles:</strong></p>
+
+<table>
+<thead>
+<tr><th>Sección</th><th>Descripción</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>FAQs</strong></td><td>Preguntas frecuentes con respuestas detalladas</td></tr>
+<tr><td><strong>Tutoriales</strong></td><td>Guías paso a paso de procesos del sistema</td></tr>
+<tr><td><strong>Novedades</strong></td><td>Historial de actualizaciones y nuevas funciones</td></tr>
+<tr><td><strong>Estado de servicios</strong></td><td>Disponibilidad actual del sistema y sus componentes</td></tr>
+</tbody>
+</table>
+
+<p><strong>Para buscar en el centro de ayuda:</strong></p>
+
+<ol>
+<li style="margin-left:0px">En la barra de búsqueda del Centro de Ayuda, escriba su consulta.</li>
+<li style="margin-left:0px">Los resultados se mostrarán agrupados por tipo (FAQ, Tutorial, Novedad).</li>
+<li style="margin-left:0px">Haga clic en el resultado para leer el contenido completo.</li>
+</ol>
+
+<p><strong>Contacto con soporte:</strong></p>
+
+<p>Desde el Centro de Ayuda puede contactar al equipo de soporte directamente mediante:</p>
+<ul>
+<li style="margin-left:0px"><strong>WhatsApp:</strong> Enlace directo a un chat de WhatsApp</li>
+<li style="margin-left:0px"><strong>Correo electrónico:</strong> Enlace para enviar un correo al equipo de soporte</li>
+</ul>
+
+<h3>Gestión del Centro de Ayuda (Solo administradores)</h3>
+
+<div class="note"><span class="note-label">Nota:</span> <strong>Permiso requerido:</strong> <code>help_manage</code></div>
+
+<p>Los administradores pueden acceder a la gestión del soporte desde las rutas:</p>
+
+<ul>
+<li style="margin-left:0px"><code>/admin/support/faqs</code> — Gestión de FAQs</li>
+<li style="margin-left:0px"><code>/admin/support/tutorials</code> — Gestión de tutoriales</li>
+<li style="margin-left:0px"><code>/admin/support/changelogs</code> — Gestión de novedades</li>
+<li style="margin-left:0px"><code>/admin/support/services</code> — Estado de servicios</li>
+</ul>
+
+<p>Desde estas secciones pueden:</p>
+
+<ul>
+<li style="margin-left:0px">Crear, editar y eliminar FAQs con etiquetas y categorías</li>
+<li style="margin-left:0px">Publicar o despublicar contenido</li>
+<li style="margin-left:0px">Crear tutoriales con pasos detallados y archivos adjuntos</li>
+<li style="margin-left:0px">Publicar novedades y marcarlas como destacadas</li>
+<li style="margin-left:0px">Actualizar el estado general del sistema y de cada servicio individual</li>
+</ul>
+
+<hr class="section-hr">
+
+<h2>20. Mi Cuenta</h2>
+
+<p><strong>Ruta:</strong> <code>/admin/mi-cuenta</code></p>
+
+<p>Cada usuario puede gestionar su propia cuenta desde esta sección.</p>
+
+<p><strong>Opciones disponibles:</strong></p>
+
+<table>
+<thead>
+<tr><th>Sección</th><th>Descripción</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Información personal</strong></td><td>Nombre, apellido, correo, teléfono, foto de perfil</td></tr>
+<tr><td><strong>Cambiar contraseña</strong></td><td>Actualización de la contraseña de acceso</td></tr>
+<tr><td><strong>Autenticación en dos pasos</strong></td><td>Activar/desactivar 2FA</td></tr>
+<tr><td><strong>WebAuthn / Passkeys</strong></td><td>Configurar acceso por huella digital o llave de seguridad</td></tr>
+<tr><td><strong>Sesiones activas</strong></td><td>Ver y cerrar sesiones en otros dispositivos</td></tr>
+</tbody>
+</table>
+
+<p><strong>Para cambiar su foto de perfil:</strong></p>
+
+<ol>
+<li style="margin-left:0px">Vaya a <strong>Mi Cuenta &gt; Información personal</strong>.</li>
+<li style="margin-left:0px">Haga clic en la foto de perfil actual.</li>
+<li style="margin-left:0px">Seleccione una nueva imagen desde su dispositivo.</li>
+<li style="margin-left:0px">Haga clic en <strong>Guardar cambios</strong>.</li>
+</ol>
+
+<p><strong>Para cerrar sesiones en otros dispositivos:</strong></p>
+
+<ol>
+<li style="margin-left:0px">Vaya a <strong>Mi Cuenta &gt; Sesiones activas</strong>.</li>
+<li style="margin-left:0px">Verá la lista de dispositivos con sesión activa.</li>
+<li style="margin-left:0px">Haga clic en <strong>Cerrar sesión</strong> junto al dispositivo que desea desconectar.</li>
+<li style="margin-left:0px">Confirme la acción.</li>
+</ol>
+
+<hr class="section-hr">
+
+<h2>21. Configuración</h2>
+
+<p><strong>Ruta:</strong> <code>/admin/configuraciones</code></p>
+
+<p>La sección de configuración permite personalizar la experiencia de uso del sistema.</p>
+
+<p><strong>Secciones disponibles:</strong></p>
+
+<table>
+<thead>
+<tr><th>Sección</th><th>Descripción</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Inicio</strong></td><td>Configuración del widget de inicio (clima, noticias, etc.)</td></tr>
+<tr><td><strong>Apariencia</strong></td><td>Tema claro u oscuro; color primario de la interfaz</td></tr>
+<tr><td><strong>Idioma y región</strong></td><td>Idioma del sistema, zona horaria y formato de fecha/hora</td></tr>
+<tr><td><strong>Notificaciones</strong></td><td>Tipos de notificaciones que desea recibir y por qué medio</td></tr>
+<tr><td><strong>Seguridad</strong></td><td>Opciones avanzadas de seguridad de la cuenta</td></tr>
+<tr><td><strong>Accesibilidad</strong></td><td>Opciones para adaptar la interfaz a necesidades especiales</td></tr>
+<tr><td><strong>Integraciones</strong></td><td>Conexiones con servicios externos</td></tr>
+<tr><td><strong>Copias de seguridad</strong></td><td>Opciones de respaldo de datos</td></tr>
+<tr><td><strong>Acerca de</strong></td><td>Información de la versión de la aplicación</td></tr>
+</tbody>
+</table>
+
+<p><strong>Para cambiar el idioma:</strong></p>
+
+<ol>
+<li style="margin-left:0px">Vaya a <strong>Configuración &gt; Idioma y región</strong>.</li>
+<li style="margin-left:0px">Seleccione el idioma deseado (Español / Inglés).</li>
+<li style="margin-left:0px">El cambio se aplica inmediatamente sin necesidad de recargar.</li>
+</ol>
+
+<p><strong>Para activar el modo oscuro:</strong></p>
+
+<ol>
+<li style="margin-left:0px">Vaya a <strong>Configuración &gt; Apariencia</strong>.</li>
+<li style="margin-left:0px">Seleccione <strong>Oscuro</strong> en la opción de tema.</li>
+<li style="margin-left:0px">La interfaz cambiará de inmediato.</li>
+</ol>
+
+<hr class="section-hr">
+
+<h2>22. Sistema de Permisos</h2>
+
+<p>Tecnasa Core utiliza un sistema de control de acceso basado en roles (RBAC — Role-Based Access Control). Esto significa que cada usuario tiene un rol asignado, y cada rol tiene un conjunto específico de permisos.</p>
+
+<h3>¿Qué es un rol?</h3>
+
+<p>Un rol es una categoría de usuario (por ejemplo: "Administrador", "Conductor", "Supervisor", "Contador"). Cada rol tiene permisos específicos que determinan qué puede ver y hacer el usuario.</p>
+
+<h3>¿Qué es un permiso?</h3>
+
+<p>Un permiso es una autorización específica para realizar una acción (por ejemplo: <code>crear_vehiculo</code>, <code>aprobar_viatico</code>, <code>ver_reportes</code>).</p>
+
+<h3>Niveles de acceso típicos</h3>
+
+<table>
+<thead>
+<tr><th>Tipo de usuario</th><th>Acceso</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Administrador</strong></td><td>Acceso total a todas las funciones del sistema</td></tr>
+<tr><td><strong>Supervisor</strong></td><td>Puede ver y aprobar operaciones; acceso limitado a configuración</td></tr>
+<tr><td><strong>Operativo/Conductor</strong></td><td>Puede registrar salidas/regresos; acceso básico</td></tr>
+<tr><td><strong>Contador/Finanzas</strong></td><td>Acceso a viáticos, liquidaciones y reportes</td></tr>
+<tr><td><strong>Solo lectura</strong></td><td>Puede ver información pero no modificarla</td></tr>
+</tbody>
+</table>
+
+<div class="note"><span class="note-label">Nota:</span> Los roles y sus permisos exactos dependen de la configuración de su organización. Contacte al administrador si necesita acceso adicional.</div>
+
+<h3>¿Qué hago si no tengo acceso a una función?</h3>
+
+<ol>
+<li style="margin-left:0px">Verifique si el botón o la sección está visible en su menú.</li>
+<li style="margin-left:0px">Si no está visible, su rol no tiene el permiso necesario.</li>
+<li style="margin-left:0px">Contacte al administrador del sistema indicando:</li>
+</ol>
+<ul>
+<li style="margin-left:24px">Qué función necesita</li>
+<li style="margin-left:24px">Por qué la necesita</li>
+</ul>
+<ol>
+<li style="margin-left:0px">El administrador puede asignarle el permiso correspondiente o ajustar su rol desde <strong>Roles y Permisos</strong>.</li>
+</ol>
+
+<hr class="section-hr">
+
+<h2>23. Preguntas Frecuentes</h2>
+
+<p><strong>¿Por qué no veo algunos módulos en el menú?</strong></p>
+
+<p>Los módulos del menú se muestran según los permisos de su rol. Si no ve un módulo que necesita, contacte al administrador.</p>
+
+<p><strong>¿Puedo tener múltiples sesiones activas?</strong></p>
+
+<p>Sí, puede estar conectado desde varios dispositivos simultáneamente. Puede revisar y cerrar las sesiones desde <strong>Mi Cuenta &gt; Sesiones activas</strong>.</p>
+
+<p><strong>¿Qué pasa si escaneo el QR de un vehículo que ya tiene una salida registrada?</strong></p>
+
+<p>El sistema detectará que el vehículo ya tiene un registro de salida activo y le mostrará una alerta. Deberá registrar el regreso antes de iniciar una nueva operación.</p>
+
+<p><strong>¿Puedo editar un viático que ya envié a revisión?</strong></p>
+
+<p>No. Una vez que el viático pasa al estado <strong>Pendiente</strong>, no puede editarse. Si necesita hacer cambios, solicite al revisor que lo rechace. Al ser rechazado, vuelve a un estado editable.</p>
+
+<p><strong>¿Cómo sé si un vehículo está disponible para reservar?</strong></p>
+
+<p>En el módulo de <strong>Reservas</strong>, use la vista de <strong>calendario</strong> para ver visualmente qué vehículos están ocupados en las fechas deseadas. Al crear una nueva reserva, el sistema también alertará si hay un conflicto.</p>
+
+<p><strong>¿Cómo puedo contactar al equipo de soporte?</strong></p>
+
+<p>Desde el <strong>Centro de Ayuda</strong> (<code>/admin/help</code>) encontrará los canales de contacto disponibles (WhatsApp, correo electrónico). También puede consultar la sección de <strong>Tutoriales</strong> y <strong>FAQs</strong> para resolver dudas comunes.</p>
+
+<p><strong>¿Con qué frecuencia se actualiza el sistema?</strong></p>
+
+<p>Puede revisar el historial de actualizaciones en <strong>Centro de Ayuda &gt; Novedades</strong>, donde se publican todas las versiones con sus cambios y mejoras.</p>
+
+<hr class="section-hr">
+
+<p><em>Este manual es una guía de referencia general. Para información específica sobre los procesos de su organización, consulte con el administrador del sistema.</em></p>
+
+<p><em>Tecnasa Core — Todos los derechos reservados.</em></p>
+
+
+</div>
+
+<script>
+  (function () {
+    var params = new URLSearchParams(window.location.search);
+    if (params.get("print") === "1") {
+      // Espera a que carguen las fuentes/estilos y lanza el diálogo
+      window.addEventListener("load", function () {
+        setTimeout(function () {
+          window.print();
+          // Cierra la pestaña tras imprimir (no funciona en todos los browsers, pero sí en Chrome)
+          window.addEventListener("afterprint", function () {
+            window.close();
+          });
+        }, 600);
+      });
+    }
+  })();
+</script>
+</body>
+</html>

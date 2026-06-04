@@ -1,4 +1,6 @@
-// src/utils/ApiHelper.js
+// src/utils/ApiHelper.jsx
+import { apiFetch } from "./apiClient";
+
 export async function fetchConToken(url, options = {}) {
   const isFormData = options.body instanceof FormData;
 
@@ -8,9 +10,8 @@ export async function fetchConToken(url, options = {}) {
   };
 
   try {
-    const res = await fetch(url, {
+    const res = await apiFetch(url, {
       ...options,
-      credentials: "include",
       headers,
     });
     return res;
@@ -21,12 +22,14 @@ export async function fetchConToken(url, options = {}) {
 }
 
 export function withQuery(url, params = {}) {
-  const u = new URL(url);
-  Object.entries(params).forEach(([k, v]) => {
-    if (v === undefined || v === null || v === "") return;
-    u.searchParams.set(k, String(v));
-  });
-  return u.toString();
+  const entries = Object.entries(params).filter(
+    ([, v]) => v !== undefined && v !== null && v !== ""
+  );
+  if (entries.length === 0) return url;
+  const qs = entries
+    .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`)
+    .join("&");
+  return url.includes("?") ? `${url}&${qs}` : `${url}?${qs}`;
 }
 
 export async function fetchPublic(url, init = {}) {

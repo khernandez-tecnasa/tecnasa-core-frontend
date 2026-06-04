@@ -1,38 +1,26 @@
-// src/pages/ComponentsReport/Registros/RegisterReport.jsx
+// src/Reports/RegisterReport.jsx
 import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  Box,
-  Sheet,
-  Typography,
-  Stack,
-  Button,
-  Input,
-  CircularProgress,
-  Alert,
-  Chip,
-  IconButton,
-  Divider,
-  Tooltip,
-} from "@mui/joy";
-import { useTranslation } from "react-i18next";
 import { useNavigate, useLocation } from "react-router-dom";
+import {
+  ArrowLeft,
+  Search,
+  X,
+  Download,
+  Calendar,
+  Filter,
+  Loader2,
+  BarChart3,
+  AlertCircle,
+} from "lucide-react";
 
-// Iconos
-import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
-import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
-import DownloadRoundedIcon from "@mui/icons-material/DownloadRounded";
-import FilterListRoundedIcon from "@mui/icons-material/FilterListRounded";
-import ClearRoundedIcon from "@mui/icons-material/ClearRounded";
-import CalendarTodayRoundedIcon from "@mui/icons-material/CalendarTodayRounded";
-
-// Componentes
 import PaginationLite from "@/components/common/PaginationLite";
 import ReportCard from "@/components/ComponentsReport/RegisterReport/ReportCard.jsx";
 import ReportDetailModal from "@/components/ComponentsReport/RegisterReport/ReportDetailModal.jsx";
 import ExportDialog from "@/components/Exports/ExportDialog";
 import { getRegisterReport } from "@/services/ReportServices";
+import { Button } from "@/components/ui/button";
 
-// ===== Helpers =====
+// ── Helpers ────────────────────────────────────────────────────────────────────
 const debounced = (fn, ms = 250) => {
   let t;
   return (...args) => {
@@ -40,26 +28,44 @@ const debounced = (fn, ms = 250) => {
     t = setTimeout(() => fn(...args), ms);
   };
 };
+
 const fmtDateInput = (d) => {
   if (!d) return "";
   const pad = (n) => String(n).padStart(2, "0");
   const dt = d instanceof Date ? d : new Date(d);
   return `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}`;
 };
+
 const todayStr = () => fmtDateInput(new Date());
+
 const addDays = (date, days) => {
   const d = new Date(date);
   d.setDate(d.getDate() + days);
   return d;
 };
 
+// ── Etiquetas hardcodeadas ─────────────────────────────────────────────────────
+const RANGE_LABELS = {
+  all: "Todo",
+  today: "Hoy",
+  "7d": "7 días",
+  month: "Este mes",
+  custom: "Personalizado",
+};
+
+const STATUS_LABELS = {
+  todos: "Todos",
+  activos: "En Curso",
+  finalizados: "Finalizados",
+};
+
+// ── Componente principal ───────────────────────────────────────────────────────
 export default function RegisterReport() {
-  const { t } = useTranslation(); // 👈 Hook de traducción
   const navigate = useNavigate();
   const { search } = useLocation();
   const qs = useMemo(() => new URLSearchParams(search), [search]);
 
-  // Estado de filtros
+  // Filtros
   const [query, setQuery] = useState(qs.get("q") || "");
   const [range, setRange] = useState(qs.get("range") || "all");
   const [from, setFrom] = useState(qs.get("from") || "");
@@ -68,7 +74,7 @@ export default function RegisterReport() {
 
   // Paginación
   const [page, setPage] = useState(Number(qs.get("p") || 1));
-  const [rowsPerPage] = useState(9);
+  const rowsPerPage = 9;
 
   // Data
   const [raw, setRaw] = useState([]);
@@ -109,8 +115,7 @@ export default function RegisterReport() {
       setTo(todayStr());
     } else if (range === "month") {
       const now = new Date();
-      const startMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      setFrom(fmtDateInput(startMonth));
+      setFrom(fmtDateInput(new Date(now.getFullYear(), now.getMonth(), 1)));
       setTo(todayStr());
     }
     setPage(1);
@@ -130,14 +135,14 @@ export default function RegisterReport() {
         setRaw(Array.isArray(data) ? data : []);
       } catch (e) {
         console.error(e);
-        setErr(t("reports.errors.load_failed"));
+        setErr("Error al cargar los registros. Intenta nuevamente.");
       } finally {
         setLoading(false);
       }
     })();
-  }, [from, to, status, t]);
+  }, [from, to, status]);
 
-  // Búsqueda (debounce)
+  // Búsqueda con debounce
   const onChangeQuery = useRef(
     debounced((v) => {
       setPage(1);
@@ -145,7 +150,7 @@ export default function RegisterReport() {
     }, 250)
   ).current;
 
-  // Filtrado Frontend
+  // Filtrado frontend
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     const fromTs = from ? new Date(from + "T00:00:00").getTime() : null;
@@ -154,12 +159,7 @@ export default function RegisterReport() {
     return (raw || []).filter((r) => {
       const textOk =
         !q ||
-        [
-          r.empleado?.nombre,
-          r.vehiculo?.marca,
-          r.vehiculo?.modelo,
-          r.vehiculo?.placa,
-        ]
+        [r.empleado?.nombre, r.vehiculo?.marca, r.vehiculo?.modelo, r.vehiculo?.placa]
           .map((v) => String(v ?? "").toLowerCase())
           .some((s) => s.includes(q));
 
@@ -176,7 +176,7 @@ export default function RegisterReport() {
     });
   }, [raw, query, status, from, to]);
 
-  // Paginación UI
+  // Paginación
   const totalPages = Math.max(1, Math.ceil(filtered.length / rowsPerPage));
   const pageSafe = Math.min(Math.max(page, 1), totalPages);
   const pageItems = useMemo(() => {
@@ -184,7 +184,6 @@ export default function RegisterReport() {
     return filtered.slice(start, start + rowsPerPage);
   }, [filtered, pageSafe, rowsPerPage]);
 
-  // Limpiar filtros
   const clearFilters = () => {
     setQuery("");
     setRange("all");
@@ -194,242 +193,198 @@ export default function RegisterReport() {
     setPage(1);
   };
 
-  // Configuración de columnas para exportación
+  const hasFilters = query || range !== "all" || status !== "todos";
+
+  // Columnas de exportación
   const columnsExport = [
-    {
-      label: t("reports.columns.employee"),
-      key: "empleado.nombre",
-      get: (r) => r.empleado?.nombre || "",
-    },
-    {
-      label: t("reports.columns.vehicle"),
-      get: (r) => `${r.vehiculo?.marca || ""} ${r.vehiculo?.modelo || ""}`,
-    },
-    {
-      label: t("reports.columns.plate"),
-      key: "vehiculo.placa",
-      get: (r) => r.vehiculo?.placa || "",
-    },
-    {
-      label: t("reports.columns.departure_date"),
-      key: "fecha_salida",
-      get: (r) => new Date(r.fecha_salida).toLocaleString(),
-    },
-    {
-      label: t("reports.columns.return_date"),
-      key: "fecha_regreso",
-      get: (r) =>
-        r.fecha_regreso ? new Date(r.fecha_regreso).toLocaleString() : "—",
-    },
-    { label: t("reports.columns.km_out"), key: "km_salida" },
-    { label: t("reports.columns.km_in"), key: "km_regreso" },
+    { label: "Empleado",       get: (r) => r.empleado?.nombre || "" },
+    { label: "Vehículo",       get: (r) => `${r.vehiculo?.marca || ""} ${r.vehiculo?.modelo || ""}` },
+    { label: "Placa",          get: (r) => r.vehiculo?.placa || "" },
+    { label: "Fecha Salida",   get: (r) => new Date(r.fecha_salida).toLocaleString() },
+    { label: "Fecha Regreso",  get: (r) => r.fecha_regreso ? new Date(r.fecha_regreso).toLocaleString() : "—" },
+    { label: "Km Salida",      key: "km_salida" },
+    { label: "Km Regreso",     key: "km_regreso" },
   ];
 
   return (
-    <Box sx={{ maxWidth: 1400, mx: "auto", px: { xs: 2, md: 4 }, py: 3 }}>
-      {/* --- HEADER --- */}
-      <Stack
-        direction={{ xs: "column", md: "row" }}
-        alignItems={{ md: "center" }}
-        justifyContent="space-between"
-        mb={3}
-        spacing={2}>
-        <Stack direction="row" alignItems="center" spacing={1}>
-          <IconButton
+    <div className="max-w-7xl mx-auto px-4 md:px-8 py-6 md:py-10 space-y-6 animate-in fade-in duration-500">
+
+      {/* ── HEADER ── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3.5">
+          {/* Back button */}
+          <button
             onClick={() => navigate("/admin/reports")}
-            variant="plain"
-            color="neutral">
-            <ArrowBackRoundedIcon />
-          </IconButton>
-          <Box>
-            <Typography level="h2" fontSize="lg" fontWeight="lg">
-              {t("reports.report_items.registros_uso.title")}
-            </Typography>
-            <Typography level="body-sm" color="neutral">
-              {t("reports.total_records", { count: filtered.length })}
-            </Typography>
-          </Box>
-        </Stack>
+            className="p-2 rounded-2xl hover:bg-muted/60 dark:hover:bg-slate-800 transition-colors text-muted-foreground hover:text-foreground shrink-0">
+            <ArrowLeft size={18} />
+          </button>
+
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-2xl bg-blue-500/10 dark:bg-blue-500/15 ring-1 ring-blue-500/20 dark:ring-blue-500/30 shadow-sm shadow-blue-500/10 shrink-0">
+              <BarChart3 size={20} className="text-blue-600 dark:text-blue-400" />
+            </div>
+            <div>
+              <h1 className="text-xl md:text-2xl font-black tracking-tight leading-none">
+                Registros de Uso
+              </h1>
+              <p className="text-muted-foreground text-xs font-medium mt-0.5">
+                {loading ? "Cargando..." : `${filtered.length} registro${filtered.length !== 1 ? "s" : ""} encontrado${filtered.length !== 1 ? "s" : ""}`}
+              </p>
+            </div>
+          </div>
+        </div>
 
         <Button
-          variant="solid"
-          color="primary"
-          startDecorator={<DownloadRoundedIcon />}
           onClick={() => setExportOpen(true)}
-          disabled={filtered.length === 0}>
-          {t("reports.actions.export")}
+          disabled={filtered.length === 0 || loading}
+          className="rounded-2xl px-5 h-10 font-bold shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all duration-200 gap-2 shrink-0 disabled:opacity-50">
+          <Download size={15} />
+          <span className="hidden sm:inline">Exportar</span>
         </Button>
-      </Stack>
+      </div>
 
-      {/* --- FILTERS BAR --- */}
-      <Sheet
-        variant="outlined"
-        sx={{
-          p: 2,
-          borderRadius: "lg",
-          mb: 3,
-          boxShadow: "sm",
-          bgcolor: "background.surface",
-        }}>
-        <Stack
-          direction={{ xs: "column", lg: "row" }}
-          spacing={2}
-          alignItems={{ lg: "center" }}>
-          {/* Buscador */}
-          <Input
-            placeholder={t("reports.search_placeholder")}
-            startDecorator={<SearchRoundedIcon />}
-            value={query}
+      {/* ── BARRA DE FILTROS ── */}
+      <div className="bg-card dark:bg-slate-900/40 border border-border/60 rounded-3xl p-4 space-y-3 shadow-sm">
+
+        {/* Fila 1: Buscador */}
+        <div className="relative group">
+          <Search
+            size={15}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/50 group-focus-within:text-primary transition-colors pointer-events-none"
+          />
+          <input
+            type="text"
+            placeholder="Buscar por empleado, vehículo o placa..."
+            defaultValue={query}
             onChange={(e) => onChangeQuery(e.target.value)}
-            sx={{ minWidth: 240, flex: 1 }}
-            endDecorator={
-              query && (
-                <IconButton
-                  size="sm"
-                  variant="plain"
-                  color="neutral"
-                  onClick={() => setQuery("")}>
-                  <ClearRoundedIcon />
-                </IconButton>
-              )
-            }
+            className="w-full bg-muted/40 dark:bg-slate-800/50 border border-border/50 rounded-2xl pl-9 pr-10 py-2.5 text-sm outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/15 focus:bg-card transition-all placeholder:text-muted-foreground/50"
           />
-
-          <Divider
-            orientation="vertical"
-            sx={{ display: { xs: "none", lg: "block" }, height: 24 }}
-          />
-
-          {/* Rango de Fechas */}
-          <Stack
-            direction="row"
-            spacing={1}
-            alignItems="center"
-            sx={{ overflowX: "auto", pb: { xs: 1, lg: 0 } }}>
-            <CalendarTodayRoundedIcon
-              sx={{ color: "text.tertiary", fontSize: 20 }}
-            />
-            {["all", "today", "7d", "month", "custom"].map((r) => (
-              <Chip
-                key={r}
-                variant={range === r ? "solid" : "soft"}
-                color={range === r ? "primary" : "neutral"}
-                onClick={() => setRange(r)}
-                sx={{
-                  cursor: "pointer",
-                  fontWeight: range === r ? "lg" : "md",
-                }}>
-                {t(`reports.ranges.${r}`)}
-              </Chip>
-            ))}
-          </Stack>
-
-          {range === "custom" && (
-            <Stack direction="row" spacing={1} alignItems="center">
-              <Input
-                type="date"
-                value={from}
-                onChange={(e) => setFrom(e.target.value)}
-                sx={{ width: 140 }}
-              />
-              <Typography level="body-sm">-</Typography>
-              <Input
-                type="date"
-                value={to}
-                onChange={(e) => setTo(e.target.value)}
-                sx={{ width: 140 }}
-              />
-            </Stack>
+          {query && (
+            <button
+              onClick={() => { setQuery(""); setPage(1); }}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/50 hover:text-foreground transition-colors">
+              <X size={14} />
+            </button>
           )}
+        </div>
 
-          <Divider
-            orientation="vertical"
-            sx={{ display: { xs: "none", lg: "block" }, height: 24 }}
-          />
+        {/* Fila 2: Rango de fechas + Estado */}
+        <div className="flex flex-col sm:flex-row gap-3">
+          {/* Rango */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground shrink-0">
+              <Calendar size={13} />
+              Período
+            </div>
+            <div className="flex gap-1.5 flex-wrap">
+              {Object.entries(RANGE_LABELS).map(([r, label]) => (
+                <button
+                  key={r}
+                  onClick={() => setRange(r)}
+                  className={`px-3 py-1 rounded-full text-xs font-bold border transition-all duration-150 ${
+                    range === r
+                      ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                      : "bg-muted/50 dark:bg-slate-800 border-border/50 text-muted-foreground hover:bg-muted dark:hover:bg-slate-700 hover:text-foreground"
+                  }`}>
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Separador */}
+          <div className="hidden sm:block w-px bg-border/50 self-stretch" />
 
           {/* Estado */}
-          <Stack direction="row" spacing={1}>
-            {["todos", "activos", "finalizados"].map((s) => (
-              <Chip
-                key={s}
-                variant={status === s ? "solid" : "soft"}
-                color={status === s ? "neutral" : "neutral"}
-                onClick={() => setStatus(s)}
-                sx={{
-                  cursor: "pointer",
-                  bgcolor: status === s ? "text.primary" : undefined,
-                  color: status === s ? "background.surface" : undefined,
-                }}>
-                {t(`reports.status.${s}`)}
-              </Chip>
-            ))}
-          </Stack>
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground shrink-0">
+              <Filter size={13} />
+              Estado
+            </div>
+            <div className="flex gap-1.5">
+              {Object.entries(STATUS_LABELS).map(([s, label]) => (
+                <button
+                  key={s}
+                  onClick={() => { setStatus(s); setPage(1); }}
+                  className={`px-3 py-1 rounded-full text-xs font-bold border transition-all duration-150 ${
+                    status === s
+                      ? "bg-foreground text-background border-foreground shadow-sm"
+                      : "bg-muted/50 dark:bg-slate-800 border-border/50 text-muted-foreground hover:bg-muted dark:hover:bg-slate-700 hover:text-foreground"
+                  }`}>
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
 
-          {(query || range !== "all" || status !== "todos") && (
-            <Button
-              variant="plain"
-              color="danger"
-              size="sm"
-              onClick={clearFilters}>
-              {t("reports.actions.clear_filters")}
+          {hasFilters && (
+            <button
+              onClick={clearFilters}
+              className="ml-auto text-[11px] font-semibold text-muted-foreground hover:text-rose-500 transition-colors flex items-center gap-1">
+              <X size={11} />
+              Limpiar filtros
+            </button>
+          )}
+        </div>
+
+        {/* Inputs de fecha personalizada */}
+        {range === "custom" && (
+          <div className="flex items-center gap-2 flex-wrap pt-1">
+            <span className="text-xs text-muted-foreground font-medium">Desde</span>
+            <input
+              type="date"
+              value={from}
+              onChange={(e) => { setFrom(e.target.value); setPage(1); }}
+              className="bg-muted/40 dark:bg-slate-800/50 border border-border/50 rounded-xl px-3 py-1.5 text-sm outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/15 transition-all"
+            />
+            <span className="text-xs text-muted-foreground font-medium">Hasta</span>
+            <input
+              type="date"
+              value={to}
+              onChange={(e) => { setTo(e.target.value); setPage(1); }}
+              className="bg-muted/40 dark:bg-slate-800/50 border border-border/50 rounded-xl px-3 py-1.5 text-sm outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/15 transition-all"
+            />
+          </div>
+        )}
+      </div>
+
+      {/* ── CONTENIDO ── */}
+      {loading ? (
+        <div className="flex flex-col items-center justify-center gap-4 py-24">
+          <div className="w-12 h-12 rounded-2xl bg-blue-500/10 dark:bg-blue-500/15 flex items-center justify-center">
+            <Loader2 size={22} className="animate-spin text-blue-500" />
+          </div>
+          <p className="text-sm text-muted-foreground font-medium">Cargando registros...</p>
+        </div>
+      ) : err ? (
+        <div className="bg-rose-50 dark:bg-rose-900/10 border border-rose-200 dark:border-rose-900/30 rounded-3xl p-6 flex items-start gap-3">
+          <AlertCircle size={18} className="text-rose-500 shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-bold text-rose-700 dark:text-rose-400">Error al cargar</p>
+            <p className="text-xs text-rose-600 dark:text-rose-500 mt-0.5">{err}</p>
+          </div>
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="bg-card dark:bg-slate-900/40 border border-border/60 rounded-3xl flex flex-col items-center justify-center gap-4 py-20">
+          <div className="w-16 h-16 rounded-3xl bg-muted/50 dark:bg-slate-800/50 flex items-center justify-center">
+            <BarChart3 size={28} className="text-muted-foreground/40" />
+          </div>
+          <div className="text-center">
+            <p className="font-bold text-sm">Sin registros</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              No hay registros que coincidan con los filtros aplicados
+            </p>
+          </div>
+          {hasFilters && (
+            <Button variant="outline" size="sm" className="rounded-2xl" onClick={clearFilters}>
+              Limpiar filtros
             </Button>
           )}
-        </Stack>
-      </Sheet>
-
-      {/* --- CONTENT --- */}
-      {loading ? (
-        <Box
-          sx={{
-            py: 10,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            gap: 2,
-          }}>
-          <CircularProgress size="lg" thickness={3} />
-          <Typography level="body-md" color="neutral">
-            {t("common.loading")}
-          </Typography>
-        </Box>
-      ) : err ? (
-        <Alert color="danger" variant="soft" sx={{ my: 2 }}>
-          {err}
-        </Alert>
-      ) : filtered.length === 0 ? (
-        <Box
-          sx={{
-            py: 8,
-            textAlign: "center",
-            bgcolor: "background.level1",
-            borderRadius: "lg",
-          }}>
-          <FilterListRoundedIcon
-            sx={{ fontSize: 48, color: "neutral.300", mb: 2 }}
-          />
-          <Typography level="h4" color="neutral">
-            {t("reports.no_data_title")}
-          </Typography>
-          <Typography level="body-md" color="neutral">
-            {t("reports.no_data_desc")}
-          </Typography>
-          <Button variant="outlined" sx={{ mt: 2 }} onClick={clearFilters}>
-            {t("reports.actions.clear_filters")}
-          </Button>
-        </Box>
+        </div>
       ) : (
         <>
-          <Box
-            sx={{
-              display: "grid",
-              gridTemplateColumns: {
-                xs: "1fr",
-                sm: "1fr 1fr",
-                lg: "1fr 1fr 1fr",
-              },
-              gap: 2,
-              mb: 3,
-            }}>
+          {/* Grid de tarjetas */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {pageItems.map((registro) => (
               <ReportCard
                 key={registro.id}
@@ -440,27 +395,19 @@ export default function RegisterReport() {
                 }}
               />
             ))}
-          </Box>
+          </div>
 
           {/* Paginación */}
-          <Stack
-            direction="row"
-            justifyContent="center"
-            alignItems="center"
-            spacing={2}>
-            <Typography level="body-sm">
-              {t("reports.showing_page", { page: pageSafe, total: totalPages })}
-            </Typography>
-            <PaginationLite
-              page={pageSafe}
-              count={totalPages}
-              onChange={setPage}
-            />
-          </Stack>
+          <div className="flex items-center justify-between pt-2">
+            <p className="text-xs text-muted-foreground font-medium">
+              Página {pageSafe} de {totalPages}
+            </p>
+            <PaginationLite page={pageSafe} count={totalPages} onChange={setPage} />
+          </div>
         </>
       )}
 
-      {/* --- MODALES --- */}
+      {/* ── MODALES ── */}
       <ReportDetailModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
@@ -472,9 +419,9 @@ export default function RegisterReport() {
         onClose={() => setExportOpen(false)}
         rows={filtered}
         columns={columnsExport}
-        defaultTitle={t("reports.report_items.registros_uso.title")}
+        defaultTitle="Registros de Uso"
         defaultFilename={`registros_${todayStr()}`}
       />
-    </Box>
+    </div>
   );
 }
