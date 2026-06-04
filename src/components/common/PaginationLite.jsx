@@ -1,10 +1,4 @@
-// src/components/common/PaginationLite.jsx
-import { Stack, Button, IconButton } from "@mui/joy";
-import FirstPageRoundedIcon from "@mui/icons-material/FirstPageRounded";
-import LastPageRoundedIcon from "@mui/icons-material/LastPageRounded";
-import ChevronLeftRoundedIcon from "@mui/icons-material/ChevronLeftRounded";
-import ChevronRightRoundedIcon from "@mui/icons-material/ChevronRightRounded";
-import MoreHorizRoundedIcon from "@mui/icons-material/MoreHorizRounded";
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, MoreHorizontal } from "lucide-react";
 
 function range(start, end) {
   const out = [];
@@ -12,30 +6,13 @@ function range(start, end) {
   return out;
 }
 
-/**
- * Props:
- *  - page:        número de página actual (1-indexed)
- *  - count:       total de páginas
- *  - onChange:    (newPage:number) => void
- *  - size:        "sm" | "md" | "lg" (default "sm")
- *  - variant:     "outlined" | "soft" | "plain" | "solid" (default "outlined")
- *  - color:       Joy color (default "neutral")
- *  - boundaryCount: nº de páginas fijas al inicio/fin (default 1)
- *  - siblingCount:  nº de páginas vecinas alrededor de la actual (default 1)
- *  - showFirstLast: mostrar botones Ir al inicio/fin (default true)
- *  - sx:          estilos sx para el contenedor
- */
 export default function PaginationLite({
   page = 1,
   count = 1,
   onChange,
-  size = "sm",
-  variant = "outlined",
-  color = "neutral",
   boundaryCount = 1,
   siblingCount = 1,
   showFirstLast = true,
-  sx,
 }) {
   const clampPage = (p) => Math.min(Math.max(1, p), Math.max(1, count));
   const go = (p) => onChange?.(clampPage(p));
@@ -73,64 +50,63 @@ export default function PaginationLite({
     ...endPages,
   ].filter(Boolean);
 
+  const btnBase =
+    "inline-flex items-center justify-center h-8 w-8 rounded-xl text-sm font-bold transition-colors";
+  const btnActive =
+    "bg-primary text-primary-foreground shadow-sm";
+  const btnInactive =
+    "border border-border/60 bg-card hover:bg-muted/60 dark:hover:bg-slate-800/60 text-foreground";
+  const btnDisabled =
+    "border border-border/40 bg-muted/30 text-muted-foreground/40 cursor-not-allowed";
+
   return (
-    <Stack direction="row" spacing={0.5} alignItems="center" sx={sx}>
+    <div className="flex items-center gap-1">
       {showFirstLast && (
-        <IconButton
-          size={size}
-          variant={variant}
-          color={color}
+        <button
+          className={page <= 1 ? btnDisabled : `${btnBase} ${btnInactive}`}
           disabled={page <= 1}
           onClick={() => go(1)}>
-          <FirstPageRoundedIcon />
-        </IconButton>
+          <ChevronsLeft size={14} />
+        </button>
       )}
 
-      <IconButton
-        size={size}
-        variant={variant}
-        color={color}
+      <button
+        className={page <= 1 ? `${btnBase} ${btnDisabled}` : `${btnBase} ${btnInactive}`}
         disabled={page <= 1}
         onClick={() => go(page - 1)}>
-        <ChevronLeftRoundedIcon />
-      </IconButton>
+        <ChevronLeft size={14} />
+      </button>
 
       {itemList.map((it, idx) =>
         it === "ellipsis" ? (
-          <IconButton key={`e-${idx}`} size={size} variant="plain" disabled>
-            <MoreHorizRoundedIcon />
-          </IconButton>
+          <span key={`e-${idx}`} className={`${btnBase} text-muted-foreground/50 border-0`}>
+            <MoreHorizontal size={14} />
+          </span>
         ) : (
-          <Button
+          <button
             key={it}
-            size={size}
-            variant={it === page ? "solid" : variant}
-            color={it === page ? "primary" : color}
+            className={`${btnBase} ${it === page ? btnActive : btnInactive}`}
             onClick={() => go(it)}>
             {it}
-          </Button>
+          </button>
         )
       )}
 
-      <IconButton
-        size={size}
-        variant={variant}
-        color={color}
+      <button
+        className={page >= count ? `${btnBase} ${btnDisabled}` : `${btnBase} ${btnInactive}`}
         disabled={page >= count}
         onClick={() => go(page + 1)}>
-        <ChevronRightRoundedIcon />
-      </IconButton>
+        <ChevronRight size={14} />
+      </button>
 
       {showFirstLast && (
-        <IconButton
-          size={size}
-          variant={variant}
-          color={color}
+        <button
+          className={page >= count ? `${btnBase} ${btnDisabled}` : `${btnBase} ${btnInactive}`}
           disabled={page >= count}
           onClick={() => go(count)}>
-          <LastPageRoundedIcon />
-        </IconButton>
+          <ChevronsRight size={14} />
+        </button>
       )}
-    </Stack>
+    </div>
   );
 }

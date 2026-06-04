@@ -2,37 +2,34 @@ import { endpoints } from "../config/variables";
 import { fetchConToken } from "../utils/ApiHelper";
 
 // 🚗 REGISTRAR SALIDA
-export async function registrarSalida(data) {
+// formData debe contener los campos de texto + archivos con nombre 'files'
+export async function registrarSalida(formData) {
   try {
-    // data debe traer: idVehiculo, idEmpleado, fechaSalida, kmSalida, idUbicacionSalida, combustibleSalida, comentarioSalida
     const res = await fetchConToken(endpoints.operacionesSalida, {
       method: "POST",
-      body: JSON.stringify(data),
-      headers: { "Content-Type": "application/json" },
+      body: formData,
     });
 
     const result = await res.json();
-    if (!res.ok) throw new Error(result.message || "Error al registrar salida");
+    if (!res.ok) throw new Error(result.message || result.error || "Error al registrar salida");
     return result;
   } catch (err) {
     console.error("registrarSalida error:", err);
-    throw err; // Es mejor lanzar el error para que el componente lo atrape con un SweetAlert o Toast
+    throw err;
   }
 }
 
 // 🔚 REGISTRAR REGRESO
-export async function registrarRegreso(data) {
+// formData debe contener los campos de texto + archivos con nombre 'files'
+export async function registrarRegreso(formData) {
   try {
-    // data debe traer: idVehiculo, idEmpleado, fechaRegreso, kmRegreso, idUbicacionRegreso, combustibleRegreso, comentarioRegreso
     const res = await fetchConToken(endpoints.operacionesRegreso, {
       method: "POST",
-      body: JSON.stringify(data),
-      headers: { "Content-Type": "application/json" },
+      body: formData,
     });
 
     const result = await res.json();
-    if (!res.ok)
-      throw new Error(result.message || "Error al registrar regreso");
+    if (!res.ok) throw new Error(result.message || result.error || "Error al registrar regreso");
     return result;
   } catch (err) {
     console.error("registrarRegreso error:", err);

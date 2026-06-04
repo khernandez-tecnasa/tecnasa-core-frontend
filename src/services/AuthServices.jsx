@@ -1,5 +1,6 @@
 import { endpoints } from "../config/variables";
 import { fetchConToken } from "../utils/ApiHelper";
+import { apiFetch } from "../utils/apiClient";
 const API_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api";
 
@@ -34,9 +35,8 @@ export async function login(username, password, code = null) {
 
 export async function me() {
   try {
-    const res = await fetch(`${API_URL}/auth/me`, {
+    const res = await apiFetch(`${API_URL}/auth/me`, {
       method: "GET",
-      credentials: "include",
       headers: { Accept: "application/json" },
     });
     if (!res.ok) {
@@ -46,6 +46,23 @@ export async function me() {
     return res.json();
   } catch (err) {
     console.error("me error:", err);
+    throw err;
+  }
+}
+
+export async function refreshToken() {
+  try {
+    const res = await apiFetch(`${API_URL}/auth/refresh`, {
+      method: "POST",
+      headers: { Accept: "application/json" },
+    });
+    if (!res.ok) {
+      const json = await res.json().catch(() => ({}));
+      throw new Error(json?.error || "No se pudo renovar la sesión");
+    }
+    return res.json();
+  } catch (err) {
+    console.error("refreshToken error:", err);
     throw err;
   }
 }

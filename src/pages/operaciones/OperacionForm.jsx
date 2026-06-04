@@ -139,6 +139,8 @@ export default function OperacionForm({
       return showToast("Seleccione una unidad", "warning");
     if (!form.km || !form.ubicacion)
       return showToast("Complete los campos obligatorios", "warning");
+    if (images.length === 0)
+      return showToast("Debes subir al menos una imagen", "warning");
 
     if (!operacionActiva && ultimoEstado) {
       if (form.km < ultimoEstado.km) {
@@ -190,26 +192,28 @@ export default function OperacionForm({
     setLoading(true);
     try {
       if (operacionActiva) {
-        await registrarRegreso({
-          idEmpleado: userData.id,
-          idVehiculo: operacionActiva.id_vehiculo,
-          fechaRegreso: new Date(),
-          kmRegreso: form.km,
-          combustibleRegreso: form.combustible,
-          comentarioRegreso: form.comentario,
-          idUbicacionRegreso: form.ubicacion,
-        });
+        const fd = new FormData();
+        fd.append("idEmpleado", userData.id);
+        fd.append("idVehiculo", operacionActiva.id_vehiculo);
+        fd.append("fechaRegreso", new Date().toISOString());
+        fd.append("kmRegreso", form.km);
+        fd.append("combustibleRegreso", form.combustible ?? "");
+        fd.append("comentarioRegreso", form.comentario ?? "");
+        fd.append("idUbicacionRegreso", form.ubicacion);
+        images.forEach((img) => fd.append("files", img));
+        await registrarRegreso(fd);
         showToast("Retorno registrado exitosamente", "success");
       } else {
-        await registrarSalida({
-          idEmpleado: userData.id,
-          idVehiculo: vehiculo.id,
-          fechaSalida: new Date(),
-          kmSalida: form.km,
-          combustibleSalida: form.combustible,
-          comentarioSalida: form.comentario,
-          idUbicacionSalida: form.ubicacion,
-        });
+        const fd = new FormData();
+        fd.append("idEmpleado", userData.id);
+        fd.append("idVehiculo", vehiculo.id);
+        fd.append("fechaSalida", new Date().toISOString());
+        fd.append("kmSalida", form.km);
+        fd.append("combustibleSalida", form.combustible ?? "");
+        fd.append("comentarioSalida", form.comentario ?? "");
+        fd.append("idUbicacionSalida", form.ubicacion);
+        images.forEach((img) => fd.append("files", img));
+        await registrarSalida(fd);
         showToast("Salida de unidad confirmada", "success");
       }
       setForm({ km: "", combustible: "", comentario: "", ubicacion: "" });
@@ -370,7 +374,7 @@ export default function OperacionForm({
             <UploadImages
               value={images}
               onChange={setImages}
-              maxCount={6}
+              maxCount={4}
               maxSizeMB={6}
               capture="environment"
             />
