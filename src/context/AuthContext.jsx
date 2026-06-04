@@ -44,6 +44,17 @@ export const AuthProvider = ({ children }) => {
     init();
   }, []);
 
+  // Escuchar sesión expirada globalmente (viene de apiClient cuando refresh falla)
+  useEffect(() => {
+    const handleExpired = () => {
+      setUser(null);
+      setPermisos([]);
+      navigate("/auth/login");
+    };
+    window.addEventListener("auth:sessionExpired", handleExpired);
+    return () => window.removeEventListener("auth:sessionExpired", handleExpired);
+  }, [navigate]);
+
   const refreshUser = async () => {
     try {
       const serverUser = await AuthServices.me();

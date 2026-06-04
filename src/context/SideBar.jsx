@@ -382,6 +382,15 @@ export default function Sidebar() {
         kind: "notificaciones",
         group: "Sistema",
       },
+      {
+        path: "/admin/backup",
+        icon: <Database size={18} strokeWidth={1.8} />,
+        label: "Backup y Restauración",
+        perm: "gestionar_backup",
+        canView: checkPermission("gestionar_backup"),
+        kind: "sistema",
+        group: "Sistema",
+      },
     ],
     [t, checkPermission],
   );
@@ -496,7 +505,8 @@ export default function Sidebar() {
   const showSistema =
     checkPermission("asignar_permisos") ||
     checkPermission("ver_notificaciones") ||
-    checkPermission("gestionar_usuarios");
+    checkPermission("gestionar_usuarios") ||
+    checkPermission("gestionar_backup");
 
   const showSoporte = checkPermission("help_manage");
 
