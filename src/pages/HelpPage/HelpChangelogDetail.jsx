@@ -2,441 +2,269 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, Link as RouterLink } from "react-router-dom";
 import {
-  Box,
-  Typography,
-  Sheet,
-  Skeleton,
-  Chip,
-  Stack,
-  Card,
-  CardContent,
-  Divider,
-  Button,
-  Link as JoyLink,
-} from "@mui/joy";
-
-import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
-import UpdateRoundedIcon from "@mui/icons-material/UpdateRounded";
-import PushPinRoundedIcon from "@mui/icons-material/PushPinRounded";
-import ContentCopyRoundedIcon from "@mui/icons-material/ContentCopyRounded";
-import HeadsetMicRoundedIcon from "@mui/icons-material/HeadsetMicRounded";
-import HelpOutlineRoundedIcon from "@mui/icons-material/HelpOutlineRounded";
-
+  ArrowLeft, Pin, Copy, Check, Clock,
+  Headphones, HelpCircle, ChevronRight, AlertTriangle,
+} from "lucide-react";
 import { getChangelogBySlug, listChangelogs } from "@/services/help.api";
 
-const SUPPORT_EMAIL =
-  import.meta.env.VITE_SUPPORT_EMAIL || "micros.teh@tecnasadesk.com";
-const WHATSAPP_URL =
-  import.meta.env.VITE_SUPPORT_WHATSAPP || "https://wa.me/50495989756";
+const SUPPORT_EMAIL = import.meta.env.VITE_SUPPORT_EMAIL    || "micros.teh@tecnasadesk.com";
+const WHATSAPP_URL  = import.meta.env.VITE_SUPPORT_WHATSAPP || "https://wa.me/50495989756";
 
-const TYPE_COLOR = {
-  Added: "success",
-  Changed: "warning",
-  Fixed: "primary",
-  Removed: "neutral",
-  Deprecated: "neutral",
-  Security: "danger",
-  Performance: "success",
+const TYPE_BADGE = {
+  Added:       "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
+  Changed:     "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+  Fixed:       "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+  Removed:     "bg-neutral-100 text-neutral-600 dark:bg-neutral-800/50 dark:text-neutral-400",
+  Deprecated:  "bg-neutral-100 text-neutral-600 dark:bg-neutral-800/50 dark:text-neutral-400",
+  Security:    "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400",
+  Performance: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
 };
 
 function fmtDate(d) {
   try {
-    return new Date(d).toLocaleDateString(undefined, {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  } catch {
-    return "";
-  }
+    return new Date(d).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+  } catch { return ""; }
 }
 
 export default function HelpChangelogDetail() {
   const { slug } = useParams();
-  const [loading, setLoading] = useState(true);
-  const [item, setItem] = useState(null);
-  const [error, setError] = useState(null);
 
-  const [related, setRelated] = useState([]);
+  const [loading,    setLoading]    = useState(true);
+  const [item,       setItem]       = useState(null);
+  const [error,      setError]      = useState(null);
+  const [related,    setRelated]    = useState([]);
   const [loadingRel, setLoadingRel] = useState(false);
+  const [copied,     setCopied]     = useState(false);
 
-  // Cargar novedad
+  /* Cargar novedad */
   useEffect(() => {
     (async () => {
-      setLoading(true);
-      setError(null);
+      setLoading(true); setError(null);
       try {
         const c = await getChangelogBySlug(slug);
         setItem(c || null);
-      } catch (e) {
-        setError(e?.message || "No se pudo cargar la novedad.");
-      } finally {
-        setLoading(false);
-      }
+      } catch (e) { setError(e?.message || "No se pudo cargar la novedad."); }
+      finally { setLoading(false); }
     })();
   }, [slug]);
 
-  // Cargar relacionadas (mismo type si se puede; si no, últimas)
+  /* Relacionadas */
   useEffect(() => {
     (async () => {
       if (!item) return;
       setLoadingRel(true);
       try {
-        const paramsSameType = item?.type
-          ? { type: item.type, limit: 8 }
-          : { limit: 8 };
-        const res = await listChangelogs({
-          ...paramsSameType,
-          _ts: Date.now(),
-        });
-        const items = (res?.items || []).filter(
+        const params = item?.type ? { type: item.type, limit: 8 } : { limit: 8 };
+        const res    = await listChangelogs({ ...params, _ts: Date.now() });
+        let items    = (res?.items || []).filter(
           (x) => (x.slug || String(x.id)) !== (item.slug || String(item.id))
         );
-        // fallback si no hay del mismo tipo
         if (!items.length) {
           const res2 = await listChangelogs({ limit: 8, _ts: Date.now() });
-          const alt = (res2?.items || []).filter(
+          items = (res2?.items || []).filter(
             (x) => (x.slug || String(x.id)) !== (item.slug || String(item.id))
           );
-          setRelated(alt.slice(0, 6));
-        } else {
-          setRelated(items.slice(0, 6));
         }
-      } catch {
-        setRelated([]);
-      } finally {
-        setLoadingRel(false);
-      }
+        setRelated(items.slice(0, 6));
+      } catch { setRelated([]); }
+      finally { setLoadingRel(false); }
     })();
   }, [item?.type, item?.slug, item?.id, item]);
 
-  const typeColor = TYPE_COLOR[item?.type] || "neutral";
+  const isPinned = useMemo(
+    () => item && (item.pinned === true || item.pinned === 1 || item.pinned === "1"),
+    [item]
+  );
 
   const copyLink = async () => {
     try {
       await navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
     } catch {}
   };
 
-  const isPinned = useMemo(
-    () =>
-      item &&
-      (item.pinned === true || item.pinned === 1 || item.pinned === "1"),
-    [item]
-  );
-
   return (
-    <Box sx={{ pb: 6 }}>
-      {/* Header */}
-      <Sheet
-        variant="plain"
-        sx={{
-          borderBottom: "1px solid",
-          borderColor: "neutral.outlinedBorder",
-          bgcolor: "background.body",
-        }}>
-        <Box
-          sx={{
-            maxWidth: 1120,
-            mx: "auto",
-            px: { xs: 2, md: 3 },
-            py: { xs: 3, md: 4 },
-          }}>
-          <Stack spacing={1.25}>
-            <Button
-              size="sm"
-              variant="plain"
-              component={RouterLink}
-              to="/admin/help/changelog"
-              startDecorator={<ArrowBackRoundedIcon />}
-              sx={{ alignSelf: "flex-start" }}>
-              Volver a Novedades
-            </Button>
+    <div className="pb-10 animate-in fade-in duration-300">
 
-            {loading ? (
-              <>
-                <Skeleton level="h2" width="70%" />
-                <Stack direction="row" spacing={1}>
-                  <Skeleton
-                    variant="rectangular"
-                    width={90}
-                    height={28}
-                    sx={{ borderRadius: 999 }}
-                  />
-                  <Skeleton
-                    variant="rectangular"
-                    width={140}
-                    height={28}
-                    sx={{ borderRadius: 999 }}
-                  />
-                </Stack>
-              </>
-            ) : error ? (
-              <Typography level="body-md" color="danger">
-                {error}
-              </Typography>
-            ) : (
-              <>
-                <Typography
-                  level="h1"
-                  sx={{ fontSize: { xs: 24, md: 30 }, fontWeight: 800 }}>
-                  {item?.title}
-                </Typography>
-                <Stack
-                  direction="row"
-                  spacing={1}
-                  alignItems="center"
-                  sx={{ flexWrap: "wrap" }}>
-                  {item?.type && (
-                    <Chip size="sm" variant="soft" color={typeColor}>
-                      {item.type}
-                    </Chip>
-                  )}
-                  {item?.audience && (
-                    <Chip size="sm" variant="soft" color="neutral">
-                      Audiencia: {item.audience}
-                    </Chip>
-                  )}
-                  {item?.date && (
-                    <Chip size="sm" variant="soft" color="neutral">
-                      {fmtDate(item.date)}
-                    </Chip>
-                  )}
-                  {isPinned && (
-                    <Chip
-                      size="sm"
-                      variant="soft"
-                      color="success"
-                      startDecorator={<PushPinRoundedIcon fontSize="sm" />}>
-                      Fijado
-                    </Chip>
-                  )}
-                </Stack>
-              </>
-            )}
-          </Stack>
-        </Box>
-      </Sheet>
+      {/* ── Header ─────────────────────────────────────────────── */}
+      <div className="border-b border-border/60 bg-background/80 backdrop-blur-sm">
+        <div className="max-w-7xl mx-auto px-4 md:px-8 py-5 space-y-3">
+          <RouterLink
+            to="/admin/help/changelog"
+            className="inline-flex items-center gap-1.5 text-sm font-bold text-muted-foreground hover:text-foreground transition-colors">
+            <ArrowLeft size={15} /> Volver a Novedades
+          </RouterLink>
 
-      {/* Content + Sidebar */}
-      <Box sx={{ maxWidth: 1120, mx: "auto", px: { xs: 2, md: 3 }, mt: 3 }}>
-        <Stack
-          direction={{ xs: "column", lg: "row" }}
-          spacing={{ xs: 2, lg: 3 }}>
-          {/* Main */}
-          <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Card
-              variant="plain"
-              sx={{
-                border: "1px solid",
-                borderColor: "neutral.outlinedBorder",
-                borderRadius: "xl",
-                boxShadow: "sm",
-              }}>
-              <CardContent sx={{ p: { xs: 2, md: 2.25 } }}>
-                {loading ? (
-                  <>
-                    <Skeleton level="title-md" width="35%" />
-                    <Skeleton level="body-md" />
-                    <Skeleton level="body-md" width="95%" />
-                    <Skeleton level="body-md" width="80%" />
-                  </>
-                ) : error ? (
-                  <Sheet
-                    variant="soft"
-                    color="danger"
-                    sx={{ p: 2, borderRadius: "md" }}>
-                    <Typography>{error}</Typography>
-                  </Sheet>
-                ) : (
-                  <>
-                    {item?.description ? (
-                      <Box
-                        sx={{
-                          "& p": { mb: 1.25 },
-                          "& ul, & ol": { pl: 3, mb: 1.25 },
-                          "& h1,& h2,& h3": { mt: 1.25, mb: 0.5 },
-                          "& code": {
-                            px: 0.5,
-                            py: 0.25,
-                            borderRadius: "sm",
-                            bgcolor: "neutral.softBg",
-                          },
-                        }}
-                        dangerouslySetInnerHTML={{ __html: item.description }}
-                      />
-                    ) : (
-                      <Typography color="neutral">Sin descripción.</Typography>
-                    )}
-
-                    <Divider sx={{ my: 2 }} />
-
-                    <Stack
-                      direction={{ xs: "column", sm: "row" }}
-                      spacing={1}
-                      justifyContent="space-between">
-                      <Stack
-                        direction="row"
-                        spacing={1}
-                        alignItems="center"
-                        color="neutral">
-                        <UpdateRoundedIcon fontSize="sm" />
-                        <Typography level="body-sm">
-                          Publicado {item?.date ? fmtDate(item.date) : "—"}
-                        </Typography>
-                      </Stack>
-
-                      <Button
-                        size="sm"
-                        variant="plain"
-                        startDecorator={<ContentCopyRoundedIcon />}
-                        onClick={async () => {
-                          try {
-                            await navigator.clipboard.writeText(
-                              window.location.href
-                            );
-                          } catch {}
-                        }}>
-                        Copiar enlace
-                      </Button>
-                    </Stack>
-                  </>
+          {loading ? (
+            <div className="space-y-2 animate-pulse">
+              <div className="h-7 bg-muted/60 dark:bg-slate-700/60 rounded-lg w-3/4" />
+              <div className="flex gap-2">
+                <div className="h-6 bg-muted/50 rounded-full w-20" />
+                <div className="h-6 bg-muted/50 rounded-full w-32" />
+              </div>
+            </div>
+          ) : error ? (
+            <p className="text-sm text-rose-600 dark:text-rose-400">{error}</p>
+          ) : (
+            <div className="space-y-2">
+              <h1 className="text-2xl md:text-3xl font-black tracking-tight leading-snug">
+                {item?.title}
+              </h1>
+              <div className="flex flex-wrap items-center gap-2">
+                {item?.type && (
+                  <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-black uppercase tracking-wider ${TYPE_BADGE[item.type] || "bg-muted/60 text-muted-foreground"}`}>
+                    {item.type}
+                  </span>
                 )}
-              </CardContent>
-            </Card>
+                {item?.audience && (
+                  <span className="inline-block px-2.5 py-1 rounded-full text-xs font-bold bg-muted/60 text-muted-foreground">
+                    Audiencia: {item.audience}
+                  </span>
+                )}
+                {item?.date && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-muted/60 text-muted-foreground">
+                    <Clock size={10} /> {fmtDate(item.date)}
+                  </span>
+                )}
+                {isPinned && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-black bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
+                    <Pin size={9} /> Fijado
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
 
-            {/* Related */}
-            <Box sx={{ mt: 3 }}>
-              <Stack
-                direction="row"
-                justifyContent="space-between"
-                alignItems="baseline"
-                sx={{ mb: 1 }}>
-                <Typography level="title-lg" sx={{ fontWeight: 700 }}>
-                  Novedades relacionadas
-                </Typography>
-                <JoyLink href="/admin/help/changelog" level="body-sm">
+      {/* ── Content + Sidebar ─────────────────────────────────── */}
+      <div className="max-w-7xl mx-auto px-4 md:px-8 mt-6">
+        <div className="flex flex-col lg:flex-row gap-6">
+
+          {/* Main */}
+          <div className="flex-1 min-w-0 space-y-6">
+            <div className="bg-card dark:bg-slate-900/40 border border-border/60 rounded-3xl shadow-sm p-5 md:p-6">
+              {loading ? (
+                <div className="space-y-3 animate-pulse">
+                  <div className="h-4 bg-muted/60 rounded-lg w-2/5" />
+                  <div className="h-3 bg-muted/40 rounded-lg" />
+                  <div className="h-3 bg-muted/40 rounded-lg w-11/12" />
+                  <div className="h-3 bg-muted/40 rounded-lg w-4/5" />
+                </div>
+              ) : error ? (
+                <div className="flex items-center gap-3 p-3 bg-rose-50 dark:bg-rose-900/20 border border-rose-200/60 rounded-2xl">
+                  <AlertTriangle size={16} className="text-rose-500 shrink-0" />
+                  <p className="text-sm text-rose-700 dark:text-rose-300">{error}</p>
+                </div>
+              ) : (
+                <>
+                  {item?.description ? (
+                    <div
+                      className="prose prose-sm dark:prose-invert max-w-none [&_p]:mb-3 [&_ul]:pl-5 [&_ul]:mb-3 [&_ol]:pl-5 [&_ol]:mb-3 [&_h1]:mt-4 [&_h2]:mt-4 [&_h3]:mt-4 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded-md [&_code]:bg-muted/60 [&_code]:text-xs"
+                      dangerouslySetInnerHTML={{ __html: item.description }}
+                    />
+                  ) : (
+                    <p className="text-sm text-muted-foreground">Sin descripción.</p>
+                  )}
+
+                  <div className="h-px bg-border/40 my-5" />
+
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <Clock size={11} />
+                      Publicado {item?.date ? fmtDate(item.date) : "—"}
+                    </span>
+                    <button
+                      onClick={copyLink}
+                      className="inline-flex items-center gap-1.5 h-8 px-3 rounded-xl text-xs font-bold text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-all">
+                      {copied
+                        ? <Check size={13} className="text-emerald-500" />
+                        : <Copy size={13} />}
+                      {copied ? "¡Copiado!" : "Copiar enlace"}
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Relacionadas */}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <p className="font-black text-sm">Novedades relacionadas</p>
+                <RouterLink
+                  to="/admin/help/changelog"
+                  className="text-xs font-bold text-primary hover:text-primary/80 transition-colors">
                   Ver todas
-                </JoyLink>
-              </Stack>
+                </RouterLink>
+              </div>
 
               {loadingRel ? (
-                <Stack spacing={1.25}>
+                <div className="space-y-2">
                   {Array.from({ length: 4 }).map((_, i) => (
-                    <Card
-                      key={i}
-                      variant="plain"
-                      sx={{
-                        border: "1px solid",
-                        borderColor: "neutral.outlinedBorder",
-                        borderRadius: "xl",
-                      }}>
-                      <CardContent sx={{ p: 1.25 }}>
-                        <Skeleton level="title-sm" width="70%" />
-                        <Skeleton level="body-xs" width="40%" />
-                      </CardContent>
-                    </Card>
+                    <div key={i} className="bg-card dark:bg-slate-900/40 border border-border/60 rounded-2xl p-3.5 animate-pulse space-y-1.5">
+                      <div className="h-3.5 bg-muted/60 rounded-lg w-3/4" />
+                      <div className="h-3 bg-muted/40 rounded-lg w-2/5" />
+                    </div>
                   ))}
-                </Stack>
+                </div>
               ) : !related.length ? (
-                <Typography level="body-sm" color="neutral">
-                  No hay más anuncios por ahora.
-                </Typography>
+                <p className="text-sm text-muted-foreground">No hay más anuncios por ahora.</p>
               ) : (
-                <Stack spacing={1.25}>
+                <div className="space-y-2">
                   {related.map((c) => (
-                    <Card
+                    <RouterLink
                       key={c.id}
-                      variant="plain"
-                      component={RouterLink}
-                      to={`/admin/help/changelog/${encodeURIComponent(
-                        c.slug || c.id
-                      )}`}
-                      sx={{
-                        border: "1px solid",
-                        borderColor: "neutral.outlinedBorder",
-                        borderRadius: "xl",
-                        boxShadow: "sm",
-                        textDecoration: "none",
-                        "&:hover": {
-                          boxShadow: "md",
-                          transform: "translateY(-2px)",
-                        },
-                        transition: "all .15s ease",
-                      }}>
-                      <CardContent sx={{ p: 1.25 }}>
-                        <Typography level="title-sm" sx={{ fontWeight: 600 }}>
-                          {c.title}
-                        </Typography>
-                        <Typography
-                          level="body-xs"
-                          color="neutral"
-                          sx={{ mt: 0.25 }}>
-                          {c.date ? fmtDate(c.date) : ""} • {c.type}
-                        </Typography>
-                      </CardContent>
-                    </Card>
+                      to={`/admin/help/changelog/${encodeURIComponent(c.slug || c.id)}`}
+                      className="group flex items-start gap-3 bg-card dark:bg-slate-900/40 border border-border/60 rounded-2xl p-3.5 hover:-translate-y-0.5 hover:shadow-md hover:border-border/80 transition-all duration-200">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold group-hover:text-primary transition-colors truncate">{c.title}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {c.date ? fmtDate(c.date) : ""}{c.type ? ` · ${c.type}` : ""}
+                        </p>
+                      </div>
+                      <ChevronRight size={14} className="text-muted-foreground/40 shrink-0 mt-0.5 group-hover:text-primary transition-colors" />
+                    </RouterLink>
                   ))}
-                </Stack>
+                </div>
               )}
-            </Box>
-          </Box>
+            </div>
+          </div>
 
-          {/* Sidebar */}
-          <Box sx={{ width: { xs: "100%", lg: 320 }, flexShrink: 0 }}>
-            <Stack spacing={2}>
-              <Card
-                variant="plain"
-                sx={{
-                  border: "1px solid",
-                  borderColor: "neutral.outlinedBorder",
-                  borderRadius: "xl",
-                  boxShadow: "sm",
-                }}>
-                <CardContent sx={{ p: 2 }}>
-                  <Stack spacing={1}>
-                    <Stack direction="row" spacing={1} alignItems="center">
-                      <HeadsetMicRoundedIcon />
-                      <Typography level="title-sm">
-                        ¿Necesitas más ayuda?
-                      </Typography>
-                    </Stack>
-                    <Typography level="body-sm" color="neutral">
-                      Nuestro equipo responde de L–V, 8:00–17:00.
-                    </Typography>
-                    <Stack
-                      direction="column-reverse"
-                      spacing={1}
-                      flexWrap="wrap">
-                      <Button
-                        component="a"
-                        href={`mailto:${SUPPORT_EMAIL}`}
-                        sx={{ borderRadius: "999px" }}>
-                        Escribir a soporte
-                      </Button>
-                      <Button
-                        variant="soft"
-                        component="a"
-                        href={WHATSAPP_URL}
-                        target="_blank"
-                        sx={{ borderRadius: "999px" }}>
-                        WhatsApp
-                      </Button>
-                    </Stack>
-                    <Divider sx={{ my: 1 }} />
-                    <Stack direction="row" spacing={1} alignItems="center">
-                      <HelpOutlineRoundedIcon fontSize="sm" />
-                      <JoyLink href="/admin/help">
-                        Ir al Centro de ayuda
-                      </JoyLink>
-                    </Stack>
-                  </Stack>
-                </CardContent>
-              </Card>
-            </Stack>
-          </Box>
-        </Stack>
-      </Box>
-    </Box>
+          {/* ── Sidebar ───────────────────────────────────────── */}
+          <div className="w-full lg:w-80 shrink-0 space-y-4">
+            <div className="bg-card dark:bg-slate-900/40 border border-border/60 rounded-3xl shadow-sm p-5 space-y-4">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-xl bg-primary/10 dark:bg-primary/15">
+                  <Headphones size={16} className="text-primary" />
+                </div>
+                <p className="font-black text-sm">¿Necesitas más ayuda?</p>
+              </div>
+              <p className="text-xs text-muted-foreground">Nuestro equipo responde de L–V, 8:00–17:00.</p>
+              <div className="space-y-2">
+                <a
+                  href={`mailto:${SUPPORT_EMAIL}`}
+                  className="flex items-center justify-center w-full h-9 rounded-xl bg-primary text-primary-foreground text-sm font-bold hover:bg-primary/90 transition-all">
+                  Escribir a soporte
+                </a>
+                <a
+                  href={WHATSAPP_URL}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center justify-center w-full h-9 rounded-xl bg-muted/60 dark:bg-slate-800 text-foreground text-sm font-bold hover:bg-muted dark:hover:bg-slate-700 transition-all">
+                  WhatsApp
+                </a>
+              </div>
+              <div className="h-px bg-border/40" />
+              <RouterLink
+                to="/admin/help"
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-primary hover:text-primary/80 transition-colors">
+                <HelpCircle size={12} /> Ir al Centro de ayuda
+              </RouterLink>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

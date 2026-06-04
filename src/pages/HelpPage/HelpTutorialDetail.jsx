@@ -2,28 +2,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, Link as RouterLink } from "react-router-dom";
 import {
-  Box,
-  Typography,
-  Chip,
-  Stack,
-  Sheet,
-  Skeleton,
-  Card,
-  CardContent,
-  Link as JoyLink,
-  AspectRatio,
-  Divider,
-  Button,
-} from "@mui/joy";
-import PlayCircleOutlineRoundedIcon from "@mui/icons-material/PlayCircleOutlineRounded";
-import DownloadRoundedIcon from "@mui/icons-material/DownloadRounded";
-import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
-import AccessTimeRoundedIcon from "@mui/icons-material/AccessTimeRounded";
-import FolderOpenRoundedIcon from "@mui/icons-material/FolderOpenRounded";
-import ChecklistRoundedIcon from "@mui/icons-material/ChecklistRounded";
+  ArrowLeft, PlayCircle, Download, Clock, FolderOpen,
+  List, ExternalLink, AlertTriangle,
+} from "lucide-react";
 import { getTutorialBySlug } from "@/services/help.api";
 
-/* Helpers */
+/* ── Helpers ───────────────────────────────────────────────── */
 function minutesFromSeconds(s) {
   const n = Number(s || 0);
   if (!n) return null;
@@ -31,450 +15,297 @@ function minutesFromSeconds(s) {
 }
 function fmtDate(d) {
   try {
-    return new Date(d).toLocaleDateString(undefined, {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  } catch {
-    return "";
-  }
+    return new Date(d).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+  } catch { return ""; }
 }
-function isYouTube(url = "") {
-  return /youtu\.be|youtube\.com/i.test(url);
-}
-function isVimeo(url = "") {
-  return /vimeo\.com/i.test(url);
-}
+function isYouTube(url = "") { return /youtu\.be|youtube\.com/i.test(url); }
+function isVimeo(url = "")   { return /vimeo\.com/i.test(url); }
 function toYouTubeEmbed(url) {
   try {
-    // soporta youtu.be/<id> o youtube.com/watch?v=<id>
     const u = new URL(url);
-    if (u.hostname.includes("youtu.be")) {
-      return `https://www.youtube.com/embed/${u.pathname.replace("/", "")}`;
-    }
+    if (u.hostname.includes("youtu.be")) return `https://www.youtube.com/embed/${u.pathname.replace("/", "")}`;
     const id = u.searchParams.get("v");
     return id ? `https://www.youtube.com/embed/${id}` : url;
-  } catch {
-    return url;
-  }
+  } catch { return url; }
 }
 function toVimeoEmbed(url) {
   try {
-    const u = new URL(url);
+    const u  = new URL(url);
     const id = u.pathname.split("/").filter(Boolean).pop();
     return id ? `https://player.vimeo.com/video/${id}` : url;
-  } catch {
-    return url;
-  }
+  } catch { return url; }
 }
 
 export default function HelpTutorialDetail() {
   const { slug } = useParams();
   const [loading, setLoading] = useState(true);
-  const [tut, setTut] = useState(null);
-  const [error, setError] = useState(null);
+  const [tut,     setTut]     = useState(null);
+  const [error,   setError]   = useState(null);
 
-  const durationMin = useMemo(
-    () => minutesFromSeconds(tut?.duration_seconds),
-    [tut?.duration_seconds]
-  );
-
-  const canEmbed = useMemo(() => {
-    if (!tut?.videoUrl) return false;
-    return isYouTube(tut.videoUrl) || isVimeo(tut.videoUrl);
-  }, [tut?.videoUrl]);
-
-  const embedSrc = useMemo(() => {
+  const durationMin = useMemo(() => minutesFromSeconds(tut?.duration_seconds), [tut?.duration_seconds]);
+  const canEmbed    = useMemo(() => !!tut?.videoUrl && (isYouTube(tut.videoUrl) || isVimeo(tut.videoUrl)), [tut?.videoUrl]);
+  const embedSrc    = useMemo(() => {
     if (!tut?.videoUrl) return null;
     if (isYouTube(tut.videoUrl)) return toYouTubeEmbed(tut.videoUrl);
-    if (isVimeo(tut.videoUrl)) return toVimeoEmbed(tut.videoUrl);
+    if (isVimeo(tut.videoUrl))   return toVimeoEmbed(tut.videoUrl);
     return null;
   }, [tut?.videoUrl]);
 
   useEffect(() => {
     (async () => {
-      setLoading(true);
-      setError(null);
+      setLoading(true); setError(null);
       try {
         const t = await getTutorialBySlug(slug);
         setTut(t);
-      } catch (e) {
-        setError(e?.message || "No se pudo cargar el tutorial.");
-      } finally {
-        setLoading(false);
-      }
+      } catch (e) { setError(e?.message || "No se pudo cargar el tutorial."); }
+      finally { setLoading(false); }
     })();
   }, [slug]);
 
   return (
-    <Box sx={{ pb: 6 }}>
-      {/* Encabezado / breadcrumb */}
-      <Sheet
-        variant="plain"
-        sx={{
-          borderBottom: "1px solid",
-          borderColor: "neutral.outlinedBorder",
-          bgcolor: "background.body",
-        }}>
-        <Box
-          sx={{
-            maxWidth: 1120,
-            mx: "auto",
-            px: { xs: 2, md: 3 },
-            py: { xs: 3, md: 4 },
-          }}>
-          <Stack spacing={1.5}>
-            <Button
-              size="sm"
-              variant="plain"
-              component={RouterLink}
-              to="/admin/help/tutorials"
-              startDecorator={<ArrowBackRoundedIcon />}
-              sx={{ alignSelf: "flex-start" }}>
-              Volver a tutoriales
-            </Button>
+    <div className="pb-10 animate-in fade-in duration-300">
 
-            {loading ? (
-              <>
-                <Skeleton level="h2" width="60%" />
-                <Stack direction="row" spacing={1}>
-                  <Skeleton
-                    variant="rectangular"
-                    width={80}
-                    height={28}
-                    sx={{ borderRadius: 999 }}
-                  />
-                  <Skeleton
-                    variant="rectangular"
-                    width={80}
-                    height={28}
-                    sx={{ borderRadius: 999 }}
-                  />
-                </Stack>
-              </>
-            ) : error ? (
-              <Typography level="body-md" color="danger">
-                {error}
-              </Typography>
-            ) : (
-              <>
-                <Typography
-                  level="h1"
-                  sx={{ fontSize: { xs: 26, md: 32 }, fontWeight: 800 }}>
-                  {tut?.title}
-                </Typography>
-                <Stack
-                  direction="row"
-                  spacing={1}
-                  alignItems="center"
-                  sx={{ flexWrap: "wrap" }}>
-                  {tut?.category && <Chip variant="soft">{tut.category}</Chip>}
-                  {durationMin && (
-                    <Chip
-                      variant="soft"
-                      color="neutral"
-                      startDecorator={<AccessTimeRoundedIcon />}>
-                      {durationMin} min
-                    </Chip>
-                  )}
-                  {tut?.published_at && (
-                    <Chip size="sm" variant="soft" color="neutral">
-                      Publicado: {fmtDate(tut.published_at)}
-                    </Chip>
-                  )}
-                </Stack>
-              </>
-            )}
-          </Stack>
-        </Box>
-      </Sheet>
+      {/* ── Header ─────────────────────────────────────────── */}
+      <div className="border-b border-border/60 bg-background/80 backdrop-blur-sm">
+        <div className="max-w-7xl mx-auto px-4 md:px-8 py-5 space-y-3">
+          <RouterLink
+            to="/admin/help/tutorials"
+            className="inline-flex items-center gap-1.5 text-sm font-bold text-muted-foreground hover:text-foreground transition-colors">
+            <ArrowLeft size={15} /> Volver a tutoriales
+          </RouterLink>
 
-      {/* Media + Layout 2 columnas */}
-      <Box sx={{ maxWidth: 1120, mx: "auto", px: { xs: 2, md: 3 }, mt: 3 }}>
-        {/* Portada (video embed o imagen) */}
-        <Card
-          variant="plain"
-          sx={{
-            border: "1px solid",
-            borderColor: "neutral.outlinedBorder",
-            borderRadius: "xl",
-            overflow: "hidden",
-            boxShadow: "sm",
-          }}>
-          <CardContent sx={{ p: { xs: 1, md: 1.5 } }}>
-            {loading ? (
-              <Skeleton
-                variant="rectangular"
-                height={280}
-                sx={{ borderRadius: "md" }}
-              />
-            ) : tut?.imageUrl || canEmbed ? (
-              <AspectRatio
-                ratio={16 / 9}
-                sx={{ borderRadius: "md", overflow: "hidden" }}>
-                {canEmbed ? (
-                  <iframe
-                    src={embedSrc}
-                    title={tut?.title || "video"}
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                    style={{ border: 0, width: "100%", height: "100%" }}
-                  />
-                ) : (
-                  <img
-                    src={tut?.imageUrl}
-                    alt={tut?.title || "cover"}
-                    loading="lazy"
-                  />
+          {loading ? (
+            <div className="space-y-2 animate-pulse">
+              <div className="h-7 bg-muted/60 dark:bg-slate-700/60 rounded-lg w-3/5" />
+              <div className="flex gap-2">
+                <div className="h-6 bg-muted/50 rounded-full w-20" />
+                <div className="h-6 bg-muted/50 rounded-full w-16" />
+              </div>
+            </div>
+          ) : error ? (
+            <p className="text-sm text-rose-600 dark:text-rose-400">{error}</p>
+          ) : (
+            <div className="space-y-2">
+              <h1 className="text-2xl md:text-3xl font-black tracking-tight leading-snug">
+                {tut?.title}
+              </h1>
+              <div className="flex flex-wrap items-center gap-2">
+                {tut?.category && (
+                  <span className="inline-block px-2.5 py-1 rounded-full text-xs font-black bg-primary/10 text-primary">
+                    {tut.category}
+                  </span>
                 )}
-              </AspectRatio>
-            ) : (
-              <Sheet
-                variant="soft"
-                sx={{
-                  height: 220,
-                  display: "grid",
-                  placeItems: "center",
-                  borderRadius: "md",
-                }}>
-                <PlayCircleOutlineRoundedIcon />
-                <Typography level="body-sm" color="neutral">
-                  Sin portada
-                </Typography>
-              </Sheet>
-            )}
-          </CardContent>
-        </Card>
+                {durationMin && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-muted/60 text-muted-foreground">
+                    <Clock size={10} /> {durationMin} min
+                  </span>
+                )}
+                {tut?.published_at && (
+                  <span className="inline-block px-2.5 py-1 rounded-full text-xs font-bold bg-muted/60 text-muted-foreground">
+                    Publicado: {fmtDate(tut.published_at)}
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
 
-        {/* Grid de contenido */}
-        <Stack
-          direction={{ xs: "column", lg: "row" }}
-          spacing={{ xs: 2, lg: 3 }}
-          sx={{ mt: 2 }}>
+      {/* ── Content ────────────────────────────────────────── */}
+      <div className="max-w-7xl mx-auto px-4 md:px-8 mt-6 space-y-4">
+
+        {/* Portada: video embed o imagen */}
+        <div className="bg-card dark:bg-slate-900/40 border border-border/60 rounded-3xl overflow-hidden shadow-sm">
+          {loading ? (
+            <div className="bg-muted/50 animate-pulse" style={{ aspectRatio: "16/9" }} />
+          ) : (canEmbed || tut?.imageUrl) ? (
+            <div className="overflow-hidden" style={{ aspectRatio: "16/9" }}>
+              {canEmbed ? (
+                <iframe
+                  src={embedSrc}
+                  title={tut?.title || "video"}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  className="w-full h-full border-0 block"
+                />
+              ) : (
+                <img
+                  src={tut?.imageUrl}
+                  alt={tut?.title || "cover"}
+                  loading="lazy"
+                  className="w-full h-full object-cover"
+                />
+              )}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center gap-2 py-16 text-muted-foreground/40" style={{ aspectRatio: "16/9" }}>
+              <PlayCircle size={48} />
+              <p className="text-sm text-muted-foreground">Sin portada</p>
+            </div>
+          )}
+        </div>
+
+        {/* Grid 2 columnas */}
+        <div className="flex flex-col lg:flex-row gap-4">
+
           {/* Columna principal */}
-          <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Card
-              variant="plain"
-              sx={{
-                border: "1px solid",
-                borderColor: "neutral.outlinedBorder",
-                borderRadius: "xl",
-                boxShadow: "sm",
-                height: "100%",
-              }}>
-              <CardContent sx={{ p: { xs: 2, md: 2.25 } }}>
-                {loading ? (
-                  <>
-                    <Skeleton level="title-md" width="40%" />
-                    <Skeleton level="body-md" />
-                    <Skeleton level="body-md" width="95%" />
-                    <Skeleton level="body-md" width="80%" />
-                  </>
-                ) : (
-                  <>
-                    {tut?.description && (
-                      <>
-                        <Typography level="title-md">Descripción</Typography>
-                        <Typography
-                          level="body-md"
-                          sx={{ mt: 0.5, whiteSpace: "pre-wrap" }}>
-                          {tut.description}
-                        </Typography>
-                        <Divider sx={{ my: 2 }} />
-                      </>
-                    )}
+          <div className="flex-1 min-w-0">
+            <div className="bg-card dark:bg-slate-900/40 border border-border/60 rounded-3xl shadow-sm p-5 md:p-6">
+              {loading ? (
+                <div className="space-y-3 animate-pulse">
+                  <div className="h-4 bg-muted/60 rounded-lg w-2/5" />
+                  <div className="h-3 bg-muted/40 rounded-lg" />
+                  <div className="h-3 bg-muted/40 rounded-lg w-11/12" />
+                  <div className="h-3 bg-muted/40 rounded-lg w-4/5" />
+                </div>
+              ) : error ? (
+                <div className="flex items-center gap-3 p-3 bg-rose-50 dark:bg-rose-900/20 border border-rose-200/60 rounded-2xl">
+                  <AlertTriangle size={16} className="text-rose-500 shrink-0" />
+                  <p className="text-sm text-rose-700 dark:text-rose-300">{error}</p>
+                </div>
+              ) : (
+                <>
+                  {/* Descripción */}
+                  {tut?.description && (
+                    <>
+                      <p className="font-black text-sm mb-2">Descripción</p>
+                      <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">
+                        {tut.description}
+                      </p>
+                      <div className="h-px bg-border/40 my-5" />
+                    </>
+                  )}
 
-                    {/* Pasos */}
-                    {Array.isArray(tut?.steps) && tut.steps.length > 0 ? (
-                      <>
-                        <Typography
-                          level="title-md"
-                          startDecorator={<ChecklistRoundedIcon />}>
-                          Pasos
-                        </Typography>
-                        <Stack spacing={1.25} sx={{ mt: 1 }}>
-                          {tut.steps
-                            .sort((a, b) => (a.step_no || 0) - (b.step_no || 0))
-                            .map((s, idx) => (
-                              <Card
-                                key={s.id || idx}
-                                variant="soft"
-                                sx={{
-                                  borderRadius: "lg",
-                                  border: "1px solid",
-                                  borderColor: "neutral.outlinedBorder",
-                                  bgcolor: "background.body",
-                                }}>
-                                <CardContent sx={{ p: 1.5 }}>
-                                  <Stack
-                                    direction="row"
-                                    spacing={1}
-                                    alignItems="center">
-                                    <Chip
-                                      size="sm"
-                                      variant="solid"
-                                      color="primary"
-                                      sx={{ borderRadius: "999px" }}>
-                                      Paso {s.step_no ?? idx + 1}
-                                    </Chip>
-                                    <Typography level="title-sm">
-                                      {s.title ||
-                                        `Paso ${s.step_no ?? idx + 1}`}
-                                    </Typography>
-                                  </Stack>
-
-                                  {s.body && (
-                                    <Typography
-                                      level="body-sm"
-                                      sx={{ mt: 0.5, whiteSpace: "pre-wrap" }}>
-                                      {s.body}
-                                    </Typography>
-                                  )}
-
-                                  {s.imageUrl && (
-                                    <AspectRatio
-                                      ratio={16 / 9}
-                                      sx={{ mt: 1, borderRadius: "md" }}>
-                                      <img
-                                        src={s.imageUrl}
-                                        alt={s.title || ""}
-                                        loading="lazy"
-                                      />
-                                    </AspectRatio>
-                                  )}
-                                </CardContent>
-                              </Card>
-                            ))}
-                        </Stack>
-                      </>
-                    ) : (
-                      <Typography level="body-sm" color="neutral">
-                        Este tutorial no incluye pasos detallados.
-                      </Typography>
-                    )}
-                  </>
-                )}
-              </CardContent>
-            </Card>
-          </Box>
+                  {/* Pasos */}
+                  {Array.isArray(tut?.steps) && tut.steps.length > 0 ? (
+                    <>
+                      <div className="flex items-center gap-2 mb-3">
+                        <List size={15} className="text-primary" />
+                        <p className="font-black text-sm">Pasos</p>
+                      </div>
+                      <div className="space-y-3">
+                        {[...tut.steps]
+                          .sort((a, b) => (a.step_no || 0) - (b.step_no || 0))
+                          .map((s, idx) => (
+                            <div
+                              key={s.id || idx}
+                              className="bg-muted/20 dark:bg-slate-800/30 border border-border/40 rounded-2xl p-4">
+                              <div className="flex items-center gap-2 mb-2">
+                                <span className="inline-flex items-center justify-center min-w-[24px] h-6 px-2 rounded-full text-[10px] font-black bg-primary text-primary-foreground">
+                                  {s.step_no ?? idx + 1}
+                                </span>
+                                <p className="font-bold text-sm">
+                                  {s.title || `Paso ${s.step_no ?? idx + 1}`}
+                                </p>
+                              </div>
+                              {s.body && (
+                                <p className="text-sm text-muted-foreground whitespace-pre-wrap pl-8">
+                                  {s.body}
+                                </p>
+                              )}
+                              {s.imageUrl && (
+                                <div className="mt-3 rounded-xl overflow-hidden" style={{ aspectRatio: "16/9" }}>
+                                  <img
+                                    src={s.imageUrl}
+                                    alt={s.title || ""}
+                                    loading="lazy"
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                      </div>
+                    </>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      Este tutorial no incluye pasos detallados.
+                    </p>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
 
           {/* Sidebar */}
-          <Box sx={{ width: { xs: "100%", lg: 320 }, flexShrink: 0 }}>
-            <Stack spacing={2}>
-              {/* CTA / Acciones */}
-              <Card
-                variant="plain"
-                sx={{
-                  border: "1px solid",
-                  borderColor: "neutral.outlinedBorder",
-                  borderRadius: "xl",
-                  boxShadow: "sm",
-                }}>
-                <CardContent sx={{ p: 2 }}>
-                  <Stack spacing={1}>
-                    {tut?.videoUrl && (
-                      <Button
-                        fullWidth
-                        component="a"
-                        href={tut.videoUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        startDecorator={<PlayCircleOutlineRoundedIcon />}
-                        sx={{ borderRadius: "999px" }}>
-                        Abrir video
-                      </Button>
-                    )}
-                    {tut?.source_url && (
-                      <Button
-                        fullWidth
-                        variant="soft"
-                        component="a"
-                        href={tut.source_url}
-                        target="_blank"
-                        rel="noreferrer"
-                        sx={{ borderRadius: "999px" }}>
-                        Ver fuente
-                      </Button>
-                    )}
-                  </Stack>
-                </CardContent>
-              </Card>
+          <div className="w-full lg:w-72 shrink-0 space-y-4">
 
-              {/* Metadatos */}
-              <Card
-                variant="plain"
-                sx={{
-                  border: "1px solid",
-                  borderColor: "neutral.outlinedBorder",
-                  borderRadius: "xl",
-                  boxShadow: "sm",
-                }}>
-                <CardContent sx={{ p: 2 }}>
-                  <Typography level="title-sm">Información</Typography>
-                  <Divider sx={{ my: 1 }} />
-                  <Stack spacing={0.5}>
-                    {tut?.category && (
-                      <Stack direction="row" spacing={1} alignItems="center">
-                        <FolderOpenRoundedIcon fontSize="sm" />
-                        <Typography level="body-sm">{tut.category}</Typography>
-                      </Stack>
-                    )}
-                    {durationMin && (
-                      <Stack direction="row" spacing={1} alignItems="center">
-                        <AccessTimeRoundedIcon fontSize="sm" />
-                        <Typography level="body-sm">
-                          {durationMin} min
-                        </Typography>
-                      </Stack>
-                    )}
-                    {tut?.published_at && (
-                      <Typography level="body-sm" color="neutral">
-                        Publicado: {fmtDate(tut.published_at)}
-                      </Typography>
-                    )}
-                    {tut?.updated_at && (
-                      <Typography level="body-sm" color="neutral">
-                        Actualizado: {fmtDate(tut.updated_at)}
-                      </Typography>
-                    )}
-                  </Stack>
-                </CardContent>
-              </Card>
-
-              {/* Adjuntos */}
-              {Array.isArray(tut?.attachments) &&
-                tut.attachments.length > 0 && (
-                  <Card
-                    variant="plain"
-                    sx={{
-                      border: "1px solid",
-                      borderColor: "neutral.outlinedBorder",
-                      borderRadius: "xl",
-                      boxShadow: "sm",
-                    }}>
-                    <CardContent sx={{ p: 2 }}>
-                      <Typography level="title-sm">Archivos</Typography>
-                      <Divider sx={{ my: 1 }} />
-                      <Stack spacing={0.75}>
-                        {tut.attachments.map((a) => (
-                          <JoyLink
-                            key={a.id}
-                            href={a.url}
-                            target="_blank"
-                            rel="noreferrer"
-                            startDecorator={<DownloadRoundedIcon />}>
-                            {a.name || a.url}
-                          </JoyLink>
-                        ))}
-                      </Stack>
-                    </CardContent>
-                  </Card>
+            {/* CTAs */}
+            {!loading && (tut?.videoUrl || tut?.source_url) && (
+              <div className="bg-card dark:bg-slate-900/40 border border-border/60 rounded-3xl shadow-sm p-4 space-y-2">
+                {tut.videoUrl && (
+                  <a
+                    href={tut.videoUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center justify-center gap-2 w-full h-9 rounded-xl bg-primary text-primary-foreground text-sm font-bold hover:bg-primary/90 transition-all">
+                    <PlayCircle size={15} /> Abrir video
+                  </a>
                 )}
-            </Stack>
-          </Box>
-        </Stack>
-      </Box>
-    </Box>
+                {tut.source_url && (
+                  <a
+                    href={tut.source_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center justify-center gap-2 w-full h-9 rounded-xl bg-muted/60 dark:bg-slate-800 text-foreground text-sm font-bold hover:bg-muted dark:hover:bg-slate-700 transition-all">
+                    <ExternalLink size={14} /> Ver fuente
+                  </a>
+                )}
+              </div>
+            )}
+
+            {/* Metadatos */}
+            {!loading && tut && (
+              <div className="bg-card dark:bg-slate-900/40 border border-border/60 rounded-3xl shadow-sm p-4 space-y-3">
+                <p className="font-black text-sm">Información</p>
+                <div className="h-px bg-border/40" />
+                <div className="space-y-2">
+                  {tut.category && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <FolderOpen size={13} className="shrink-0" /> {tut.category}
+                    </div>
+                  )}
+                  {durationMin && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Clock size={13} className="shrink-0" /> {durationMin} min
+                    </div>
+                  )}
+                  {tut.published_at && (
+                    <p className="text-xs text-muted-foreground">
+                      Publicado: {fmtDate(tut.published_at)}
+                    </p>
+                  )}
+                  {tut.updated_at && (
+                    <p className="text-xs text-muted-foreground">
+                      Actualizado: {fmtDate(tut.updated_at)}
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Adjuntos */}
+            {!loading && Array.isArray(tut?.attachments) && tut.attachments.length > 0 && (
+              <div className="bg-card dark:bg-slate-900/40 border border-border/60 rounded-3xl shadow-sm p-4 space-y-3">
+                <p className="font-black text-sm">Archivos</p>
+                <div className="h-px bg-border/40" />
+                <div className="space-y-1.5">
+                  {tut.attachments.map((a) => (
+                    <a
+                      key={a.id}
+                      href={a.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1.5 text-xs font-bold text-primary hover:text-primary/80 transition-colors">
+                      <Download size={11} /> {a.name || a.url}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

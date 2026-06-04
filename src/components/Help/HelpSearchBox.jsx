@@ -1,17 +1,5 @@
 import { useRef, useState } from "react";
-import {
-  Box,
-  Sheet,
-  Input,
-  Button,
-  List,
-  ListItem,
-  ListItemButton,
-  Stack,
-  Typography,
-  Skeleton,
-} from "@mui/joy";
-import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
+import { Search, Loader2, HelpCircle, PlayCircle } from "lucide-react";
 import { listFaqs, listTutorials } from "@/services/help.api";
 
 function useDebounce() {
@@ -28,7 +16,6 @@ export default function HelpSearchBox({
   placeholder = "Busca artículos y mucho más",
   onSubmitNavigate = (q) =>
     (window.location.href = `/admin/help/search?q=${encodeURIComponent(q)}`),
-  fullWidth = true,
 }) {
   const [q, setQ] = useState(defaultValue);
   const [open, setOpen] = useState(false);
@@ -67,102 +54,74 @@ export default function HelpSearchBox({
     if (term.length >= 2) onSubmitNavigate(term);
   };
 
+  const hasSuggestions = sug.faqs.length > 0 || sug.tutorials.length > 0;
+
   return (
-    <Box
-      sx={{
-        width: fullWidth ? "100%" : 680,
-        maxWidth: 680,
-        position: "relative",
-      }}>
-      <form onSubmit={handleSubmit} style={{ display: "flex", gap: 8 }}>
-        <Input
-          value={q}
-          onChange={onChange}
-          onFocus={() => setOpen((q?.length ?? 0) >= 2)}
-          onBlur={() => setTimeout(() => setOpen(false), 120)}
-          size="lg"
-          placeholder={placeholder}
-          startDecorator={<SearchRoundedIcon />}
-          sx={{
-            "--Input-radius": "999px",
-            "--Input-minHeight": "56px",
-            flex: 1,
-            bgcolor: "background.body",
-          }}
-        />
-        <Button
+    <div className="w-full max-w-2xl relative">
+      <form onSubmit={handleSubmit} className="flex gap-2">
+        <div className="relative flex-1 group">
+          <Search
+            size={18}
+            className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/50 group-focus-within:text-primary transition-colors pointer-events-none"
+          />
+          <input
+            type="text"
+            value={q}
+            onChange={onChange}
+            onFocus={() => q.length >= 2 && setOpen(true)}
+            onBlur={() => setTimeout(() => setOpen(false), 150)}
+            placeholder={placeholder}
+            className="w-full h-12 bg-card dark:bg-slate-900/60 border border-border/60 rounded-2xl pl-11 pr-4 text-sm outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/15 transition-all placeholder:text-muted-foreground/50 shadow-sm"
+          />
+        </div>
+        <button
           type="submit"
-          size="lg"
-          sx={{ borderRadius: "999px", px: 2.5, minWidth: 56 }}>
-          <SearchRoundedIcon />
-        </Button>
+          className="h-12 px-5 inline-flex items-center justify-center rounded-2xl bg-primary text-primary-foreground font-bold text-sm shadow-md shadow-primary/20 hover:bg-primary/90 transition-all">
+          <Search size={18} />
+        </button>
       </form>
 
+      {/* Dropdown de sugerencias */}
       {open && (
-        <Sheet
-          variant="outlined"
-          sx={{
-            position: "absolute",
-            top: "calc(100% + 8px)",
-            left: 0,
-            right: 0,
-            borderRadius: "lg",
-            p: 0,
-            zIndex: 1200,
-            bgcolor: "background.body",
-            boxShadow: "lg",
-          }}>
-          <Box
-            sx={{
-              px: 1.25,
-              py: 1,
-              borderBottom: "1px solid",
-              borderColor: "neutral.outlinedBorder",
-            }}>
-            <Typography level="body-sm" sx={{ fontWeight: 600 }}>
+        <div className="absolute top-[calc(100%+8px)] left-0 right-0 z-50 bg-card dark:bg-slate-900 border border-border/60 rounded-2xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
+          <div className="px-4 py-2.5 border-b border-border/50">
+            <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70">
               Principales resultados
-            </Typography>
-          </Box>
-          <Box sx={{ p: 1 }}>
+            </span>
+          </div>
+          <div className="p-2">
             {loading ? (
-              <Stack spacing={1}>
-                {[...Array(4)].map((_, i) => (
-                  <Skeleton key={i} level="body-sm" />
-                ))}
-              </Stack>
-            ) : !sug.faqs.length && !sug.tutorials.length ? (
-              <Typography level="body-sm" color="neutral">
-                Sin coincidencias.
-              </Typography>
+              <div className="flex items-center gap-2 px-3 py-3 text-muted-foreground">
+                <Loader2 size={14} className="animate-spin" />
+                <span className="text-sm">Buscando...</span>
+              </div>
+            ) : !hasSuggestions ? (
+              <p className="px-3 py-3 text-sm text-muted-foreground">Sin coincidencias.</p>
             ) : (
-              <List sx={{ py: 0 }}>
+              <div className="space-y-0.5">
                 {sug.faqs.map((f) => (
-                  <ListItem key={`faq-${f.id}`} sx={{ py: 0 }}>
-                    <ListItemButton
-                      component="a"
-                      href={`/admin/help/faqs/${encodeURIComponent(
-                        f.slug || f.id
-                      )}`}>
-                      {f.question}
-                    </ListItemButton>
-                  </ListItem>
+                  <a
+                    key={`faq-${f.id}`}
+                    href={`/admin/help/faqs/${encodeURIComponent(f.slug || f.id)}`}
+                    className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-muted/60 dark:hover:bg-slate-800/60 transition-colors text-sm">
+                    <HelpCircle size={13} className="text-primary/60 shrink-0" />
+                    <span className="truncate">{f.question}</span>
+                  </a>
                 ))}
                 {sug.tutorials.map((t) => (
-                  <ListItem key={`tut-${t.id}`} sx={{ py: 0 }}>
-                    <ListItemButton
-                      component="a"
-                      href={`/admin/help/tutorials/${encodeURIComponent(
-                        t.slug || t.id
-                      )}`}>
-                      {t.title}
-                    </ListItemButton>
-                  </ListItem>
+                  <a
+                    key={`tut-${t.id}`}
+                    href={`/admin/help/tutorials/${encodeURIComponent(t.slug || t.id)}`}
+                    className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-muted/60 dark:hover:bg-slate-800/60 transition-colors text-sm">
+                    <PlayCircle size={13} className="text-emerald-500 shrink-0" />
+                    <span className="truncate">{t.title}</span>
+                  </a>
                 ))}
-              </List>
+              </div>
             )}
-          </Box>
-        </Sheet>
+          </div>
+        </div>
       )}
-    </Box>
+    </div>
   );
 }
