@@ -41,7 +41,7 @@ export async function registrarRegreso(formData) {
 export async function getOperacionActiva(empleadoId) {
   try {
     const res = await fetchConToken(
-      `${endpoints.getOperacionActiva}/${empleadoId}`,
+      `${endpoints.getOperacionActiva}${empleadoId}`,
     );
     if (!res.ok) return null;
     return await res.json();
