@@ -1,4 +1,4 @@
-import { endpoints } from "../config/variables";
+import { endpoints, API_BASE_URL } from "../config/variables";
 import { fetchConToken } from "../utils/ApiHelper";
 
 // 🚗 REGISTRAR SALIDA
@@ -53,7 +53,9 @@ export async function getOperacionActiva(empleadoId) {
 
 export async function getReservaActivaVehiculo(vehiculoId) {
   try {
-    const res = await fetchConToken(`/api/reservas/activa/${vehiculoId}`);
+    const res = await fetchConToken(
+      `${API_BASE_URL}/reservas/activa/${vehiculoId}`,
+    );
 
     if (!res.ok) throw new Error();
 
@@ -67,7 +69,7 @@ export async function getReservaActivaVehiculo(vehiculoId) {
 export async function getUltimoEstadoVehiculo(vehiculoId) {
   try {
     const res = await fetchConToken(
-      `/api/operaciones/vehiculo/${vehiculoId}/ultimo-estado`,
+      `${API_BASE_URL}/operaciones/vehiculo/${vehiculoId}/ultimo-estado`,
     );
 
     if (!res.ok) throw new Error();
