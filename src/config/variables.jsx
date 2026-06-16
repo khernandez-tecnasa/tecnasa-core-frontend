@@ -27,7 +27,7 @@ export const endpoints = {
   getUsersById: `${API_BASE_URL}/auth/usuarios/`,
   deleteUser: `${API_BASE_URL}/auth/usuarios/`,
   restoreUser: `${API_BASE_URL}/auth/usuarios/`,
-  updateMyAccount: `${API_BASE_URL}/auth/perfil`,
+  updateMyAccount: `${API_BASE_URL}/auth/usuarios/perfil/`,
   resetPassword: `${API_BASE_URL}/auth/reset-password`,
   forgotPassword: `${API_BASE_URL}/auth/forgot-password`,
   getUbicaciones: `${API_BASE_URL}/vehiculos/ubicaciones`,

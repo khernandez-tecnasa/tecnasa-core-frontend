@@ -7,7 +7,7 @@ import { Key, Eye, EyeOff, Save, CheckCircle2, Circle } from "lucide-react";
 import ConfirmModal from "../../ui/ConfirmModal";
 import { useToast } from "../../../context/ToastContext";
 import { useAuth } from "../../../context/AuthContext";
-import { updateUser } from "../../../services/AuthServices";
+import { updateMyAccount } from "../../../services/AuthServices";
 
 /* ── Strength ── */
 function getStrength(pass) {
@@ -163,20 +163,17 @@ export default function SecuritySettingsForm({ user }) {
     setConfirmOpen(false);
     if (!pending) return;
     try {
-      const data = await updateUser({
+      const data = await updateMyAccount({
         id_usuario: user.id_usuario || user.id,
-        email: pending.email,
         password: pending.password,
       });
-      if (data?.error) {
-        showToast(data.error, "danger");
+      if (!data || data?.error) {
+        showToast(data?.error || t("common.network_error"), "danger");
       } else {
         showToast(
           "Contraseña actualizada. Inicia sesión con tu nueva contraseña.",
           "success",
         );
-        // El backend invalida el token actual al cambiar la contraseña.
-        // Cerramos sesión explícitamente para que el usuario inicie limpio.
         setTimeout(() => logout(), 1800);
       }
     } catch {
