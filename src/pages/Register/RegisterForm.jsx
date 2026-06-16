@@ -10,6 +10,7 @@ import RegresoForm from "../../components/RegisterForm/RegisterRegresoForm";
 import {
   obtenerVehiculos,
   resolveVehiculoFromQrToken,
+  getVehiculoPublicInfo,
 } from "../../services/VehiculosService";
 import { obtenerRegistroActivo } from "../../services/RegistrosService";
 import { getEmailSupervisor } from "../../services/AuthServices";
@@ -33,6 +34,7 @@ export default function RegisterForm() {
 
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token");
+  const vehiculoIdParam = searchParams.get("vehiculo_id");
 
   // Helper para extraer id usable por la API (fallback a null)
   const getUserIdForApi = () =>
@@ -81,7 +83,16 @@ export default function RegisterForm() {
               });
               return null;
             })
-          : Promise.resolve(null);
+          : vehiculoIdParam
+            ? getVehiculoPublicInfo(vehiculoIdParam)
+                .then((v) => ({
+                  id_vehiculo: v.id,
+                  placa: v.placa,
+                  marca: v.marca ?? null,
+                  modelo: v.modelo ?? null,
+                }))
+                .catch(() => null)
+            : Promise.resolve(null);
 
         const [registro, vehs, vehFromToken] = await Promise.all([
           obtenerRegistroActivo(userId),
@@ -108,7 +119,7 @@ export default function RegisterForm() {
 
     loadAll();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [checkingSession, token, userData]);
+  }, [checkingSession, token, vehiculoIdParam, userData]);
 
   // Cargar email del supervisor si el usuario existe
   useEffect(() => {

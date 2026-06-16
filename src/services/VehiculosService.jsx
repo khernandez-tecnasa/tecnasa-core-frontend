@@ -4,6 +4,13 @@ import { fetchConToken } from "../utils/ApiHelper";
 
 const API_BASE = import.meta.env.VITE_API_URL;
 
+// Info pública de un vehículo — sin auth, para página QR
+export async function getVehiculoPublicInfo(id) {
+  const res = await fetch(`${API_BASE}/vehiculos/${id}/public-info`);
+  if (!res.ok) throw new Error("Vehículo no encontrado");
+  return res.json();
+}
+
 export async function obtenerVehiculos() {
   try {
     const res = await fetchConToken(endpoints.getVehiculos, {
