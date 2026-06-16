@@ -396,7 +396,6 @@ export default function OperacionForm({
               onChange={setImages}
               maxCount={4}
               maxSizeMB={6}
-              capture="environment"
             />
           </div>
         </div>
