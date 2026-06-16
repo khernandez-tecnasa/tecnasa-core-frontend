@@ -6,7 +6,8 @@ import { Key, Eye, EyeOff, Save, CheckCircle2, Circle } from "lucide-react";
 
 import ConfirmModal from "../../ui/ConfirmModal";
 import { useToast } from "../../../context/ToastContext";
-import { updateUser } from "../../../services/AuthServices";
+import { useAuth } from "../../../context/AuthContext";
+import { updateMyAccount } from "../../../services/AuthServices";
 
 /* ── Strength ── */
 function getStrength(pass) {
@@ -110,6 +111,7 @@ function ReqItem({ ok, label }) {
 export default function SecuritySettingsForm({ user }) {
   const { t } = useTranslation();
   const { showToast } = useToast();
+  const { logout } = useAuth();
 
   const [showPass, setShowPass] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -161,16 +163,18 @@ export default function SecuritySettingsForm({ user }) {
     setConfirmOpen(false);
     if (!pending) return;
     try {
-      const data = await updateUser({
+      const data = await updateMyAccount({
         id_usuario: user.id_usuario || user.id,
-        email: pending.email,
         password: pending.password,
       });
-      if (data?.error) {
-        showToast(data.error, "danger");
+      if (!data || data?.error) {
+        showToast(data?.error || t("common.network_error"), "danger");
       } else {
-        showToast(t("account.security.success_update"), "success");
-        formik.resetForm();
+        showToast(
+          "Contraseña actualizada. Inicia sesión con tu nueva contraseña.",
+          "success",
+        );
+        setTimeout(() => logout(), 1800);
       }
     } catch {
       showToast(t("common.network_error"), "danger");
