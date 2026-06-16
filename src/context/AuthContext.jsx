@@ -49,7 +49,10 @@ export const AuthProvider = ({ children }) => {
     const handleExpired = () => {
       setUser(null);
       setPermisos([]);
-      navigate("/auth/login");
+      // No redirigir si ya estamos en una ruta pública de auth (ej: reset-password)
+      const publicPaths = ["/auth/reset-password", "/auth/forgot-password", "/auth/login"];
+      const isPublic = publicPaths.some((p) => window.location.pathname.startsWith(p));
+      if (!isPublic) navigate("/auth/login");
     };
     window.addEventListener("auth:sessionExpired", handleExpired);
     return () => window.removeEventListener("auth:sessionExpired", handleExpired);
