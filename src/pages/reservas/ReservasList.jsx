@@ -16,6 +16,7 @@ import {
   AlertTriangle,
   Loader2,
   History,
+  Wrench,
 } from "lucide-react";
 
 import FullCalendar from "@fullcalendar/react";
@@ -85,8 +86,10 @@ export default function ReservasList() {
 
   const formatFechaLocal = (fechaStr) => {
     if (!fechaStr) return "S/F";
-    const [year, month, day] = fechaStr.split("T")[0].split("-");
-    return `${day}/${month}/${year}`;
+    const [fecha, hora] = fechaStr.split("T");
+    const [year, month, day] = fecha.split("-");
+    const hhmm = hora?.slice(0, 5);
+    return hhmm ? `${day}/${month}/${year} ${hhmm}` : `${day}/${month}/${year}`;
   };
 
   const formatFechaISO = (date) => {
@@ -540,10 +543,17 @@ export default function ReservasList() {
                           </div>
                         </div>
                       </div>
-                      <span
-                        className={`px-2.5 py-1 text-[10px] font-black uppercase rounded-full border ${getEstadoStyle(r.estado)}`}>
-                        {r.estado}
-                      </span>
+                      <div className="flex flex-col items-end gap-1">
+                        <span
+                          className={`px-2.5 py-1 text-[10px] font-black uppercase rounded-full border ${getEstadoStyle(r.estado)}`}>
+                          {r.estado}
+                        </span>
+                        {!!r.es_mantenimiento && (
+                          <span className="flex items-center gap-1 px-2 py-0.5 text-[9px] font-bold uppercase rounded-full border bg-orange-100 text-orange-700 border-orange-200">
+                            <Wrench size={9} /> Mantenimiento
+                          </span>
+                        )}
+                      </div>
                     </div>
 
                     <div className="flex items-center gap-2 text-[11px] font-medium text-muted-foreground bg-muted/40 dark:bg-slate-800/50 px-3 py-2 rounded-xl mb-3">
@@ -618,10 +628,17 @@ export default function ReservasList() {
                           </div>
                         </td>
                         <td className="px-6 py-4 text-center">
-                          <span
-                            className={`px-2.5 py-1 text-[10px] font-black uppercase rounded-full border ${getEstadoStyle(r.estado)}`}>
-                            {r.estado}
-                          </span>
+                          <div className="flex flex-col items-center gap-1">
+                            <span
+                              className={`px-2.5 py-1 text-[10px] font-black uppercase rounded-full border ${getEstadoStyle(r.estado)}`}>
+                              {r.estado}
+                            </span>
+                            {!!r.es_mantenimiento && (
+                              <span className="flex items-center gap-1 px-2 py-0.5 text-[9px] font-bold uppercase rounded-full border bg-orange-100 text-orange-700 border-orange-200">
+                                <Wrench size={9} /> Mantenimiento
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex justify-end">

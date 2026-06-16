@@ -18,8 +18,10 @@ function estadoClass(estado) {
 
 const formatFecha = (str) => {
   if (!str) return "S/F";
-  const [y, m, d] = str.split("T")[0].split("-");
-  return `${d}/${m}/${y}`;
+  const [fecha, hora] = str.split("T");
+  const [y, m, d] = fecha.split("-");
+  const hhmm = hora?.slice(0, 5);
+  return hhmm ? `${d}/${m}/${y} ${hhmm}` : `${d}/${m}/${y}`;
 };
 
 export default function ReservaHistorial() {

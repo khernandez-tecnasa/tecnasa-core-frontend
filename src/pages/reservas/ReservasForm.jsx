@@ -13,6 +13,7 @@ import {
   Check,
   ChevronDown,
   AlertCircle,
+  Wrench,
 } from "lucide-react";
 
 import {
@@ -200,11 +201,16 @@ export default function ReservasForm() {
     fecha_inicio: "",
     fecha_fin: "",
     motivo: "",
+    es_mantenimiento: false,
   });
 
   useEffect(() => {
     if (inicio && fin) {
-      setForm((prev) => ({ ...prev, fecha_inicio: inicio, fecha_fin: fin }));
+      setForm((prev) => ({
+        ...prev,
+        fecha_inicio: inicio.length > 10 ? inicio.slice(0, 16) : `${inicio}T00:00`,
+        fecha_fin: fin.length > 10 ? fin.slice(0, 16) : `${fin}T23:59`,
+      }));
     }
   }, []);
 
@@ -231,8 +237,9 @@ export default function ReservasForm() {
         if (data) {
           setForm({
             ...data,
-            fecha_inicio: data.fecha_inicio?.split("T")[0] || "",
-            fecha_fin: data.fecha_fin?.split("T")[0] || "",
+            fecha_inicio: data.fecha_inicio?.slice(0, 16) || "",
+            fecha_fin: data.fecha_fin?.slice(0, 16) || "",
+            es_mantenimiento: !!data.es_mantenimiento,
           });
         } else {
           showToast("No se pudo cargar la información", "danger");
@@ -456,7 +463,7 @@ export default function ReservasForm() {
                   size={15}
                 />
                 <input
-                  type="date"
+                  type="datetime-local"
                   name="fecha_inicio"
                   value={form.fecha_inicio}
                   onChange={handleChange}
@@ -480,7 +487,7 @@ export default function ReservasForm() {
                   size={15}
                 />
                 <input
-                  type="date"
+                  type="datetime-local"
                   name="fecha_fin"
                   value={form.fecha_fin}
                   onChange={handleChange}
@@ -511,6 +518,30 @@ export default function ReservasForm() {
                 rows={3}
                 className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none transition-all bg-background dark:bg-slate-900/60 placeholder:text-muted-foreground/50 border-border focus:border-primary/60 focus:ring-2 focus:ring-primary/20 resize-none"
               />
+            </div>
+
+            {/* Reserva para mantenimiento — full width */}
+            <div className="md:col-span-2">
+              <label className="flex items-start gap-3 p-3.5 rounded-xl border border-border bg-background dark:bg-slate-900/60 cursor-pointer hover:border-primary/40 transition-colors">
+                <input
+                  type="checkbox"
+                  checked={form.es_mantenimiento}
+                  onChange={(e) =>
+                    handleFieldChange("es_mantenimiento", e.target.checked)
+                  }
+                  className="mt-0.5 h-4 w-4 rounded border-border accent-primary cursor-pointer"
+                />
+                <span className="flex-1">
+                  <span className="flex items-center gap-1.5 text-sm font-bold">
+                    <Wrench size={13} className="text-muted-foreground" />
+                    Reserva para mantenimiento
+                  </span>
+                  <span className="block text-[11px] text-muted-foreground mt-0.5">
+                    Mientras dure esta reserva, el vehículo quedará marcado
+                    como "En Mantenimiento".
+                  </span>
+                </span>
+              </label>
             </div>
           </div>
         </div>
