@@ -7,6 +7,7 @@ import {
   useMemo,
   useState,
 } from "react";
+import { flushSync } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import * as AuthServices from "../services/AuthServices";
 import { getPermisosEfectivos } from "../services/PermissionsServices";
@@ -77,8 +78,12 @@ export const AuthProvider = ({ children }) => {
     } catch (e) {
       console.error("logout error", e);
     } finally {
-      setUser(null);
-      setPermisos([]);
+      // flushSync garantiza que setUser(null) se aplique antes de navegar,
+      // evitando que PublicRoute vea userData todavía como válido y redirija a /admin/home.
+      flushSync(() => {
+        setUser(null);
+        setPermisos([]);
+      });
       navigate("/auth/login");
     }
   };
