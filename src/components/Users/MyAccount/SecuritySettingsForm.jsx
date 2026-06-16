@@ -6,6 +6,7 @@ import { Key, Eye, EyeOff, Save, CheckCircle2, Circle } from "lucide-react";
 
 import ConfirmModal from "../../ui/ConfirmModal";
 import { useToast } from "../../../context/ToastContext";
+import { useAuth } from "../../../context/AuthContext";
 import { updateUser } from "../../../services/AuthServices";
 
 /* ── Strength ── */
@@ -110,6 +111,7 @@ function ReqItem({ ok, label }) {
 export default function SecuritySettingsForm({ user }) {
   const { t } = useTranslation();
   const { showToast } = useToast();
+  const { logout } = useAuth();
 
   const [showPass, setShowPass] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -169,8 +171,13 @@ export default function SecuritySettingsForm({ user }) {
       if (data?.error) {
         showToast(data.error, "danger");
       } else {
-        showToast(t("account.security.success_update"), "success");
-        formik.resetForm();
+        showToast(
+          "Contraseña actualizada. Inicia sesión con tu nueva contraseña.",
+          "success",
+        );
+        // El backend invalida el token actual al cambiar la contraseña.
+        // Cerramos sesión explícitamente para que el usuario inicie limpio.
+        setTimeout(() => logout(), 1800);
       }
     } catch {
       showToast(t("common.network_error"), "danger");
