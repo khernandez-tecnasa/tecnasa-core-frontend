@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Gauge,
   Fuel,
@@ -68,7 +68,7 @@ export default function OperacionForm({
   canViewEstacionamientos,
   canRegister,
 }) {
-  const { userData } = useAuth();
+  const { userData, isAdmin, can } = useAuth();
   const { showToast } = useToast();
 
   const [vehiculo, setVehiculo] = useState(null);
@@ -114,6 +114,28 @@ export default function OperacionForm({
     };
     load();
   }, [canViewEstacionamientos]);
+
+  // Administradores (o quienes gestionan estacionamientos) ven todos los
+  // parqueos. El resto solo ve los de su propia ciudad (si tiene alguno
+  // asignado; si no, se muestran todos como respaldo).
+  const visibleParkings = useMemo(() => {
+    if (isAdmin || can("gestionar_estacionamientos")) return parkings;
+    if (!userData?.id_ciudad) return parkings;
+
+    const deSuCiudad = parkings.filter(
+      (p) => p.id_ciudad === userData.id_ciudad,
+    );
+    return deSuCiudad.length > 0 ? deSuCiudad : parkings;
+  }, [parkings, isAdmin, can, userData]);
+
+  // Si solo hay un punto de control disponible, se preselecciona para
+  // evitar que el usuario tenga que elegirlo manualmente cada vez.
+  useEffect(() => {
+    if (form.ubicacion || isAutofilled) return;
+    if (visibleParkings.length === 1) {
+      setForm((prev) => ({ ...prev, ubicacion: visibleParkings[0].id }));
+    }
+  }, [visibleParkings, form.ubicacion, isAutofilled]);
 
   useEffect(() => {
     const loadReserva = async () => {
@@ -314,7 +336,7 @@ export default function OperacionForm({
                 }
                 className={`${inputCls} appearance-none cursor-pointer`}>
                 <option value="">Seleccione punto...</option>
-                {parkings.map((p) => (
+                {visibleParkings.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.nombre_ubicacion}
                   </option>
@@ -323,23 +345,21 @@ export default function OperacionForm({
             </Field>
 
             {/* COMBUSTIBLE */}
-            <Field label="Combustible (%)" icon={<Fuel size={15} />}>
-              <input
-                type="number"
-                min={0}
-                max={100}
-                inputMode="numeric"
+            <Field label="Nivel de Combustible" icon={<Fuel size={15} />}>
+              <select
                 value={form.combustible}
-                readOnly={isAutofilled}
-                placeholder="0 – 100"
-                onChange={(e) => {
-                  let value = Number(e.target.value);
-                  if (value < 0) value = 0;
-                  if (value > 100) value = 100;
-                  setForm({ ...form, combustible: value });
-                }}
-                className={inputCls}
-              />
+                disabled={isAutofilled}
+                onChange={(e) =>
+                  setForm({ ...form, combustible: Number(e.target.value) })
+                }
+                className={`${inputCls} appearance-none cursor-pointer`}>
+                <option value="">Seleccione nivel...</option>
+                <option value={100}>Full</option>
+                <option value={75}>3/4</option>
+                <option value={50}>Medio</option>
+                <option value={25}>1/4</option>
+                <option value={0}>Vacío</option>
+              </select>
             </Field>
 
             {/* COMENTARIO */}

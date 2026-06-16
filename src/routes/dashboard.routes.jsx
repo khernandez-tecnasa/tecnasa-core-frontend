@@ -1,6 +1,7 @@
 // src/routes/dashboard.routes.jsx
 import { Routes, Route } from "react-router-dom";
 import MainLayout from "@/layouts/MainLayout";
+import RequirePermission from "./RequirePermission";
 import SearchResultsPage from "@/pages/Search/SearchResultsPage";
 import EntityPreviewPage from "@/pages/Search/EntityPreviewPage.jsx";
 import Dashboard from "@/pages/Dashboard/Dashboard";
@@ -90,7 +91,14 @@ export default function DashboardRoutes() {
   return (
     <Routes>
       <Route element={<MainLayout />}>
-        <Route path="dashboard" element={<Dashboard />} />
+        <Route
+          path="dashboard"
+          element={
+            <RequirePermission permiso="ver_dashboard">
+              <Dashboard />
+            </RequirePermission>
+          }
+        />
         <Route path="home" element={<Home />} />
         <Route path="search" element={<SearchResultsPage />} />
         <Route path="preview/:kind/:id" element={<EntityPreviewPage />} />
