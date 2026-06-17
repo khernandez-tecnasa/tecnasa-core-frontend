@@ -1,9 +1,12 @@
 import { useEffect, useState } from "react";
-import { ListarVehiculosEmpleado } from "@/services/VehiculosService";
+import {
+  ListarVehiculosEmpleado,
+  getVehiculoPublicInfo,
+} from "@/services/VehiculosService";
 import { useAuth } from "@/context/AuthContext";
 import { Car, ChevronDown } from "lucide-react";
 
-export default function OperacionVehiculo({ onSelect }) {
+export default function OperacionVehiculo({ onSelect, preselectId = null }) {
   const { userData } = useAuth();
   const [vehiculos, setVehiculos] = useState([]);
   const [selectedId, setSelectedId] = useState("");
@@ -23,10 +26,35 @@ export default function OperacionVehiculo({ onSelect }) {
   useEffect(() => {
     const load = async () => {
       const data = await ListarVehiculosEmpleado(userData.id);
-      setVehiculos(data || []);
+      let list = Array.isArray(data) ? data : [];
+
+      // Si venimos desde un QR con vehículo preseleccionado y no está en
+      // la lista del empleado (otra ciudad, etc.), lo traemos por su info
+      // pública para poder seleccionarlo igual.
+      const idNum = preselectId != null ? Number(preselectId) : null;
+      if (idNum && !list.some((v) => v.id === idNum)) {
+        try {
+          const info = await getVehiculoPublicInfo(idNum);
+          if (info) list = [...list, info];
+        } catch {
+          // si falla, simplemente no se preselecciona
+        }
+      }
+
+      setVehiculos(list);
+
+      // Autoseleccionar el vehículo del QR
+      if (idNum) {
+        const match = list.find((v) => v.id === idNum);
+        if (match) {
+          setSelectedId(String(idNum));
+          onSelect(match);
+        }
+      }
     };
     load();
-  }, [userData.id]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userData.id, preselectId]);
 
   return (
     <div className="space-y-1.5">

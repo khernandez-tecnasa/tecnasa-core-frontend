@@ -67,6 +67,7 @@ export default function OperacionForm({
   refresh,
   canViewEstacionamientos,
   canRegister,
+  vehiculoIdPreseleccionado = null,
 }) {
   const { userData, isAdmin, can } = useAuth();
   const { showToast } = useToast();
@@ -266,7 +267,11 @@ export default function OperacionForm({
             icon={<Car size={13} className="text-muted-foreground" />}
             label="Selección de Unidad"
           />
-          <OperacionVehiculo onSelect={setVehiculo} selectedId={vehiculo?.id} />
+          <OperacionVehiculo
+            onSelect={setVehiculo}
+            selectedId={vehiculo?.id}
+            preselectId={vehiculoIdPreseleccionado}
+          />
         </div>
       )}
 

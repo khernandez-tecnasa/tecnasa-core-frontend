@@ -9,7 +9,7 @@ import {
   AlertTriangle,
   RotateCcw,
 } from "lucide-react";
-import Swal from "sweetalert2";
+import VehiculoEnUsoModal from "@/components/ui/VehiculoEnUsoModal";
 
 import StyledQR from "@/components/QRCode/StyledQR";
 import logoTecnasa from "@/assets/newLogoTecnasaBlack.png";
@@ -118,10 +118,10 @@ export default function Vehiculos() {
 
   /* Confirm modals */
   const [deleteConfirm, setDeleteConfirm] = useState({ open: false, id: null });
-  const [restoreConfirm, setRestoreConfirm] = useState({
-    open: false,
-    id: null,
-  });
+  const [restoreConfirm, setRestoreConfirm] = useState({ open: false, id: null });
+
+  /* En-uso modal */
+  const [enUsoModal, setEnUsoModal] = useState({ open: false, registro: null });
 
   /* ── Load ── */
   const loadVehiculos = useCallback(async () => {
@@ -362,7 +362,6 @@ export default function Vehiculos() {
     qrRef.current.download("png", `QR_REGISTRO_${vehiculoQR.placa}`);
   }
 
-  /* QR in-use — complex multi-step Swal kept intentionally */
   async function handleTestLinkClick(e) {
     e.preventDefault();
     if (!vehiculoQR) return;
@@ -373,104 +372,27 @@ export default function Vehiculos() {
       return;
     }
 
-    try {
-      closeQR();
-    } catch {
-      /* noop */
-    }
-
-    const nombre = registro.nombre_empleado || registro.employeeName || null;
     const email = registro.email_empleado || registro.email || null;
-    const fechaISO = registro.fecha_salida || registro.fecha || null;
-    const fechaText = fechaISO ? new Date(fechaISO).toLocaleString() : null;
 
     let isOwner = false;
     try {
       if (userData) {
         if (userData.email && email)
-          isOwner =
-            String(userData.email).toLowerCase() ===
-            String(email).toLowerCase();
+          isOwner = String(userData.email).toLowerCase() === String(email).toLowerCase();
         if (!isOwner && userData.id_empleado && registro.id_empleado)
-          isOwner =
-            Number(userData.id_empleado) === Number(registro.id_empleado);
-        if (!isOwner && userData.nombre && nombre)
-          isOwner =
-            String(userData.nombre).trim().toLowerCase() ===
-            String(nombre).trim().toLowerCase();
+          isOwner = Number(userData.id_empleado) === Number(registro.id_empleado);
+        if (!isOwner && userData.nombre && registro.nombre_empleado)
+          isOwner = String(userData.nombre).trim().toLowerCase() === String(registro.nombre_empleado).trim().toLowerCase();
       }
-    } catch {
-      isOwner = false;
-    }
+    } catch { isOwner = false; }
 
     if (isOwner && registro.id_registro) {
-      navigate(
-        `/admin/panel-vehiculos?mode=regreso&id_registro=${registro.id_registro}`,
-      );
+      navigate(`/admin/panel-vehiculos?mode=regreso&id_registro=${registro.id_registro}`);
       return;
     }
 
-    const infoText = `${t("vehiculos.qr_in_use_detected", "Este vehículo está en uso por")} ${nombre ?? t("vehiculos.unknown_user", "un usuario")}${email ? ` (${email})` : ""}${fechaText ? ` — ${t("vehiculos.since", "Salida:")} ${fechaText}` : ""}.`;
-
-    const resp = await Swal.fire({
-      title: t("vehiculos.qr_in_use_title", "Vehículo en uso"),
-      text:
-        infoText +
-        "\n\n" +
-        t(
-          "vehiculos.qr_in_use_next_steps",
-          "Pide al usuario que registre el regreso o utiliza una de las acciones abajo.",
-        ),
-      icon: "info",
-      showCancelButton: true,
-      showDenyButton: true,
-      confirmButtonText: t("vehiculos.qr_ok", "OK"),
-      denyButtonText: t("vehiculos.qr_in_use_notify_user", "Notificar usuario"),
-      cancelButtonText: t("vehiculos.cancel", "Cerrar"),
-      allowOutsideClick: false,
-    });
-
-    if (resp.isDenied) {
-      if (!email) {
-        await Swal.fire({
-          title: t(
-            "vehiculos.qr_in_use_no_email_title",
-            "No se encontró email",
-          ),
-          text: t(
-            "vehiculos.qr_in_use_no_email_text",
-            "No se encontró el correo del usuario responsable.",
-          ),
-          icon: "warning",
-        });
-        return;
-      }
-      try {
-        await sendNotificacionSalida({
-          to: [email],
-          employeeName: nombre,
-          vehicleName: vehiculoQR?.placa,
-          supervisorName: userData?.nombre || null,
-        });
-        await Swal.fire({
-          title: t("vehiculos.qr_notify_sent_title", "Notificación enviada"),
-          text: t(
-            "vehiculos.qr_notify_sent_text",
-            "Se ha enviado un correo al usuario responsable.",
-          ),
-          icon: "success",
-        });
-      } catch {
-        await Swal.fire({
-          title: t("vehiculos.qr_notify_error_title", "Error"),
-          text: t(
-            "vehiculos.qr_notify_error_text",
-            "No se pudo enviar la notificación.",
-          ),
-          icon: "error",
-        });
-      }
-    }
+    try { closeQR(); } catch { /* noop */ }
+    setEnUsoModal({ open: true, registro });
   }
 
   /* ── Filter ── */
@@ -707,6 +629,22 @@ export default function Vehiculos() {
         )}
         confirmLabel={t("vehiculos.yes_restore", "Sí, restaurar")}
         cancelLabel={t("vehiculos.cancel", "Cancelar")}
+      />
+
+      <VehiculoEnUsoModal
+        open={enUsoModal.open}
+        onClose={() => setEnUsoModal({ open: false, registro: null })}
+        registro={enUsoModal.registro}
+        vehiculoPlaca={vehiculoQR?.placa}
+        onNotificar={async () => {
+          const email = enUsoModal.registro?.email_empleado || enUsoModal.registro?.email;
+          await sendNotificacionSalida({
+            to: [email],
+            employeeName: enUsoModal.registro?.nombre_empleado,
+            vehicleName: vehiculoQR?.placa,
+            supervisorName: userData?.nombre || null,
+          });
+        }}
       />
 
       {/* QR modal */}

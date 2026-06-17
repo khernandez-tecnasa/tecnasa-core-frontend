@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { getOperacionActiva } from "@/services/operaciones.service";
 import { useAuth } from "@/context/AuthContext";
 import OperacionForm from "./OperacionForm";
@@ -7,6 +8,8 @@ import { Loader2, Lock } from "lucide-react";
 
 export default function OperacionesPage() {
   const { userData, hasPermiso, checkingSession } = useAuth();
+  const [searchParams] = useSearchParams();
+  const vehiculoIdQR = searchParams.get("vehiculo_id");
   const [operacionActiva, setOperacionActiva] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -59,6 +62,7 @@ export default function OperacionesPage() {
           refresh={loadOperacion}
           canViewEstacionamientos={canViewEstacionamientos}
           canRegister={canRegister}
+          vehiculoIdPreseleccionado={vehiculoIdQR}
         />
       )}
     </div>

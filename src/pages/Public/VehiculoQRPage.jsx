@@ -232,65 +232,72 @@ export default function VehiculoQRPage() {
 
         ) : tieneRegistroPropio ? (
           /* ── El usuario ya tiene un vehículo en uso ── */
-          <div className="space-y-4">
-            <div className="bg-orange-50 dark:bg-orange-950/30 rounded-2xl border border-orange-200 dark:border-orange-800 p-6 space-y-3">
-              <div className="flex items-start gap-3">
-                <AlertTriangle className="w-5 h-5 text-orange-500 shrink-0 mt-0.5" />
-                <div className="space-y-1">
-                  <p className="text-sm font-semibold text-orange-800 dark:text-orange-300">Tienes un registro pendiente</p>
-                  <p className="text-sm text-orange-700 dark:text-orange-400">
-                    Ya tienes un vehículo en uso. Debes registrar el regreso antes de poder usar otro.
-                  </p>
-                </div>
+          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 overflow-hidden shadow-sm">
+            <div className="bg-orange-500 px-6 py-5 flex flex-col items-center text-center gap-2">
+              <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center">
+                <AlertTriangle className="w-6 h-6 text-white" />
               </div>
+              <p className="text-white font-bold text-base leading-tight">Tienes un registro pendiente</p>
+              <p className="text-orange-100 text-xs leading-relaxed">
+                Ya tienes un vehículo en uso. Debes registrar el regreso antes de poder usar otro.
+              </p>
             </div>
-
-            <button
-              onClick={irARegistroRegreso}
-              className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl bg-primary text-[var(--foreground)] font-semibold text-base hover:opacity-90 active:opacity-80 transition-opacity shadow-sm"
-            >
-              <RotateCcw className="w-5 h-5" />
-              Registrar Regreso
-            </button>
+            <div className="p-5">
+              <button
+                onClick={irARegistroRegreso}
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-orange-500 text-white font-semibold text-sm hover:bg-orange-600 active:bg-orange-700 transition-colors"
+              >
+                <RotateCcw className="w-4 h-4" />
+                Registrar Regreso
+              </button>
+            </div>
           </div>
 
         ) : registroPendiente ? (
           /* ── Vehículo en uso por otro empleado ── */
-          <div className="bg-amber-50 dark:bg-amber-950/30 rounded-2xl border border-amber-200 dark:border-amber-800 p-6 space-y-4">
-            <div className="flex items-start gap-3">
-              <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-              <div className="space-y-1">
-                <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">Vehículo en uso</p>
-                <p className="text-sm text-amber-700 dark:text-amber-400">
-                  Este vehículo está siendo utilizado actualmente.
-                </p>
+          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 overflow-hidden shadow-sm">
+            <div className="bg-amber-500 px-6 py-5 flex flex-col items-center text-center gap-2">
+              <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center">
+                <AlertTriangle className="w-6 h-6 text-white" />
               </div>
+              <p className="text-white font-bold text-base">Vehículo no disponible</p>
+              <p className="text-amber-100 text-xs leading-relaxed">
+                Este vehículo está siendo utilizado en este momento.
+              </p>
             </div>
 
-            <div className="bg-white dark:bg-gray-900 rounded-xl p-4 space-y-2 text-sm">
-              <div className="flex items-center gap-2 text-gray-700 dark:text-gray-200">
-                <span className="font-medium">Empleado:</span>
-                <span>{registroPendiente.nombre_empleado || "—"}</span>
-              </div>
-              {registroPendiente.fecha_salida && (
-                <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
-                  <Clock className="w-3.5 h-3.5 shrink-0" />
-                  <span>
-                    Salida:{" "}
-                    {new Date(registroPendiente.fecha_salida).toLocaleString("es-HN", {
-                      day: "2-digit",
-                      month: "2-digit",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
+            <div className="px-5 py-4 space-y-3">
+              <div className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-800">
+                <div className="w-9 h-9 rounded-full bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center shrink-0">
+                  <span className="text-amber-600 dark:text-amber-400 font-bold text-sm">
+                    {(registroPendiente.nombre_empleado || "?")[0].toUpperCase()}
                   </span>
                 </div>
-              )}
-            </div>
+                <div className="min-w-0">
+                  <p className="text-xs text-gray-400 dark:text-gray-500">En uso por</p>
+                  <p className="text-sm font-semibold text-gray-800 dark:text-gray-100 truncate">
+                    {registroPendiente.nombre_empleado || "—"}
+                  </p>
+                </div>
+                {registroPendiente.fecha_salida && (
+                  <div className="ml-auto text-right shrink-0">
+                    <p className="text-xs text-gray-400 dark:text-gray-500">Salida</p>
+                    <p className="text-xs font-medium text-gray-600 dark:text-gray-300">
+                      {new Date(registroPendiente.fecha_salida).toLocaleString("es-HN", {
+                        day: "2-digit",
+                        month: "2-digit",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </p>
+                  </div>
+                )}
+              </div>
 
-            <p className="text-xs text-amber-600 dark:text-amber-500">
-              El empleado debe registrar el regreso antes de que puedas utilizarlo.
-            </p>
+              <p className="text-xs text-center text-gray-400 dark:text-gray-500 px-2">
+                El empleado debe registrar el regreso antes de que puedas utilizarlo.
+              </p>
+            </div>
           </div>
 
         ) : (
