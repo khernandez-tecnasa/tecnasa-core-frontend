@@ -1,11 +1,14 @@
 // src/pages/Public/VehiculoQRPage.jsx
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Car, AlertTriangle, CheckCircle, Loader2, LogIn, Clock } from "lucide-react";
+import { Car, AlertTriangle, CheckCircle, Loader2, LogIn, Clock, RotateCcw } from "lucide-react";
 
 import { useAuth } from "../../context/AuthContext";
 import { getVehiculoPublicInfo } from "../../services/VehiculosService";
-import { obtenerRegistroPendientePorVehiculo } from "../../services/RegistrosService";
+import {
+  obtenerRegistroPendientePorVehiculo,
+  obtenerRegistroActivo,
+} from "../../services/RegistrosService";
 import { login } from "../../services/AuthServices";
 
 const ESTADO_COLOR = {
@@ -14,6 +17,9 @@ const ESTADO_COLOR = {
   "En Mantenimiento": "text-orange-600 bg-orange-50 border-orange-200",
   Inactivo: "text-gray-500 bg-gray-50 border-gray-200",
 };
+
+const getUserId = (userData) =>
+  userData?.id_empleado ?? userData?.id ?? userData?.id_usuario ?? null;
 
 export default function VehiculoQRPage() {
   const { id } = useParams();
@@ -24,7 +30,10 @@ export default function VehiculoQRPage() {
   const [loadingVehiculo, setLoadingVehiculo] = useState(true);
   const [vehiculoError, setVehiculoError] = useState(null);
 
-  const [registroPendiente, setRegistroPendiente] = useState(undefined); // undefined = sin verificar
+  // undefined = sin verificar aún, null = disponible, object = en uso
+  const [registroPendiente, setRegistroPendiente] = useState(undefined);
+  // null = sin registro activo propio, object = tiene uno
+  const [registroPropio, setRegistroPropio] = useState(undefined);
   const [loadingStatus, setLoadingStatus] = useState(false);
 
   const [credentials, setCredentials] = useState({ username: "", password: "" });
@@ -40,14 +49,25 @@ export default function VehiculoQRPage() {
       .finally(() => setLoadingVehiculo(false));
   }, [id]);
 
-  // 2. Cuando el usuario ya está autenticado, verificar estado del vehículo
+  // 2. Cuando el usuario está autenticado, verificar estado del vehículo Y registro propio
   useEffect(() => {
     if (checkingSession || !userData) return;
 
+    const userId = getUserId(userData);
     setLoadingStatus(true);
-    obtenerRegistroPendientePorVehiculo(id)
-      .then(setRegistroPendiente)
-      .catch(() => setRegistroPendiente(null))
+
+    Promise.all([
+      obtenerRegistroPendientePorVehiculo(id),
+      userId ? obtenerRegistroActivo(userId) : Promise.resolve(null),
+    ])
+      .then(([pendiente, propio]) => {
+        setRegistroPendiente(pendiente ?? null);
+        setRegistroPropio(propio ?? null);
+      })
+      .catch(() => {
+        setRegistroPendiente(null);
+        setRegistroPropio(null);
+      })
       .finally(() => setLoadingStatus(false));
   }, [userData, checkingSession, id]);
 
@@ -69,9 +89,8 @@ export default function VehiculoQRPage() {
     }
   };
 
-  const irARegistro = () => {
-    navigate(`/admin/panel-vehiculos?vehiculo_id=${id}`);
-  };
+  const irARegistroSalida = () => navigate(`/admin/panel-vehiculos?vehiculo_id=${id}`);
+  const irARegistroRegreso = () => navigate(`/admin/panel-vehiculos`);
 
   // ── UI ──────────────────────────────────────────────────────────────────────
 
@@ -96,6 +115,14 @@ export default function VehiculoQRPage() {
   }
 
   const estadoClass = ESTADO_COLOR[vehiculo?.estado] || ESTADO_COLOR.Inactivo;
+
+  // Determina qué panel mostrar tras autenticarse
+  const tieneRegistroPropio = Boolean(
+    registroPropio &&
+      (registroPropio.id_registro ||
+        registroPropio.id ||
+        registroPropio.id_vehiculo),
+  );
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex flex-col items-center justify-start pt-10 px-4 pb-10">
@@ -128,12 +155,6 @@ export default function VehiculoQRPage() {
                 <p className="font-medium text-gray-700 dark:text-gray-200">{vehiculo.modelo}</p>
               </div>
             )}
-            {vehiculo.color && (
-              <div>
-                <p className="text-xs text-gray-400">Color</p>
-                <p className="font-medium text-gray-700 dark:text-gray-200">{vehiculo.color}</p>
-              </div>
-            )}
             <div>
               <p className="text-xs text-gray-400">Estado</p>
               <span className={`inline-block text-xs font-semibold px-2 py-0.5 rounded-full border ${estadoClass}`}>
@@ -148,6 +169,7 @@ export default function VehiculoQRPage() {
           <div className="flex justify-center py-6">
             <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
           </div>
+
         ) : !userData ? (
           /* ── Login inline ── */
           <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-6 space-y-4">
@@ -200,14 +222,40 @@ export default function VehiculoQRPage() {
               </button>
             </form>
           </div>
+
         ) : loadingStatus ? (
           /* ── Verificando estado ── */
           <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-6 flex items-center gap-3">
             <Loader2 className="w-5 h-5 animate-spin text-gray-400 shrink-0" />
             <p className="text-sm text-gray-500">Verificando disponibilidad...</p>
           </div>
+
+        ) : tieneRegistroPropio ? (
+          /* ── El usuario ya tiene un vehículo en uso ── */
+          <div className="space-y-4">
+            <div className="bg-orange-50 dark:bg-orange-950/30 rounded-2xl border border-orange-200 dark:border-orange-800 p-6 space-y-3">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="w-5 h-5 text-orange-500 shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-orange-800 dark:text-orange-300">Tienes un registro pendiente</p>
+                  <p className="text-sm text-orange-700 dark:text-orange-400">
+                    Ya tienes un vehículo en uso. Debes registrar el regreso antes de poder usar otro.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <button
+              onClick={irARegistroRegreso}
+              className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl bg-primary text-[var(--foreground)] font-semibold text-base hover:opacity-90 active:opacity-80 transition-opacity shadow-sm"
+            >
+              <RotateCcw className="w-5 h-5" />
+              Registrar Regreso
+            </button>
+          </div>
+
         ) : registroPendiente ? (
-          /* ── Vehículo en uso ── */
+          /* ── Vehículo en uso por otro empleado ── */
           <div className="bg-amber-50 dark:bg-amber-950/30 rounded-2xl border border-amber-200 dark:border-amber-800 p-6 space-y-4">
             <div className="flex items-start gap-3">
               <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
@@ -241,9 +289,10 @@ export default function VehiculoQRPage() {
             </div>
 
             <p className="text-xs text-amber-600 dark:text-amber-500">
-              El empleado debe registrar el regreso del vehículo antes de que puedas utilizarlo.
+              El empleado debe registrar el regreso antes de que puedas utilizarlo.
             </p>
           </div>
+
         ) : (
           /* ── Vehículo disponible ── */
           <div className="space-y-4">
@@ -256,7 +305,7 @@ export default function VehiculoQRPage() {
             </div>
 
             <button
-              onClick={irARegistro}
+              onClick={irARegistroSalida}
               className="w-full py-3 rounded-2xl bg-primary text-[var(--foreground)] font-semibold text-base hover:opacity-90 active:opacity-80 transition-opacity shadow-sm"
             >
               Registrar Salida
