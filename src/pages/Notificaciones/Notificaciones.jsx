@@ -1,565 +1,612 @@
-// src/pages/Notificaciones/Notificaciones.jsx
-import React, { useEffect, useMemo, useState, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
-  Box,
-  Sheet,
-  Card,
-  Typography,
-  Tabs,
-  TabList,
-  Tab,
-  TabPanel,
-  Button,
-  IconButton,
-  Table,
-  Chip,
-  Input,
-  Select,
-  Option,
-  Modal,
-  ModalDialog,
-  FormControl,
-  FormLabel,
-  Textarea,
-  Divider,
-  Stack,
-  Tooltip,
-  CircularProgress,
-  Switch,
-  Checkbox,
-  Skeleton,
-} from "@mui/joy";
-
-import {
-  Bell,
-  Settings,
-  Mail,
-  TriangleAlert,
-  LayoutDashboard,
-  Send,
-  Users,
-  FileText,
-  Link2,
-  Plus,
-  Pencil,
-  Trash2,
-  ToggleLeft,
-  ToggleRight,
-  RefreshCw,
-  Filter,
-  Search as SearchIcon,
-  Save as SaveIcon,
-  Check,
-  Download,
-  XCircle,
-  EyeOff,
-  Timer,
-  Copy,
-  Braces,
+  Bell, Users, Link2, Plus, Pencil, Trash2, RefreshCw,
+  Search, X, Check, Loader2, ChevronRight, UserMinus,
+  UserPlus, ToggleLeft, ToggleRight, AlertTriangle,
 } from "lucide-react";
-
 import { useToast } from "../../context/ToastContext";
-
-// === Services ===
 import {
-  listEventos,
-  createEvento,
-  updateEvento,
-  deleteEvento,
-  setEventoEstado,
-  getEventoGrupos,
-  setEventoGrupos,
-} from "../../services/NotificacionesEventosService";
-
+  getGrupos, createGrupo, updateGrupo, deleteGrupo,
+  getMiembros, addMiembros, removeMiembro, searchUsuarios,
+} from "../../services/GruposNotifService";
 import {
-  listGrupos,
-  createGrupo,
-  updateGrupo,
-  deleteGrupo,
-  setGrupoEstado,
-  listMiembros,
-  addMiembros,
-  removeMiembro,
-  getCanales,
-  saveCanales,
-  listUsuarios,
-} from "../../services/NotificacionesGruposService";
+  getEventos, createEvento, updateEvento, deleteEvento,
+  toggleEventoEstado, getEventoGrupos, setEventoGrupos,
+} from "../../services/EventosNotifService";
 
-import {
-  listPlantillas as apiListPlantillas,
-  createPlantilla as apiCreatePlantilla,
-  updatePlantilla as apiUpdatePlantilla,
-  deletePlantilla as apiDeletePlantilla,
-  publishPlantilla as apiPublishPlantilla,
-  previewPlantilla as apiPreviewPlantilla,
-  testPlantilla as apiTestPlantilla,
-  setPlantillaEstado,
-} from "../../services/NotificacionesPlantillasService";
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 
-// ====== Helpers ======
-const SEV_OPTIONS = ["low", "medium", "high", "critical"];
+const SEV_COLORS = {
+  low: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400",
+  medium: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+  high: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400",
+  critical: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+};
 
-function SeveridadChip({ value }) {
-  const map = {
-    high: { color: "danger", label: "Alta" },
-    medium: { color: "warning", label: "Media" },
-    low: { color: "neutral", label: "Baja" },
+function SevBadge({ value }) {
+  return (
+    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize ${SEV_COLORS[value] ?? SEV_COLORS.low}`}>
+      {value ?? "low"}
+    </span>
+  );
+}
+
+function EstadoBadge({ activo }) {
+  return activo
+    ? <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">Activo</span>
+    : <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400">Inactivo</span>;
+}
+
+function Spinner() {
+  return <Loader2 size={18} className="animate-spin text-[var(--muted-foreground)]" />;
+}
+
+function EmptyState({ message = "Sin datos" }) {
+  return (
+    <div className="flex flex-col items-center gap-2 py-12 text-[var(--muted-foreground)]">
+      <AlertTriangle size={24} className="opacity-40" />
+      <p className="text-sm">{message}</p>
+    </div>
+  );
+}
+
+// ─── Modal base ──────────────────────────────────────────────────────────────
+
+function Modal({ open, onClose, title, children, footer }) {
+  const overlayRef = useRef(null);
+  useEffect(() => {
+    const handler = (e) => { if (e.key === "Escape") onClose(); };
+    if (open) document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [open, onClose]);
+
+  if (!open) return null;
+  return (
+    <div
+      ref={overlayRef}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: "rgba(0,0,0,0.45)" }}
+      onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}>
+      <div className="bg-[var(--card)] border border-[var(--border)] rounded-2xl shadow-2xl w-full max-w-lg flex flex-col max-h-[90vh]">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border)]">
+          <h3 className="font-semibold text-[var(--foreground)] text-sm">{title}</h3>
+          <button onClick={onClose} className="text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors">
+            <X size={16} />
+          </button>
+        </div>
+        <div className="overflow-y-auto flex-1 px-5 py-4">{children}</div>
+        {footer && (
+          <div className="px-5 py-3 border-t border-[var(--border)] flex justify-end gap-2">
+            {footer}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function Btn({ children, onClick, variant = "primary", size = "md", loading, disabled, type = "button", className = "" }) {
+  const base = "inline-flex items-center gap-1.5 font-medium rounded-xl transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed";
+  const sizes = { sm: "px-3 py-1.5 text-xs", md: "px-4 py-2 text-sm" };
+  const variants = {
+    primary: "bg-primary text-primary-foreground hover:opacity-90 shadow-sm",
+    outline: "border border-[var(--border)] text-[var(--foreground)] hover:bg-[var(--muted)] bg-transparent",
+    ghost: "text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)] bg-transparent",
+    danger: "border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 bg-transparent",
   };
-  const { color, label } = map[value] || map.low;
   return (
-    <Chip
-      size="sm"
-      variant="soft"
-      color={color}
-      sx={{ textTransform: "capitalize" }}>
-      {label}
-    </Chip>
+    <button type={type} onClick={onClick} disabled={disabled || loading} className={`${base} ${sizes[size]} ${variants[variant]} ${className}`}>
+      {loading && <Loader2 size={13} className="animate-spin" />}
+      {children}
+    </button>
   );
 }
 
-function EstadoPill({ estado }) {
-  const m = {
-    delivered: { color: "success", text: "delivered" },
-    sent: { color: "primary", text: "sent" },
-    failed: { color: "danger", text: "failed" },
-    suppressed: { color: "warning", text: "suppressed" },
-    pending: { color: "neutral", text: "pending" },
-    queued: { color: "neutral", text: "queued" },
-  };
-  const x = m[estado] || m.pending;
+function Input({ value, onChange, placeholder, className = "", ...props }) {
   return (
-    <Chip size="sm" variant="soft" color={x.color}>
-      {x.text}
-    </Chip>
+    <input
+      value={value}
+      onChange={onChange}
+      placeholder={placeholder}
+      className={`w-full px-3 py-2 text-sm rounded-xl border border-[var(--border)] bg-[var(--background)] text-[var(--foreground)] placeholder-[var(--muted-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/30 transition ${className}`}
+      {...props}
+    />
   );
 }
 
-function EstadoChip({ activo }) {
+function Textarea({ value, onChange, placeholder, rows = 3, className = "" }) {
   return (
-    <Chip size="sm" variant="soft" color={activo ? "success" : "neutral"}>
-      {activo ? "Activo" : "Inactivo"}
-    </Chip>
+    <textarea
+      value={value}
+      onChange={onChange}
+      placeholder={placeholder}
+      rows={rows}
+      className={`w-full px-3 py-2 text-sm rounded-xl border border-[var(--border)] bg-[var(--background)] text-[var(--foreground)] placeholder-[var(--muted-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/30 resize-none transition ${className}`}
+    />
   );
 }
 
-// ====== Top Bar ======
-function TopBar() {
+function Select({ value, onChange, children, className = "" }) {
   return (
-    <Sheet
-      variant="outlined"
-      sx={{
-        position: "sticky",
-        top: 0,
-        zIndex: 9,
-        borderBottom: "1px solid",
-        borderColor: "divider",
-        bgcolor: "background.surface",
-        backdropFilter: "blur(4px)",
-        borderRadius: "12px",
-        marginRight: "10rem",
-        marginLeft: "10rem",
-        padding: "0 1rem",
-      }}>
-      <Box
-        sx={{
-          maxWidth: 1200,
-          mx: "auto",
-          height: 56,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-        }}>
-        <Stack direction="row" spacing={1} alignItems="center">
-          <Box
-            sx={{
-              width: 32,
-              height: 32,
-              borderRadius: 12,
-              bgcolor: "primary.solidBg",
-              color: "primary.solidColor",
-              display: "grid",
-              placeItems: "center",
-            }}>
-            <Bell size={16} />
-          </Box>
-          <Typography level="title-md">Notificaciones</Typography>
-          <Typography level="body-sm" sx={{ color: "neutral.500" }}>
-            · Panel Administrativo
-          </Typography>
-        </Stack>
-        <Stack direction="row" spacing={1} sx={{ color: "neutral.600" }}>
-          <Settings size={18} />
-        </Stack>
-      </Box>
-    </Sheet>
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className={`px-3 py-2 text-sm rounded-xl border border-[var(--border)] bg-[var(--background)] text-[var(--foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/30 transition ${className}`}>
+      {children}
+    </select>
   );
 }
 
-function DashboardView() {
-  // Si todavía no tienes datos, deja "—" y mostramos skeletons bonitos.
-  const KPIs = [
-    {
-      key: "hoy",
-      label: "Notificaciones hoy",
-      value: "—",
-      icon: <Bell size={16} />,
-    },
-    {
-      key: "enviadas",
-      label: "Enviadas",
-      value: "—",
-      icon: <Send size={16} />,
-    },
-    {
-      key: "fallidas",
-      label: "Fallidas",
-      value: "—",
-      icon: <XCircle size={16} />,
-    },
-    {
-      key: "suprimidas",
-      label: "Suprimidas",
-      value: "—",
-      icon: <EyeOff size={16} />,
-    },
-    {
-      key: "tiempo",
-      label: "T. promedio (s)",
-      value: "—",
-      icon: <Timer size={16} />,
-    },
-  ];
-
-  const isEmpty = KPIs.every((k) => k.value === "—");
-
+function Field({ label, children }) {
   return (
-    <Box
-      sx={{
-        maxWidth: 1200,
-        mx: "auto",
-        p: { xs: 1.5, sm: 2 },
-      }}>
-      {/* Header visual del bloque */}
-      <Sheet
-        variant="soft"
-        sx={{
-          p: 2,
-          mb: 2,
-          borderRadius: 16,
-          bgcolor: "background.level1",
-          border: "1px solid",
-          borderColor: "neutral.outlinedBorder",
-          boxShadow: "sm",
-          backgroundImage:
-            "linear-gradient(180deg, rgba(255,255,255,0.0), rgba(255,255,255,0.06))",
-        }}>
-        {/* KPIs */}
-        <Box
-          sx={{
-            display: "grid",
-            gridTemplateColumns: { xs: "1fr 1fr", md: "repeat(5, 1fr)" },
-            gap: 1.5,
-          }}>
-          {KPIs.map((k, idx) => (
-            <Card
-              key={k.key}
-              variant="soft"
-              color={
-                idx === 0
-                  ? "primary"
-                  : idx === 1
-                  ? "success"
-                  : idx === 2
-                  ? "danger"
-                  : idx === 3
-                  ? "warning"
-                  : "neutral"
-              }
-              sx={{
-                borderRadius: 16,
-                boxShadow: "sm",
-                overflow: "hidden",
-                position: "relative",
-                p: 1.25,
-                // franja superior de color (look moderno)
-                "&::before": {
-                  content: '""',
-                  position: "absolute",
-                  insetInline: 0,
-                  top: 0,
-                  height: 3,
-                  backgroundColor: "var(--joy-palette-solidBg)",
-                },
-              }}>
-              <Stack
-                direction="row"
-                alignItems="center"
-                justifyContent="space-between">
-                <Typography level="body-xs" color="neutral">
-                  {k.label}
-                </Typography>
-                <Box
-                  sx={{
-                    width: 26,
-                    height: 26,
-                    borderRadius: "10px",
-                    display: "grid",
-                    placeItems: "center",
-                    bgcolor: "var(--joy-palette-softBg)",
-                    color: "var(--joy-palette-solidBg)",
-                  }}>
-                  {k.icon}
-                </Box>
-              </Stack>
-              <Typography level="h3" sx={{ mt: 0.5 }}>
-                {k.value === "—" ? (
-                  <Skeleton variant="text" width={40} />
-                ) : (
-                  k.value
-                )}
-              </Typography>
-            </Card>
-          ))}
-        </Box>
-      </Sheet>
-
-      {/* Tabla de últimas notificaciones */}
-      <Card variant="outlined" sx={{ borderRadius: 16, boxShadow: "sm" }}>
-        <Stack
-          direction="row"
-          justifyContent="space-between"
-          alignItems="center"
-          sx={{ p: 1.25 }}>
-          <Typography
-            level="title-md"
-            component="h3"
-            sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
-            <TriangleAlert size={16} /> Últimas notificaciones
-          </Typography>
-          <Stack direction="row" gap={1}>
-            <Tooltip title="Filtrar">
-              <IconButton size="sm" variant="outlined">
-                <Filter size={14} />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="Exportar CSV">
-              <IconButton size="sm" variant="outlined">
-                <Download size={14} />
-              </IconButton>
-            </Tooltip>
-            <Button size="sm" variant="soft">
-              Ver historial
-            </Button>
-          </Stack>
-        </Stack>
-        <Divider />
-
-        <Table
-          size="sm"
-          stickyHeader
-          borderAxis="bothBetween"
-          sx={{
-            "--TableCell-headBackground":
-              "var(--joy-palette-background-level1)",
-          }}>
-          <thead>
-            <tr>
-              <th style={{ width: 80 }}>ID</th>
-              <th>Evento</th>
-              <th style={{ width: 120 }}>Severidad</th>
-              <th style={{ width: 120 }}>Estado</th>
-              <th style={{ width: 180 }}>Fecha</th>
-            </tr>
-          </thead>
-          <tbody>
-            {/* Estado vacío bonito mientras no hay datos */}
-            <tr>
-              <td colSpan={5}>
-                <Sheet
-                  variant="soft"
-                  sx={{
-                    my: 2,
-                    mx: 1.5,
-                    p: 3,
-                    borderRadius: 12,
-                    textAlign: "center",
-                    color: "neutral.600",
-                  }}>
-                  <Box
-                    sx={{
-                      display: "inline-grid",
-                      placeItems: "center",
-                      gap: 1,
-                    }}>
-                    <TriangleAlert size={18} />
-                    <Typography level="body-sm">
-                      Conecta <code>/api/notificaciones</code> para ver
-                      registros en tiempo real.
-                    </Typography>
-                  </Box>
-                </Sheet>
-              </td>
-            </tr>
-          </tbody>
-        </Table>
-      </Card>
-    </Box>
+    <div className="flex flex-col gap-1.5">
+      <label className="text-xs font-semibold text-[var(--muted-foreground)] uppercase tracking-wide">{label}</label>
+      {children}
+    </div>
   );
 }
 
-// ====== Modal: Crear/Editar Evento ======
-function EventoModal({ open, onClose, initial, onSaved }) {
+// ─── GRUPOS ──────────────────────────────────────────────────────────────────
+
+function GrupoFormModal({ open, onClose, initial, onSaved }) {
   const { showToast } = useToast();
   const isEdit = !!initial?.id;
-  const [form, setForm] = useState({
-    clave: "",
-    nombre: "",
-    descripcion: "",
-    severidad_def: "medium",
-    activo: false,
-  });
+  const [form, setForm] = useState({ nombre: "", descripcion: "" });
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (open) {
-      setForm({
-        clave: initial?.clave || "",
-        nombre: initial?.nombre || "",
-        descripcion: initial?.descripcion || "",
-        severidad_def: initial?.severidad_def || "medium",
-        activo: !!initial?.activo,
-      });
-    }
+    if (open) setForm({ nombre: initial?.nombre ?? "", descripcion: initial?.descripcion ?? "" });
   }, [open, initial]);
 
   async function onSubmit(e) {
     e.preventDefault();
-    if (!form.clave.trim() || !form.nombre.trim()) {
-      showToast("Clave y nombre son requeridos", "warning");
-      return;
-    }
+    if (!form.nombre.trim()) { showToast("El nombre es requerido", "warning"); return; }
     setSaving(true);
     try {
-      if (isEdit) {
-        await updateEvento(initial.id, form);
-        showToast("Evento actualizado", "success");
-      } else {
-        await createEvento(form);
-        showToast("Evento creado", "success");
-      }
+      if (isEdit) await updateGrupo(initial.id, form);
+      else await createGrupo(form);
+      showToast(isEdit ? "Grupo actualizado" : "Grupo creado", "success");
       onSaved?.();
       onClose();
     } catch (err) {
-      showToast(err.message || "Error al guardar evento", "danger");
+      showToast(err.message || "Error al guardar", "danger");
     } finally {
       setSaving(false);
     }
   }
 
   return (
-    <Modal open={open} onClose={onClose}>
-      <ModalDialog component="form" onSubmit={onSubmit} sx={{ width: 520 }}>
-        <Typography level="title-lg">
-          {isEdit ? "Editar evento" : "Nuevo evento"}
-        </Typography>
-        <Divider />
-        <Stack spacing={1.25} mt={1}>
-          <FormControl required>
-            <FormLabel>Clave</FormLabel>
-            <Input
-              value={form.clave}
-              onChange={(e) =>
-                setForm({ ...form, clave: e.target.value.toUpperCase() })
-              }
-              placeholder="Ejem: VEHICULO_SALIDA"
-              disabled={isEdit}
-            />
-          </FormControl>
-          <FormControl required>
-            <FormLabel>Nombre</FormLabel>
-            <Input
-              value={form.nombre}
-              onChange={(e) => setForm({ ...form, nombre: e.target.value })}
-              placeholder="Nombre legible"
-            />
-          </FormControl>
-          <FormControl>
-            <FormLabel>Descripción</FormLabel>
-            <Textarea
-              minRows={2}
-              value={form.descripcion}
-              onChange={(e) =>
-                setForm({ ...form, descripcion: e.target.value })
-              }
-            />
-          </FormControl>
-          <Stack direction="row" spacing={1.25}>
-            <FormControl sx={{ flex: 1 }}>
-              <FormLabel>Severidad por defecto</FormLabel>
-              <Select
-                value={form.severidad_def}
-                onChange={(_, v) => setForm({ ...form, severidad_def: v })}>
-                {SEV_OPTIONS.map((s) => (
-                  <Option key={s} value={s} className="capitalize">
-                    {s}
-                  </Option>
-                ))}
-              </Select>
-            </FormControl>
-            <FormControl orientation="horizontal" sx={{ alignItems: "center" }}>
-              <FormLabel>Activo</FormLabel>
-              <Switch
-                checked={form.activo}
-                onChange={(e) => setForm({ ...form, activo: e.target.checked })}
-              />
-            </FormControl>
-          </Stack>
-        </Stack>
-        <Stack direction="row" justifyContent="flex-end" spacing={1} mt={2}>
-          <Button variant="plain" onClick={onClose} disabled={saving}>
-            Cancelar
-          </Button>
-          <Button type="submit" loading={saving}>
-            Guardar
-          </Button>
-        </Stack>
-      </ModalDialog>
+    <Modal
+      open={open}
+      onClose={onClose}
+      title={isEdit ? "Editar grupo" : "Nuevo grupo"}
+      footer={
+        <>
+          <Btn variant="ghost" onClick={onClose} disabled={saving}>Cancelar</Btn>
+          <Btn type="submit" form="grupo-form" loading={saving}>Guardar</Btn>
+        </>
+      }>
+      <form id="grupo-form" onSubmit={onSubmit} className="flex flex-col gap-4">
+        <Field label="Nombre *">
+          <Input value={form.nombre} onChange={(e) => setForm((f) => ({ ...f, nombre: e.target.value }))} placeholder="Ej: Supervisores de flota" />
+        </Field>
+        <Field label="Descripción">
+          <Textarea value={form.descripcion} onChange={(e) => setForm((f) => ({ ...f, descripcion: e.target.value }))} placeholder="Descripción opcional..." />
+        </Field>
+      </form>
     </Modal>
   );
 }
 
-// ====== Modal: Asignar grupos a evento ======
-function EventoGruposModal({ open, onClose, evento, onSaved }) {
+function MiembrosModal({ open, onClose, grupo, miembros, onMiembrosChange }) {
   const { showToast } = useToast();
-  const [loading, setLoading] = useState(true);
-  const [todosGrupos, setTodosGrupos] = useState([]);
-  const [checked, setChecked] = useState(new Set()); // ids
-  const [saving, setSaving] = useState(false);
-  const [search, setSearch] = useState("");
+  const [q, setQ] = useState("");
+  const [results, setResults] = useState([]);
+  const [searching, setSearching] = useState(false);
+  const [adding, setAdding] = useState(null);
 
-  const visible = useMemo(() => {
-    const s = (search || "").toLowerCase();
-    return todosGrupos.filter((g) => g.nombre.toLowerCase().includes(s));
-  }, [todosGrupos, search]);
+  useEffect(() => { if (!open) { setQ(""); setResults([]); } }, [open]);
+
+  async function buscar() {
+    if (q.trim().length < 2) { showToast("Escribe al menos 2 caracteres", "warning"); return; }
+    setSearching(true);
+    try {
+      const data = await searchUsuarios(q.trim());
+      setResults(data);
+    } catch (err) {
+      showToast(err.message, "danger");
+    } finally {
+      setSearching(false);
+    }
+  }
+
+  async function agregar(usuario) {
+    setAdding(usuario.id_usuario);
+    try {
+      await addMiembros(grupo.id, [usuario.id_usuario]);
+      onMiembrosChange?.();
+      showToast(`${usuario.nombre} agregado`, "success");
+    } catch (err) {
+      showToast(err.message, "danger");
+    } finally {
+      setAdding(null);
+    }
+  }
+
+  async function quitar(miembro) {
+    try {
+      await removeMiembro(grupo.id, miembro.id_usuario);
+      onMiembrosChange?.();
+      showToast("Miembro eliminado", "success");
+    } catch (err) {
+      showToast(err.message, "danger");
+    }
+  }
+
+  return (
+    <Modal open={open} onClose={onClose} title={`Miembros — ${grupo?.nombre ?? ""}`} footer={<Btn variant="outline" onClick={onClose}>Cerrar</Btn>}>
+      <div className="flex flex-col gap-4">
+        {/* Buscador */}
+        <div>
+          <p className="text-xs font-semibold text-[var(--muted-foreground)] uppercase tracking-wide mb-2">Agregar usuarios</p>
+          <div className="flex gap-2">
+            <Input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Buscar por nombre, email..."
+              onKeyDown={(e) => e.key === "Enter" && buscar()}
+            />
+            <Btn variant="outline" size="sm" onClick={buscar} loading={searching}>
+              <Search size={13} />
+            </Btn>
+          </div>
+
+          {results.length > 0 && (
+            <div className="mt-2 border border-[var(--border)] rounded-xl overflow-hidden">
+              {results.map((u) => {
+                const yaEsta = miembros.some((m) => m.id_usuario === u.id_usuario);
+                return (
+                  <div key={u.id_usuario} className="flex items-center justify-between px-3 py-2 border-b border-[var(--border)] last:border-0 hover:bg-[var(--muted)]/40">
+                    <div>
+                      <p className="text-sm font-medium text-[var(--foreground)]">{u.nombre}</p>
+                      <p className="text-xs text-[var(--muted-foreground)]">{u.email}</p>
+                    </div>
+                    {yaEsta
+                      ? <span className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1"><Check size={12} /> En grupo</span>
+                      : (
+                        <Btn size="sm" variant="outline" onClick={() => agregar(u)} loading={adding === u.id_usuario}>
+                          <UserPlus size={13} /> Agregar
+                        </Btn>
+                      )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Lista miembros actuales */}
+        <div>
+          <p className="text-xs font-semibold text-[var(--muted-foreground)] uppercase tracking-wide mb-2">
+            Miembros actuales ({miembros.length})
+          </p>
+          {miembros.length === 0
+            ? <p className="text-sm text-[var(--muted-foreground)]">Sin miembros todavía.</p>
+            : (
+              <div className="border border-[var(--border)] rounded-xl overflow-hidden">
+                {miembros.map((m) => (
+                  <div key={m.id_usuario} className="flex items-center justify-between px-3 py-2 border-b border-[var(--border)] last:border-0 hover:bg-[var(--muted)]/40">
+                    <div>
+                      <p className="text-sm font-medium text-[var(--foreground)]">{m.nombre}</p>
+                      <p className="text-xs text-[var(--muted-foreground)]">{m.email}</p>
+                    </div>
+                    <button onClick={() => quitar(m)} className="text-red-400 hover:text-red-600 transition-colors" title="Quitar">
+                      <UserMinus size={15} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+function GruposTab() {
+  const { showToast } = useToast();
+  const [grupos, setGrupos] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [sel, setSel] = useState(null);
+  const [miembros, setMiembros] = useState([]);
+  const [loadingMiembros, setLoadingMiembros] = useState(false);
+  const [openForm, setOpenForm] = useState(false);
+  const [editando, setEditando] = useState(null);
+  const [openMiembros, setOpenMiembros] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await getGrupos({ search });
+      const arr = Array.isArray(data) ? data : data.rows ?? [];
+      setGrupos(arr);
+      if (!sel && arr.length) setSel(arr[0]);
+    } catch (err) {
+      showToast(err.message, "danger");
+    } finally {
+      setLoading(false);
+    }
+  }, [search, sel, showToast]);
+
+  useEffect(() => { load(); }, []); // eslint-disable-line
+
+  const loadMiembros = useCallback(async (grupo) => {
+    if (!grupo) return;
+    setLoadingMiembros(true);
+    try {
+      const data = await getMiembros(grupo.id);
+      setMiembros(Array.isArray(data) ? data : []);
+    } catch {
+      setMiembros([]);
+    } finally {
+      setLoadingMiembros(false);
+    }
+  }, []);
+
+  useEffect(() => { loadMiembros(sel); }, [sel, loadMiembros]);
+
+  async function onDelete(g) {
+    if (!window.confirm(`¿Eliminar el grupo "${g.nombre}"? Los miembros serán desvinculados.`)) return;
+    try {
+      await deleteGrupo(g.id);
+      showToast("Grupo eliminado", "success");
+      if (sel?.id === g.id) setSel(null);
+      load();
+    } catch (err) {
+      showToast(err.message, "danger");
+    }
+  }
+
+  const filtrado = grupos.filter((g) =>
+    !search || g.nombre.toLowerCase().includes(search.toLowerCase()) || (g.descripcion ?? "").toLowerCase().includes(search.toLowerCase())
+  );
+
+  return (
+    <div className="flex flex-col md:flex-row gap-4 h-full">
+      {/* Sidebar */}
+      <div className="md:w-72 shrink-0 flex flex-col gap-3">
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted-foreground)]" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar grupos..."
+              className="pl-8"
+              onKeyDown={(e) => e.key === "Enter" && load()}
+            />
+          </div>
+          <Btn size="sm" variant="outline" onClick={load} title="Recargar"><RefreshCw size={13} /></Btn>
+          <Btn size="sm" onClick={() => { setEditando(null); setOpenForm(true); }}><Plus size={13} /> Nuevo</Btn>
+        </div>
+
+        <div className="flex flex-col gap-1 flex-1 overflow-y-auto">
+          {loading
+            ? <div className="flex justify-center py-8"><Spinner /></div>
+            : filtrado.length === 0
+              ? <EmptyState message="Sin grupos" />
+              : filtrado.map((g) => (
+                <button
+                  key={g.id}
+                  onClick={() => setSel(g)}
+                  className={`w-full text-left px-3 py-2.5 rounded-xl border transition-all ${sel?.id === g.id ? "border-[var(--primary)] bg-[var(--primary)]/5" : "border-transparent hover:bg-[var(--muted)]/50"}`}>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-semibold text-[var(--foreground)] truncate">{g.nombre}</span>
+                    <ChevronRight size={13} className="text-[var(--muted-foreground)] shrink-0" />
+                  </div>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    {g.descripcion && <span className="text-xs text-[var(--muted-foreground)] truncate">{g.descripcion}</span>}
+                    {typeof g.miembros === "number" && (
+                      <span className="shrink-0 text-xs text-[var(--muted-foreground)] ml-auto">{g.miembros} miembros</span>
+                    )}
+                  </div>
+                </button>
+              ))}
+        </div>
+      </div>
+
+      {/* Panel derecho */}
+      <div className="flex-1 border border-[var(--border)] rounded-2xl bg-[var(--card)] overflow-hidden">
+        {!sel
+          ? <EmptyState message="Selecciona un grupo para ver sus detalles" />
+          : (
+            <div className="flex flex-col h-full">
+              {/* Header */}
+              <div className="flex items-start justify-between px-5 py-4 border-b border-[var(--border)]">
+                <div>
+                  <h3 className="font-semibold text-[var(--foreground)]">{sel.nombre}</h3>
+                  {sel.descripcion && <p className="text-sm text-[var(--muted-foreground)] mt-0.5">{sel.descripcion}</p>}
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <Btn size="sm" variant="outline" onClick={() => { setEditando(sel); setOpenForm(true); }}>
+                    <Pencil size={13} /> Editar
+                  </Btn>
+                  <Btn size="sm" variant="danger" onClick={() => onDelete(sel)}>
+                    <Trash2 size={13} /> Eliminar
+                  </Btn>
+                </div>
+              </div>
+
+              {/* Miembros */}
+              <div className="flex-1 overflow-y-auto px-5 py-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="text-sm font-semibold text-[var(--foreground)]">
+                    Miembros {!loadingMiembros && `(${miembros.length})`}
+                  </h4>
+                  <Btn size="sm" variant="outline" onClick={() => setOpenMiembros(true)}>
+                    <UserPlus size={13} /> Gestionar
+                  </Btn>
+                </div>
+
+                {loadingMiembros
+                  ? <div className="flex justify-center py-6"><Spinner /></div>
+                  : miembros.length === 0
+                    ? <EmptyState message="Este grupo no tiene miembros aún" />
+                    : (
+                      <div className="flex flex-col divide-y divide-[var(--border)] border border-[var(--border)] rounded-xl overflow-hidden">
+                        {miembros.map((m) => (
+                          <div key={m.id_usuario} className="flex items-center justify-between px-4 py-2.5 hover:bg-[var(--muted)]/40 transition-colors">
+                            <div>
+                              <p className="text-sm font-medium text-[var(--foreground)]">{m.nombre}</p>
+                              <p className="text-xs text-[var(--muted-foreground)]">{m.email}</p>
+                            </div>
+                            <button
+                              onClick={async () => {
+                                try {
+                                  await removeMiembro(sel.id, m.id_usuario);
+                                  loadMiembros(sel);
+                                  showToast("Miembro eliminado", "success");
+                                } catch (err) { showToast(err.message, "danger"); }
+                              }}
+                              className="text-[var(--muted-foreground)] hover:text-red-500 transition-colors p-1 rounded-lg"
+                              title="Quitar miembro">
+                              <UserMinus size={15} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+              </div>
+            </div>
+          )}
+      </div>
+
+      <GrupoFormModal
+        open={openForm}
+        onClose={() => setOpenForm(false)}
+        initial={editando}
+        onSaved={() => {
+          load();
+          if (editando) setSel((s) => s?.id === editando.id ? { ...s, ...editando } : s);
+        }}
+      />
+
+      <MiembrosModal
+        open={openMiembros}
+        onClose={() => setOpenMiembros(false)}
+        grupo={sel}
+        miembros={miembros}
+        onMiembrosChange={() => loadMiembros(sel)}
+      />
+    </div>
+  );
+}
+
+// ─── EVENTOS ─────────────────────────────────────────────────────────────────
+
+const SEV_OPTIONS = ["low", "medium", "high", "critical"];
+
+function EventoFormModal({ open, onClose, initial, onSaved }) {
+  const { showToast } = useToast();
+  const isEdit = !!initial?.id;
+  const [form, setForm] = useState({ clave: "", nombre: "", descripcion: "", severidad_def: "medium", activo: true });
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (open) setForm({
+      clave: initial?.clave ?? "",
+      nombre: initial?.nombre ?? "",
+      descripcion: initial?.descripcion ?? "",
+      severidad_def: initial?.severidad_def ?? "medium",
+      activo: initial?.activo !== 0,
+    });
+  }, [open, initial]);
+
+  async function onSubmit(e) {
+    e.preventDefault();
+    if (!form.clave.trim() || !form.nombre.trim()) { showToast("Clave y nombre son requeridos", "warning"); return; }
+    setSaving(true);
+    try {
+      if (isEdit) await updateEvento(initial.id, form);
+      else await createEvento({ ...form, clave: form.clave.trim().toUpperCase() });
+      showToast(isEdit ? "Evento actualizado" : "Evento creado", "success");
+      onSaved?.();
+      onClose();
+    } catch (err) {
+      showToast(err.message || "Error al guardar", "danger");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title={isEdit ? "Editar evento" : "Nuevo evento"}
+      footer={
+        <>
+          <Btn variant="ghost" onClick={onClose} disabled={saving}>Cancelar</Btn>
+          <Btn type="submit" form="evento-form" loading={saving}>Guardar</Btn>
+        </>
+      }>
+      <form id="evento-form" onSubmit={onSubmit} className="flex flex-col gap-4">
+        <Field label="Clave *">
+          <Input
+            value={form.clave}
+            onChange={(e) => setForm((f) => ({ ...f, clave: e.target.value.toUpperCase() }))}
+            placeholder="Ej: SALIDA_VEHICULO"
+            disabled={isEdit}
+          />
+          <p className="text-xs text-[var(--muted-foreground)]">Identificador único en mayúsculas. No se puede cambiar después de crear.</p>
+        </Field>
+        <Field label="Nombre *">
+          <Input value={form.nombre} onChange={(e) => setForm((f) => ({ ...f, nombre: e.target.value }))} placeholder="Nombre descriptivo" />
+        </Field>
+        <Field label="Descripción">
+          <Textarea value={form.descripcion} onChange={(e) => setForm((f) => ({ ...f, descripcion: e.target.value }))} placeholder="Para qué sirve este evento..." />
+        </Field>
+        <div className="flex gap-3">
+          <Field label="Severidad por defecto">
+            <Select value={form.severidad_def} onChange={(v) => setForm((f) => ({ ...f, severidad_def: v }))}>
+              {SEV_OPTIONS.map((s) => <option key={s} value={s} className="capitalize">{s}</option>)}
+            </Select>
+          </Field>
+          <Field label="Activo">
+            <div className="flex items-center h-[38px]">
+              <button
+                type="button"
+                onClick={() => setForm((f) => ({ ...f, activo: !f.activo }))}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${form.activo ? "bg-[var(--primary)]" : "bg-[var(--muted-foreground)]/30"}`}>
+                <span className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${form.activo ? "translate-x-6" : "translate-x-1"}`} />
+              </button>
+            </div>
+          </Field>
+        </div>
+      </form>
+    </Modal>
+  );
+}
+
+function AsignarGruposModal({ open, onClose, evento, onSaved }) {
+  const { showToast } = useToast();
+  const [allGrupos, setAllGrupos] = useState([]);
+  const [checked, setChecked] = useState(new Set());
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (!open || !evento?.id) return;
     (async () => {
       setLoading(true);
       try {
-        const [todos, asignados] = await Promise.all([
-          listGrupos({ limit: 500 }),
-          getEventoGrupos(evento.id),
-        ]);
-        const assignedIds = new Set(
-          (asignados || [])
-            .filter((x) => !!x.asignacion_activa)
-            .map((x) => x.id)
-        );
-        setTodosGrupos(todos?.rows || []);
-        setChecked(assignedIds);
-      } catch (e) {
-        showToast("No se pudieron cargar grupos", "danger");
+        const [grupos, asignados] = await Promise.all([getGrupos(), getEventoGrupos(evento.id)]);
+        const arr = Array.isArray(grupos) ? grupos : grupos.rows ?? [];
+        setAllGrupos(arr);
+        setChecked(new Set(asignados.filter((a) => a.asignacion_activa !== 0).map((a) => a.id)));
+      } catch (err) {
+        showToast(err.message, "danger");
       } finally {
         setLoading(false);
       }
@@ -567,2017 +614,252 @@ function EventoGruposModal({ open, onClose, evento, onSaved }) {
   }, [open, evento?.id, showToast]);
 
   function toggle(id) {
-    const next = new Set(checked);
-    if (next.has(id)) next.delete(id);
-    else next.add(id);
-    setChecked(next);
+    setChecked((prev) => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s; });
   }
 
-  async function onSubmit(e) {
-    e.preventDefault();
+  async function save() {
     setSaving(true);
     try {
       await setEventoGrupos(evento.id, [...checked]);
-      showToast("Grupos asignados", "success");
+      showToast("Grupos asignados correctamente", "success");
       onSaved?.();
       onClose();
-    } catch (e) {
-      showToast(e.message || "Error al guardar grupos", "danger");
+    } catch (err) {
+      showToast(err.message, "danger");
     } finally {
       setSaving(false);
     }
   }
 
   return (
-    <Modal open={open} onClose={onClose}>
-      <ModalDialog component="form" onSubmit={onSubmit} sx={{ width: 560 }}>
-        <Typography level="title-lg">
-          Asignar grupos — {evento?.clave}
-        </Typography>
-        <Divider />
-        {loading ? (
-          <Stack alignItems="center" p={2}>
-            <CircularProgress />
-            <Typography level="body-sm">Cargando grupos…</Typography>
-          </Stack>
-        ) : (
-          <>
-            <Stack direction="row" spacing={1} mb={1}>
-              <Input
-                startDecorator={<Filter size={14} />}
-                placeholder="Buscar grupo…"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-              <Chip size="sm" variant="soft">
-                {visible.length} / {todosGrupos.length}
-              </Chip>
-            </Stack>
-            <Sheet
-              variant="soft"
-              sx={{
-                maxHeight: 320,
-                overflow: "auto",
-                p: 1,
-                borderRadius: "md",
-                border: "1px solid",
-                borderColor: "divider",
-              }}>
-              {visible.map((g) => (
-                <Stack
-                  key={g.id}
-                  direction="row"
-                  alignItems="center"
-                  justifyContent="space-between"
-                  sx={{
-                    borderBottom: "1px solid",
-                    borderColor: "divider",
-                    py: 0.75,
-                  }}>
-                  <Stack spacing={0.3}>
-                    <Typography level="body-sm" fontWeight={600}>
-                      {g.nombre}
-                    </Typography>
-                    <Typography level="body-xs" color="neutral">
-                      {g.descripcion || "—"}
-                    </Typography>
-                  </Stack>
-                  <Checkbox
+    <Modal
+      open={open}
+      onClose={onClose}
+      title={`Grupos para: ${evento?.clave ?? ""}`}
+      footer={
+        <>
+          <Btn variant="ghost" onClick={onClose} disabled={saving}>Cancelar</Btn>
+          <Btn onClick={save} loading={saving}>Guardar</Btn>
+        </>
+      }>
+      {loading
+        ? <div className="flex justify-center py-8"><Spinner /></div>
+        : allGrupos.length === 0
+          ? <EmptyState message="No hay grupos creados. Crea uno primero." />
+          : (
+            <div className="flex flex-col gap-1">
+              <p className="text-xs text-[var(--muted-foreground)] mb-3">
+                Los grupos seleccionados recibirán las notificaciones de este evento.
+              </p>
+              {allGrupos.map((g) => (
+                <label key={g.id} className="flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-[var(--muted)]/40 cursor-pointer transition-colors border border-transparent hover:border-[var(--border)]">
+                  <div>
+                    <p className="text-sm font-medium text-[var(--foreground)]">{g.nombre}</p>
+                    {g.descripcion && <p className="text-xs text-[var(--muted-foreground)]">{g.descripcion}</p>}
+                    {typeof g.miembros === "number" && <p className="text-xs text-[var(--muted-foreground)]">{g.miembros} miembros</p>}
+                  </div>
+                  <input
+                    type="checkbox"
                     checked={checked.has(g.id)}
                     onChange={() => toggle(g.id)}
+                    className="w-4 h-4 rounded accent-[var(--primary)]"
                   />
-                </Stack>
+                </label>
               ))}
-              {!visible.length && (
-                <Typography level="body-sm" sx={{ p: 1 }}>
-                  No hay grupos con ese filtro.
-                </Typography>
-              )}
-            </Sheet>
-          </>
-        )}
-        <Stack direction="row" justifyContent="flex-end" spacing={1} mt={2}>
-          <Button variant="plain" onClick={onClose} disabled={saving}>
-            Cancelar
-          </Button>
-          <Button type="submit" loading={saving}>
-            Guardar
-          </Button>
-        </Stack>
-      </ModalDialog>
+            </div>
+          )}
     </Modal>
   );
 }
 
-// ====== Vista: Eventos & ruteo ======
-function RowSkeleton() {
-  return (
-    <tr>
-      <td colSpan={6}>
-        <Stack direction="row" alignItems="center" gap={1.5} sx={{ p: 1.5 }}>
-          <Sheet variant="soft" sx={{ height: 10, borderRadius: 8, flex: 1 }} />
-          <Sheet
-            variant="soft"
-            sx={{ height: 10, borderRadius: 8, width: 180 }}
-          />
-          <Sheet
-            variant="soft"
-            sx={{ height: 10, borderRadius: 8, width: 120 }}
-          />
-          <Sheet
-            variant="soft"
-            sx={{ height: 10, borderRadius: 8, width: 120 }}
-          />
-          <Sheet
-            variant="soft"
-            sx={{ height: 10, borderRadius: 8, width: 160 }}
-          />
-        </Stack>
-      </td>
-    </tr>
-  );
-}
-
-function EventosView() {
+function EventosTab() {
   const { showToast } = useToast();
+  const [eventos, setEventos] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [rows, setRows] = useState([]);
+  const [loadError, setLoadError] = useState(null);
   const [search, setSearch] = useState("");
-  const [activo, setActivo] = useState();
-  const [openModal, setOpenModal] = useState(false);
-  const [editing, setEditing] = useState(null);
+  const [openForm, setOpenForm] = useState(false);
+  const [editando, setEditando] = useState(null);
   const [openGrupos, setOpenGrupos] = useState(false);
   const [eventoSel, setEventoSel] = useState(null);
 
-  const filtered = useMemo(() => {
-    const s = (search || "").toLowerCase();
-    return rows.filter(
-      (r) =>
-        (!search ||
-          r.clave.toLowerCase().includes(s) ||
-          (r.nombre || "").toLowerCase().includes(s)) &&
-        (typeof activo === "undefined" || r.activo === (activo ? 1 : 0))
-    );
-  }, [rows, search, activo]);
-
   const load = useCallback(async () => {
     setLoading(true);
+    setLoadError(null);
     try {
-      const data = await listEventos({ limit: 200 });
-      setRows(data.rows || []);
-    } catch (e) {
-      showToast("No se pudieron cargar eventos", "danger");
+      const data = await getEventos();
+      setEventos(data);
+    } catch (err) {
+      setLoadError(err.message);
+      showToast(err.message, "danger");
     } finally {
       setLoading(false);
     }
-  }, [showToast]);
+  }, []); // eslint-disable-line
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  useEffect(() => { load(); }, []);
 
-  async function onDelete(id) {
-    if (!window.confirm("¿Eliminar (soft) este evento?")) return;
+  async function onDelete(e) {
+    if (!window.confirm(`¿Desactivar el evento "${e.nombre}"?`)) return;
     try {
-      await deleteEvento(id);
-      showToast("Evento eliminado (soft)", "success");
+      await deleteEvento(e.id);
+      showToast("Evento desactivado", "success");
       load();
-    } catch (e) {
-      showToast(e.message || "Error al eliminar", "danger");
+    } catch (err) {
+      showToast(err.message, "danger");
     }
   }
 
   async function onToggle(e) {
-    const next = e.activo ? 0 : 1;
     try {
-      await setEventoEstado(e.id, !!next);
-      showToast(next ? "Evento activado" : "Evento desactivado", "success");
+      await toggleEventoEstado(e.id, !e.activo);
+      showToast(e.activo ? "Evento desactivado" : "Evento activado", "success");
       load();
     } catch (err) {
-      showToast(err.message || "No se pudo cambiar el estado", "danger");
+      showToast(err.message, "danger");
     }
   }
+
+  const filtrado = eventos.filter((e) =>
+    !search ||
+    e.clave.toLowerCase().includes(search.toLowerCase()) ||
+    (e.nombre ?? "").toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
-    <Box sx={{ maxWidth: 1200, mx: "auto", p: 2 }}>
-      <Card variant="outlined" sx={{ borderRadius: 16, boxShadow: "sm" }}>
-        {/* Toolbar */}
-        <Sheet
-          variant="soft"
-          sx={{
-            p: 1.25,
-            borderTopLeftRadius: 16,
-            borderTopRightRadius: 16,
-            borderBottomLeftRadius: 8,
-            borderBottomRightRadius: 8,
-            display: "flex",
-            flexDirection: { xs: "column", sm: "row" },
-            gap: 1,
-            alignItems: { xs: "stretch", sm: "center" },
-            justifyContent: "space-between",
-          }}>
-          <Typography
-            level="title-md"
-            sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
-            <Link2 size={16} /> Eventos & ruteo
-          </Typography>
-
-          <Stack
-            direction="row"
-            spacing={1}
-            sx={{ width: { xs: "100%", sm: "auto" } }}>
-            <Input
-              placeholder="Buscar por clave o nombre…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              startDecorator={<Filter size={14} />}
-              variant="soft"
-              size="sm"
-              sx={{ minWidth: { sm: 280 }, flex: { xs: 1, sm: "initial" } }}
-            />
-
-            <Select
-              placeholder="Estado"
-              value={typeof activo === "undefined" ? "" : activo ? "1" : "0"}
-              onChange={(_, v) => setActivo(v === "" ? undefined : v === "1")}
-              size="sm"
-              variant="soft"
-              sx={{ minWidth: 140 }}>
-              <Option value="">Todos</Option>
-              <Option value="1">Activos</Option>
-              <Option value="0">Inactivos</Option>
-            </Select>
-
-            <IconButton
-              size="sm"
-              variant="outlined"
-              onClick={load}
-              title="Recargar">
-              <RefreshCw size={14} />
-            </IconButton>
-
-            <Button
-              size="sm"
-              startDecorator={<Plus size={16} />}
-              onClick={() => {
-                setEditing(null);
-                setOpenModal(true);
-              }}>
-              Nuevo evento
-            </Button>
-          </Stack>
-        </Sheet>
-
-        <Divider />
-
-        {/* Tabla */}
-        {loading ? (
-          <Stack alignItems="center" p={3}>
-            <CircularProgress />
-          </Stack>
-        ) : (
-          <Table
-            size="sm"
-            borderAxis="bothBetween"
-            stickyHeader
-            hoverRow
-            stripe="odd"
-            sx={{
-              "--TableCell-headBackground":
-                "var(--joy-palette-background-level1)",
-              "& thead th": {
-                fontWeight: 600,
-                color: "text.secondary",
-                whiteSpace: "nowrap",
-              },
-              "& tbody td": { verticalAlign: "middle" },
-            }}>
-            <thead>
-              <tr>
-                <th style={{ width: 160 }}>Clave</th>
-                <th>Nombre</th>
-                <th style={{ width: 140 }}>Severidad</th>
-                <th style={{ width: 120 }}>Estado</th>
-                <th style={{ width: 160 }}>Grupos asignados</th>
-                <th style={{ width: 260 }}>Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((e) => (
-                <tr key={e.id}>
-                  <td>
-                    <Typography
-                      level="body-sm"
-                      sx={{ fontFamily: "monospace" }}>
-                      {e.clave}
-                    </Typography>
-                  </td>
-                  <td>{e.nombre}</td>
-                  <td>
-                    <SeveridadChip value={e.severidad_def} />
-                  </td>
-                  <td>
-                    <EstadoChip activo={!!e.activo} />
-                  </td>
-                  <td>
-                    {typeof e.grupos_asignados === "number" ? (
-                      <Chip size="sm" variant="soft" color="neutral">
-                        {e.grupos_asignados} grupo
-                        {e.grupos_asignados === 1 ? "" : "s"}
-                      </Chip>
-                    ) : (
-                      e.grupos_asignados
-                    )}
-                  </td>
-                  <td>
-                    <Stack direction="row" spacing={1}>
-                      <Tooltip title="Editar">
-                        <span>
-                          <IconButton
-                            size="sm"
-                            onClick={() => {
-                              setEditing(e);
-                              setOpenModal(true);
-                            }}>
-                            <Pencil size={16} />
-                          </IconButton>
-                        </span>
-                      </Tooltip>
-
-                      <Tooltip title={e.activo ? "Desactivar" : "Activar"}>
-                        <span>
-                          <IconButton
-                            size="sm"
-                            color={e.activo ? "danger" : "success"}
-                            onClick={() => onToggle(e)}>
-                            {e.activo ? (
-                              <ToggleLeft size={16} />
-                            ) : (
-                              <ToggleRight size={16} />
-                            )}
-                          </IconButton>
-                        </span>
-                      </Tooltip>
-
-                      <Tooltip title="Configurar grupos">
-                        <span>
-                          <IconButton
-                            size="sm"
-                            onClick={() => {
-                              setEventoSel(e);
-                              setOpenGrupos(true);
-                            }}>
-                            <Users size={16} />
-                          </IconButton>
-                        </span>
-                      </Tooltip>
-
-                      <Tooltip title="Eliminar (soft)">
-                        <span>
-                          <IconButton
-                            size="sm"
-                            color="danger"
-                            onClick={() => onDelete(e.id)}>
-                            <Trash2 size={16} />
-                          </IconButton>
-                        </span>
-                      </Tooltip>
-                    </Stack>
-                  </td>
-                </tr>
-              ))}
-
-              {!filtered.length && (
-                <tr>
-                  <td colSpan={6}>
-                    <Sheet
-                      variant="soft"
-                      sx={{
-                        my: 2,
-                        mx: 1.5,
-                        p: 3,
-                        borderRadius: 12,
-                        textAlign: "center",
-                        color: "neutral.600",
-                      }}>
-                      No hay eventos con ese filtro.
-                    </Sheet>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </Table>
-        )}
-      </Card>
-
-      {/* Modales */}
-      <EventoModal
-        open={openModal}
-        onClose={() => setOpenModal(false)}
-        initial={editing}
-        onSaved={load}
-      />
-      <EventoGruposModal
-        open={openGrupos}
-        onClose={() => setOpenGrupos(false)}
-        evento={eventoSel}
-        onSaved={load}
-      />
-    </Box>
-  );
-}
-
-// ====== Vista: Plantillas (con metadata + restaurar) ======
-function PlantillasView() {
-  const { showToast } = useToast();
-  const [loading, setLoading] = useState(true);
-  const [rows, setRows] = useState([]);
-
-  // filtros
-  const [filters, setFilters] = useState({
-    evento: "",
-    canal: "email",
-    locale: "es",
-    activo: "", // ''(default)=solo activas ; true=todas ; false=inactivas
-  });
-
-  // plantilla seleccionada + draft
-  const [editing, setEditing] = useState(null);
-  const [form, setForm] = useState({ asunto: "", cuerpo: "" });
-  const [metadataStr, setMetadataStr] = useState("{}");
-
-  // preview
-  const [payloadStr, setPayloadStr] = useState(
-    JSON.stringify(
-      {
-        empleado_nombre: "Ana Pérez",
-        vehiculo_placa: "HAA-1234",
-        fecha: "2025-09-27 10:30",
-        detalle: "Falla de frenos",
-        link_detalle: "https://app/vehiculos/123",
-      },
-      null,
-      2
-    )
-  );
-  const [rendered, setRendered] = useState({ subject: "", html: "" });
-  const [useServerPreview, setUseServerPreview] = useState(false);
-  const [testing, setTesting] = useState(false);
-  const [publishing, setPublishing] = useState(false);
-  const [saving, setSaving] = useState(false);
-
-  // validación JSON en vivo
-  const [metadataError, setMetadataError] = useState("");
-  const [payloadError, setPayloadError] = useState("");
-
-  const safeParse = (text) => {
-    try {
-      return [JSON.parse(text || "{}"), ""];
-    } catch (e) {
-      return [null, e.message || "JSON inválido"];
-    }
-  };
-
-  useEffect(() => {
-    const [, mErr] = safeParse(metadataStr);
-    setMetadataError(mErr);
-  }, [metadataStr]);
-  useEffect(() => {
-    const [, pErr] = safeParse(payloadStr);
-    setPayloadError(pErr);
-  }, [payloadStr]);
-
-  const extractPlaceholders = useCallback((...strings) => {
-    const set = new Set();
-    strings.forEach((s = "") => {
-      (s.match(/\{\{\s*[\w.]+\s*\}\}/g) || []).forEach((m) => {
-        set.add(m.replace(/\{\{|\}\}/g, "").trim());
-      });
-    });
-    return Array.from(set);
-  }, []);
-
-  const placeholders = useMemo(
-    () =>
-      extractPlaceholders(
-        form.asunto,
-        form.cuerpo,
-        editing?.asunto,
-        editing?.cuerpo
-      ),
-    [extractPlaceholders, form.asunto, form.cuerpo, editing]
-  );
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const data = await apiListPlantillas({ ...filters, page: 1, limit: 200 });
-      setRows(data.rows || []);
-      if (!editing && data.rows?.length) {
-        const p = data.rows[0];
-        setEditing(p);
-        setForm({ asunto: p.asunto || "", cuerpo: p.cuerpo || "" });
-        setMetadataStr(p.metadata ? JSON.stringify(p.metadata, null, 2) : "{}");
-      }
-    } catch (e) {
-      showToast("No se pudieron cargar plantillas", "danger");
-    } finally {
-      setLoading(false);
-    }
-  }, [filters, editing, showToast]);
-
-  useEffect(() => {
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters.evento, filters.canal, filters.locale, filters.activo]);
-
-  const renderLocalWithMetadata = useCallback(
-    (subjectTpl, bodyTpl, payload, metadata) => {
-      const getDeep = (obj, path) =>
-        path
-          .split(".")
-          .reduce((acc, k) => (acc && acc[k] !== undefined ? acc[k] : ""), obj);
-      const render = (tpl = "") =>
-        String(tpl).replace(/\{\{\s*([\w.]+)\s*\}\}/g, (_, key) => {
-          const v = getDeep(payload, key);
-          return v == null ? "" : String(v);
-        });
-      const prefix = metadata?.subject_prefix || "";
-      const subject = prefix + render(subjectTpl || "");
-      const html = render(bodyTpl || "");
-      return { subject, html };
-    },
-    []
-  );
-
-  async function onPreview() {
-    try {
-      const [payloadUser, pErr] = safeParse(payloadStr);
-      if (pErr) throw new Error("payload inválido");
-      let metadata = {};
-      if (metadataStr && metadataStr.trim()) {
-        const [m, mErr] = safeParse(metadataStr);
-        if (mErr) throw new Error("metadata inválida");
-        metadata = m || {};
-      }
-      const payload = {
-        ...(metadata?.default_payload || {}),
-        ...(payloadUser || {}),
-      };
-
-      if (!useServerPreview) {
-        const { subject, html } = renderLocalWithMetadata(
-          form.asunto || editing?.asunto,
-          form.cuerpo || editing?.cuerpo,
-          payload,
-          metadata
-        );
-        setRendered({ subject, html });
-        return;
-      }
-
-      const evento_clave =
-        editing?.evento || filters.evento || "VEHICULO_SALIDA";
-      const resp = await apiPreviewPlantilla({
-        evento_clave,
-        canal: filters.canal || "email",
-        locale: filters.locale || "es",
-        payload,
-      });
-      setRendered({ subject: resp.subject, html: resp.html });
-    } catch (e) {
-      setRendered({ subject: "", html: "(payload o metadata inválidos)" });
-    }
-  }
-
-  async function onSave() {
-    if (!editing) return;
-    setSaving(true);
-    try {
-      let metadata = null;
-      if (metadataStr && metadataStr.trim()) {
-        const [m, mErr] = safeParse(metadataStr);
-        if (mErr) {
-          showToast("Metadata inválida", "danger");
-          setSaving(false);
-          return;
-        }
-        metadata = m;
-      }
-      await apiUpdatePlantilla(editing.id, {
-        asunto: form.asunto,
-        cuerpo: form.cuerpo,
-        metadata,
-      });
-      await load();
-      showToast("Plantilla guardada", "success");
-    } catch {
-      // noop visual
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function onPublish() {
-    if (!editing) return;
-    setPublishing(true);
-    try {
-      await apiPublishPlantilla(editing.id);
-      await load();
-      showToast("Publicada como default", "success");
-    } finally {
-      setPublishing(false);
-    }
-  }
-
-  async function onCreate() {
-    const evento = window.prompt("Clave del evento (ej: VEHICULO_SALIDA):");
-    if (!evento) return;
-    try {
-      const resp = await apiCreatePlantilla({
-        evento_clave: evento.trim().toUpperCase(),
-        canal: filters.canal || "email",
-        locale: filters.locale || "es",
-        asunto: "Nuevo asunto",
-        cuerpo: "Hola {{empleado_nombre}}",
-        metadata: {},
-      });
-      setEditing(resp);
-      setForm({ asunto: resp.asunto || "", cuerpo: resp.cuerpo || "" });
-      setMetadataStr(
-        resp.metadata ? JSON.stringify(resp.metadata, null, 2) : "{}"
-      );
-      load();
-    } catch {
-      // noop
-    }
-  }
-
-  async function onDelete(id) {
-    if (!window.confirm("¿Enviar a papelera esta plantilla (inactivar)?"))
-      return;
-    try {
-      await apiDeletePlantilla(id); // soft => activo=0
-      await load();
-    } catch {
-      // noop
-    }
-  }
-
-  async function onRestore(id) {
-    try {
-      await setPlantillaEstado(id, true);
-      await load();
-    } catch {
-      // noop
-    }
-  }
-
-  const [copied, setCopied] = useState({ subject: false, html: false });
-  const copyToClipboard = async (text, key) => {
-    try {
-      await navigator.clipboard.writeText(text || "");
-      setCopied((c) => ({ ...c, [key]: true }));
-      setTimeout(() => setCopied((c) => ({ ...c, [key]: false })), 1200);
-    } catch {}
-  };
-
-  return (
-    <Box sx={{ maxWidth: 1200, mx: "auto", p: 2 }}>
-      <Stack direction={{ xs: "column", md: "row" }} spacing={1.5}>
-        {/* Sidebar list */}
-        <Card
-          variant="outlined"
-          sx={{
-            width: { xs: "100%", md: 380 },
-            flexShrink: 0,
-            borderRadius: 16,
-            boxShadow: "sm",
-          }}>
-          <Stack
-            direction="row"
-            justifyContent="space-between"
-            alignItems="center"
-            sx={{ mb: 1 }}>
-            <Typography
-              level="title-md"
-              sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
-              <FileText size={16} /> Plantillas
-            </Typography>
-            <Button
-              size="sm"
-              onClick={onCreate}
-              startDecorator={<Plus size={14} />}>
-              Nueva
-            </Button>
-          </Stack>
-
-          <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
-            <Input
-              placeholder="Evento (clave)…"
-              value={filters.evento}
-              onChange={(e) =>
-                setFilters((f) => ({ ...f, evento: e.target.value }))
-              }
-              size="sm"
-              variant="soft"
-            />
-            <Select
-              value={filters.canal}
-              onChange={(_, v) => setFilters((f) => ({ ...f, canal: v }))}
-              size="sm"
-              variant="soft">
-              <Option value="email">email</Option>
-            </Select>
-            <Select
-              value={filters.locale}
-              onChange={(_, v) => setFilters((f) => ({ ...f, locale: v }))}
-              size="sm"
-              variant="soft">
-              <Option value="es">es</Option>
-              <Option value="en">en</Option>
-            </Select>
-          </Stack>
-
-          <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
-            <Select
-              placeholder="Estado"
-              value={String(filters.activo)}
-              onChange={(_, v) =>
-                setFilters((f) => ({
-                  ...f,
-                  activo: v === "true" ? true : v === "false" ? false : "",
-                }))
-              }
-              sx={{ minWidth: 160 }}
-              size="sm"
-              variant="soft">
-              <Option value="">Activas (default)</Option>
-              <Option value="true">Todas</Option>
-              <Option value="false">Inactivas</Option>
-            </Select>
-          </Stack>
-
-          <Sheet
-            variant="soft"
-            sx={{
-              borderRadius: 12,
-              border: "1px solid",
-              borderColor: "divider",
-              maxHeight: 420,
-              overflow: "auto",
-            }}>
-            {loading ? (
-              <Stack alignItems="center" p={2}>
-                <CircularProgress />
-              </Stack>
-            ) : rows.length ? (
-              rows.map((p) => (
-                <Sheet
-                  key={p.id}
-                  variant={editing?.id === p.id ? "soft" : "plain"}
-                  sx={{
-                    px: 1,
-                    py: 1,
-                    borderBottom: "1px solid",
-                    borderColor: "divider",
-                    cursor: "pointer",
-                    "&:hover": { bgcolor: "background.level2" },
-                  }}
-                  onClick={() => {
-                    setEditing(p);
-                    setForm({ asunto: p.asunto || "", cuerpo: p.cuerpo || "" });
-                    setMetadataStr(
-                      p.metadata ? JSON.stringify(p.metadata, null, 2) : "{}"
-                    );
-                    setRendered({ subject: "", html: "" });
-                  }}>
-                  <Stack direction="row" alignItems="center" spacing={1}>
-                    {!p.activo && (
-                      <Chip size="sm" variant="soft" color="neutral">
-                        inactiva
-                      </Chip>
-                    )}
-                    {p.es_default && (
-                      <Chip size="sm" variant="soft" color="success">
-                        default
-                      </Chip>
-                    )}
-                    <Typography level="body-sm" fontWeight={600}>
-                      {p.evento} · {p.canal} ({p.locale})
-                    </Typography>
-                  </Stack>
-                  <Typography level="body-xs" color="neutral" sx={{ mt: 0.25 }}>
-                    {p.asunto}
-                  </Typography>
-                </Sheet>
-              ))
-            ) : (
-              <Typography level="body-sm" sx={{ p: 1 }}>
-                No hay plantillas con ese filtro.
-              </Typography>
-            )}
-          </Sheet>
-        </Card>
-
-        {/* Editor + preview */}
-        <Card
-          variant="outlined"
-          sx={{ flex: 1, borderRadius: 16, boxShadow: "sm" }}>
-          <Stack
-            direction="row"
-            justifyContent="space-between"
-            alignItems="center"
-            sx={{ mb: 1.25 }}>
-            <Typography
-              level="title-md"
-              sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
-              <Mail size={16} /> Editor de plantilla (email)
-            </Typography>
-            <Stack direction="row" spacing={1} alignItems="center">
-              <Chip size="sm" variant="soft">
-                Preview: {useServerPreview ? "Servidor" : "Local"}
-              </Chip>
-              <Switch
-                checked={useServerPreview}
-                onChange={(e) => setUseServerPreview(e.target.checked)}
-              />
-              <Button
-                size="sm"
-                variant="outlined"
-                startDecorator={<RefreshCw size={14} />}
-                onClick={onPreview}>
-                Previsualizar
-              </Button>
-              {editing?.activo ? (
-                <Button
-                  size="sm"
-                  variant="outlined"
-                  color="danger"
-                  startDecorator={<Trash2 size={14} />}
-                  onClick={() => onDelete(editing.id)}>
-                  Eliminar
-                </Button>
-              ) : (
-                <Button
-                  size="sm"
-                  variant="outlined"
-                  color="success"
-                  onClick={() => onRestore(editing.id)}>
-                  Restaurar
-                </Button>
-              )}
-              <Button size="sm" onClick={onSave} loading={saving}>
-                Guardar
-              </Button>
-            </Stack>
-          </Stack>
-
-          <Stack spacing={1.25}>
-            <FormControl>
-              <FormLabel>Asunto</FormLabel>
-              <Input
-                value={form.asunto}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, asunto: e.target.value }))
-                }
-                placeholder="Asunto del correo (acepta {{placeholders}})"
-              />
-            </FormControl>
-
-            <FormControl>
-              <FormLabel>Cuerpo (HTML con {placeholders})</FormLabel>
-              <Textarea
-                minRows={10}
-                value={form.cuerpo}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, cuerpo: e.target.value }))
-                }
-                placeholder="<p>Hola {{empleado_nombre}}, ...</p>"
-              />
-            </FormControl>
-
-            {/* Variables detectadas */}
-            {placeholders.length > 0 && (
-              <Stack
-                direction="row"
-                gap={1}
-                flexWrap="wrap"
-                alignItems="center">
-                <Chip size="sm" startDecorator={<Braces size={14} />}>
-                  Variables detectadas
-                </Chip>
-                {placeholders.map((v) => (
-                  <Chip
-                    key={v}
-                    size="sm"
-                    variant="soft"
-                    color="neutral"
-                    sx={{
-                      fontFamily: "var(--joy-fontFamily-code)",
-                    }}>{`{{${v}}}`}</Chip>
-                ))}
-              </Stack>
-            )}
-
-            {/* ===== METADATA ===== */}
-            <FormControl error={!!metadataError}>
-              <FormLabel>Metadata (JSON)</FormLabel>
-              <Textarea
-                minRows={8}
-                value={metadataStr}
-                onChange={(e) => setMetadataStr(e.target.value)}
-                slotProps={{
-                  textarea: {
-                    style: { fontFamily: "var(--joy-fontFamily-code)" },
-                  },
-                }}
-                placeholder={`{\n  "default_payload": { "empresa": "Tecnasa" },\n  "subject_prefix": "[FLOTA] "\n}`}
-              />
-              {metadataError ? (
-                <Typography level="body-xs" color="danger" sx={{ mt: 0.5 }}>
-                  {metadataError}
-                </Typography>
-              ) : (
-                <Typography level="body-xs" color="neutral" sx={{ mt: 0.5 }}>
-                  Usa JSON válido. Campos comunes: <code>default_payload</code>,{" "}
-                  <code>subject_prefix</code>.
-                </Typography>
-              )}
-            </FormControl>
-
-            <Divider />
-
-            <Typography level="title-sm">Preview rápido</Typography>
-            <Sheet
-              variant="outlined"
-              sx={{
-                borderRadius: 12,
-                p: 2,
-                bgcolor: "background.body",
-                overflow: "auto",
-                maxHeight: 360,
-              }}>
-              {rendered.subject && (
-                <Stack
-                  direction="row"
-                  alignItems="center"
-                  justifyContent="space-between"
-                  sx={{ mb: 1 }}>
-                  <Stack spacing={0.25}>
-                    <Typography level="body-xs" color="neutral">
-                      Asunto
-                    </Typography>
-                    <Typography level="body-sm">{rendered.subject}</Typography>
-                  </Stack>
-                  <Tooltip title="Copiar asunto">
-                    <IconButton
-                      size="sm"
-                      variant="outlined"
-                      onClick={() =>
-                        copyToClipboard(rendered.subject, "subject")
-                      }>
-                      {copied.subject ? (
-                        <Check size={14} />
-                      ) : (
-                        <Copy size={14} />
-                      )}
-                    </IconButton>
-                  </Tooltip>
-                </Stack>
-              )}
-              <Typography level="body-xs" color="neutral">
-                Cuerpo
-              </Typography>
-              <Box sx={{ position: "relative" }}>
-                <Box
-                  sx={{
-                    border: "1px solid",
-                    borderColor: "divider",
-                    borderRadius: 10,
-                    p: 1.5,
-                    bgcolor: "#fff",
-                  }}
-                  dangerouslySetInnerHTML={{
-                    __html: rendered.html || "(sin preview aún)",
-                  }}
-                />
-                <Tooltip title="Copiar HTML">
-                  <IconButton
-                    size="sm"
-                    variant="outlined"
-                    onClick={() => copyToClipboard(rendered.html, "html")}
-                    sx={{ position: "absolute", top: 8, right: 8 }}>
-                    {copied.html ? <Check size={14} /> : <Copy size={14} />}
-                  </IconButton>
-                </Tooltip>
-              </Box>
-            </Sheet>
-
-            <Stack
-              direction={{ xs: "column", md: "row" }}
-              spacing={1.5}
-              sx={{ mt: 1 }}>
-              <Card variant="soft" sx={{ flex: 1 }}>
-                <Typography level="title-sm" sx={{ mb: 1 }}>
-                  Payload de prueba (JSON)
-                </Typography>
-                <FormControl error={!!payloadError}>
-                  <Textarea
-                    minRows={10}
-                    value={payloadStr}
-                    onChange={(e) => setPayloadStr(e.target.value)}
-                    slotProps={{
-                      textarea: {
-                        style: { fontFamily: "var(--joy-fontFamily-code)" },
-                      },
-                    }}
-                  />
-                  {payloadError && (
-                    <Typography level="body-xs" color="danger" sx={{ mt: 0.5 }}>
-                      {payloadError}
-                    </Typography>
-                  )}
-                </FormControl>
-              </Card>
-
-              <Card variant="soft" sx={{ width: { xs: "100%", md: 320 } }}>
-                <Typography level="title-sm" sx={{ mb: 1 }}>
-                  Acciones
-                </Typography>
-                <Stack spacing={1}>
-                  <Button
-                    variant="solid"
-                    startDecorator={<Send size={14} />}
-                    loading={testing}
-                    onClick={async () => {
-                      if (!editing) return;
-                      const email = window.prompt("Enviar prueba a (correo):");
-                      if (!email) return;
-                      try {
-                        setTesting(true);
-                        const [payloadUser, pErr] = safeParse(payloadStr);
-                        if (pErr) {
-                          showToast("Payload inválido", "danger");
-                          return;
-                        }
-                        await apiTestPlantilla(editing.id, {
-                          to_email: email,
-                          payload: payloadUser,
-                        });
-                        showToast("Prueba enviada", "success");
-                      } finally {
-                        setTesting(false);
-                      }
-                    }}>
-                    Enviar prueba
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    loading={publishing}
-                    onClick={onPublish}
-                    disabled={!editing}>
-                    Publicar como default
-                  </Button>
-                </Stack>
-              </Card>
-            </Stack>
-          </Stack>
-        </Card>
-      </Stack>
-    </Box>
-  );
-}
-
-// ====== Modal: Crear/Editar Grupo ======
-function GrupoModal({ open, onClose, initial, onSaved }) {
-  const { showToast } = useToast();
-  const isEdit = !!initial?.id;
-  const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({
-    nombre: "",
-    descripcion: "",
-    activo: true,
-  });
-
-  useEffect(() => {
-    if (open) {
-      setForm({
-        nombre: initial?.nombre || "",
-        descripcion: initial?.descripcion || "",
-        activo: initial?.activo !== 0,
-      });
-    }
-  }, [open, initial]);
-
-  async function onSubmit(e) {
-    e.preventDefault();
-    if (!form.nombre.trim()) {
-      showToast("El nombre es requerido", "warning");
-      return;
-    }
-    setSaving(true);
-    try {
-      if (isEdit) {
-        await updateGrupo(initial.id, form);
-      } else {
-        await createGrupo(form);
-      }
-      onSaved?.();
-      onClose();
-    } catch (e) {
-      showToast(e.message || "Error al guardar grupo", "danger");
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  return (
-    <Modal open={open} onClose={onClose}>
-      <ModalDialog component="form" onSubmit={onSubmit} sx={{ width: 520 }}>
-        <Typography level="title-lg">
-          {isEdit ? "Editar grupo" : "Nuevo grupo"}
-        </Typography>
-        <Divider />
-        <Stack spacing={1.25} mt={1}>
-          <FormControl required>
-            <FormLabel>Nombre</FormLabel>
-            <Input
-              value={form.nombre}
-              onChange={(e) => setForm({ ...form, nombre: e.target.value })}
-            />
-          </FormControl>
-          <FormControl>
-            <FormLabel>Descripción</FormLabel>
-            <Textarea
-              minRows={2}
-              value={form.descripcion}
-              onChange={(e) =>
-                setForm({ ...form, descripcion: e.target.value })
-              }
-            />
-          </FormControl>
-          <FormControl orientation="horizontal" sx={{ alignItems: "center" }}>
-            <FormLabel>Activo</FormLabel>
-            <Switch
-              checked={form.activo}
-              onChange={(e) => setForm({ ...form, activo: e.target.checked })}
-            />
-          </FormControl>
-        </Stack>
-
-        <Stack direction="row" justifyContent="flex-end" spacing={1} mt={2}>
-          <Button variant="plain" onClick={onClose} disabled={saving}>
-            Cancelar
-          </Button>
-          <Button type="submit" loading={saving}>
-            Guardar
-          </Button>
-        </Stack>
-      </ModalDialog>
-    </Modal>
-  );
-}
-
-// ====== Vista: Grupos ======
-function GruposView() {
-  const { showToast } = useToast();
-  const [searchingUsers, setSearchingUsers] = useState(false);
-
-  // listados
-  const [filtro, setFiltro] = useState({ q: "", activo: "" }); // ''=solo activos (default), true=todos, false=inactivos
-  const [loading, setLoading] = useState(true);
-  const [grupos, setGrupos] = useState([]);
-  const [sel, setSel] = useState(null); // grupo seleccionado (objeto)
-
-  // detalles del grupo
-  const [miembros, setMiembros] = useState([]);
-  const [canales, setCanales] = useState([]); // [{canal, enabled/habilitado, min_severity/severidad_min}]
-  const [savingGrupo, setSavingGrupo] = useState(false);
-
-  // modal crear/editar grupo
-  const [openGrupo, setOpenGrupo] = useState(false);
-  const [editGrupo, setEditGrupo] = useState(null);
-  const [formGrupo, setFormGrupo] = useState({ nombre: "", descripcion: "" });
-
-  // modal miembros
-  const [openMiembros, setOpenMiembros] = useState(false);
-  const [buscaUser, setBuscaUser] = useState("");
-  const [resultUsers, setResultUsers] = useState([]);
-  const [addingMembers, setAddingMembers] = useState(false);
-
-  // canales (solo email por ahora)
-  const [emailCfg, setEmailCfg] = useState({
-    enabled: false,
-    min_severity: "low",
-  });
-  const [savingChannel, setSavingChannel] = useState(false);
-
-  const loadGrupos = useCallback(async () => {
-    setLoading(true);
-    try {
-      const data = await listGrupos({
-        q: filtro.q,
-        activo: filtro.activo,
-        page: 1,
-        limit: 200,
-      });
-      setGrupos(data.rows || []);
-      // autoselect
-      if (!sel && data.rows?.length) {
-        setSel(data.rows[0]);
-      }
-    } catch (e) {
-      showToast("No se pudieron cargar grupos", "danger");
-    } finally {
-      setLoading(false);
-    }
-  }, [filtro, sel, showToast]);
-
-  // carga inicial y al cambiar filtro
-  useEffect(() => {
-    loadGrupos();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filtro.q, filtro.activo]);
-
-  // cargar detalles (miembros/canales) al cambiar seleccionado
-  useEffect(() => {
-    if (!sel) return;
-    (async () => {
-      try {
-        const [m, c] = await Promise.all([
-          listMiembros(sel.id, { page: 1, limit: 200 }),
-          getCanales(sel.id),
-        ]);
-        setMiembros(
-          Array.isArray(m?.rows) ? m.rows : Array.isArray(m) ? m : []
-        );
-        setCanales(c || []);
-        const email = (c || []).find((x) => x.canal === "email");
-        setEmailCfg({
-          enabled: !!email?.habilitado || !!email?.enabled,
-          min_severity: email?.severidad_min || email?.min_severity || "low",
-        });
-      } catch (e) {
-        showToast("No se pudo cargar detalle del grupo", "danger");
-      }
-    })();
-  }, [sel, showToast]);
-
-  // ---- handlers: grupos
-  function abrirNuevoGrupo() {
-    setEditGrupo(null);
-    setFormGrupo({ nombre: "", descripcion: "" });
-    setOpenGrupo(true);
-  }
-  function abrirEditarGrupo(g) {
-    setEditGrupo(g);
-    setFormGrupo({ nombre: g.nombre || "", descripcion: g.descripcion || "" });
-    setOpenGrupo(true);
-  }
-  async function onSubmitGrupo(e) {
-    e.preventDefault();
-    setSavingGrupo(true);
-    try {
-      if (editGrupo) {
-        await updateGrupo(editGrupo.id, formGrupo);
-        showToast("Grupo actualizado", "success");
-      } else {
-        await createGrupo(formGrupo);
-        showToast("Grupo creado", "success");
-      }
-      setOpenGrupo(false);
-      await loadGrupos();
-    } catch (e) {
-      showToast(e.message || "Error al guardar grupo", "danger");
-    } finally {
-      setSavingGrupo(false);
-    }
-  }
-  async function onEliminarGrupo(g) {
-    if (!g) return;
-    if (!window.confirm("¿Enviar a papelera este grupo (inactivar)?")) return;
-    try {
-      await deleteGrupo(g.id);
-      showToast("Grupo inactivado", "success");
-      await loadGrupos();
-      setSel(null);
-    } catch (e) {
-      showToast(e.message || "No se pudo inactivar", "danger");
-    }
-  }
-  async function onRestaurarGrupo(g) {
-    try {
-      await setGrupoEstado(g.id, true);
-      showToast("Grupo restaurado", "success");
-      await loadGrupos();
-      setSel(g);
-    } catch (e) {
-      showToast(e.message || "No se pudo restaurar", "danger");
-    }
-  }
-
-  // ---- handlers: miembros
-  async function buscarUsuarios() {
-    const q = (buscaUser || "").trim();
-    if (q.length < 2) {
-      setResultUsers([]);
-      showToast("Escribe al menos 2 caracteres", "warning");
-      return;
-    }
-    setSearchingUsers(true);
-    try {
-      const rs = await listUsuarios({ q, limit: 200 });
-      const arr = Array.isArray(rs)
-        ? rs
-        : Array.isArray(rs?.rows)
-        ? rs.rows
-        : [];
-
-      const norm = (s = "") =>
-        s
-          .toString()
-          .normalize("NFD")
-          .replace(/[\u0300-\u036f]/g, "")
-          .toLowerCase();
-      const nq = norm(q);
-
-      const filtered = arr.filter((u) => {
-        const nombre = norm(u.nombre);
-        const email = norm(u.email);
-        const user = norm(u.username);
-        return nombre.includes(nq) || email.includes(nq) || user.includes(nq);
-      });
-
-      setResultUsers(filtered);
-    } catch {
-      setResultUsers([]);
-    } finally {
-      setSearchingUsers(false);
-    }
-  }
-
-  async function agregarMiembrosSeleccionados(ids) {
-    if (!sel) return;
-    setAddingMembers(true);
-    try {
-      await addMiembros(sel.id, ids);
-      const m = await listMiembros(sel.id, { page: 1, limit: 200 });
-      setMiembros(Array.isArray(m?.rows) ? m.rows : []);
-      showToast("Miembros agregados", "success");
-    } catch (e) {
-      showToast(e.message || "No se pudieron agregar", "danger");
-    } finally {
-      setAddingMembers(false);
-    }
-  }
-
-  async function quitarMiembro(u) {
-    if (!sel) return;
-    try {
-      await removeMiembro(sel.id, u.id_usuario);
-      setMiembros((prev) => prev.filter((x) => x.id_usuario !== u.id_usuario));
-    } catch (e) {
-      showToast(e.message || "No se pudo quitar", "danger");
-    }
-  }
-
-  // ---- handlers: canales (email)
-  async function guardarCanalEmail() {
-    if (!sel) return;
-    setSavingChannel(true);
-    try {
-      await saveCanales(sel.id, [
-        {
-          canal: "email",
-          habilitado: emailCfg.enabled,
-          severidad_min: emailCfg.min_severity,
-        },
-      ]);
-      const c = await getCanales(sel.id);
-      setCanales(c || []);
-      showToast("Canal guardado", "success");
-    } catch (e) {
-      showToast(e.message || "No se pudo guardar", "danger");
-    } finally {
-      setSavingChannel(false);
-    }
-  }
-  async function eliminarCanalEmail() {
-    setEmailCfg({ enabled: false, min_severity: "low" });
-    await guardarCanalEmail();
-  }
-
-  return (
-    <Box className="grupos-view" sx={{ maxWidth: 1200, mx: "auto", p: 2 }}>
-      <Stack direction={{ xs: "column", md: "row" }} spacing={1.5}>
-        {/* ===== Sidebar: listado de grupos ===== */}
-        <Card
-          variant="outlined"
-          sx={{
-            width: { xs: "100%", md: 360 },
-            flexShrink: 0,
-            borderRadius: 16,
-            boxShadow: "sm",
-          }}>
-          {/* Toolbar sidebar */}
-          <Stack
-            direction="row"
-            justifyContent="space-between"
-            alignItems="center"
-            sx={{ mb: 1 }}>
-            <Typography
-              level="title-md"
-              sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
-              <Users size={16} /> Grupos
-            </Typography>
-            <Button
-              size="sm"
-              startDecorator={<Plus size={14} />}
-              onClick={abrirNuevoGrupo}>
-              Nuevo
-            </Button>
-          </Stack>
-
-          <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
-            <Input
-              placeholder="Buscar…"
-              value={filtro.q}
-              onChange={(e) => setFiltro((f) => ({ ...f, q: e.target.value }))}
-              startDecorator={<SearchIcon size={14} />}
-              size="sm"
-              variant="soft"
-            />
-            <Select
-              value={String(filtro.activo)}
-              onChange={(_, v) =>
-                setFiltro((f) => ({
-                  ...f,
-                  activo: v === "true" ? true : v === "false" ? false : "",
-                }))
-              }
-              size="sm"
-              variant="soft"
-              sx={{ minWidth: 140 }}>
-              <Option value="">Activos</Option>
-              <Option value="true">Todos</Option>
-              <Option value="false">Inactivos</Option>
-            </Select>
-            <IconButton
-              size="sm"
-              variant="outlined"
-              onClick={loadGrupos}
-              title="Recargar">
-              <RefreshCw size={14} />
-            </IconButton>
-          </Stack>
-
-          <Sheet
-            variant="soft"
-            sx={{
-              borderRadius: 12,
-              border: "1px solid",
-              borderColor: "divider",
-              maxHeight: 420,
-              overflow: "auto",
-            }}>
-            {loading ? (
-              <Stack alignItems="center" p={2}>
-                <CircularProgress />
-              </Stack>
-            ) : grupos.length ? (
-              grupos.map((g) => (
-                <Sheet
-                  key={g.id}
-                  variant={sel?.id === g.id ? "soft" : "plain"}
-                  sx={{
-                    px: 1,
-                    py: 1,
-                    borderBottom: "1px solid",
-                    borderColor: "divider",
-                    cursor: "pointer",
-                    "&:hover": { bgcolor: "background.level2" },
-                  }}
-                  onClick={() => setSel(g)}>
-                  <Stack direction="row" alignItems="center" spacing={0.75}>
-                    {!g.activo && (
-                      <Chip size="sm" variant="soft" color="neutral">
-                        inactivo
-                      </Chip>
-                    )}
-                    <Typography level="body-sm" fontWeight={600}>
-                      {g.nombre}
-                    </Typography>
-                    {typeof g.cantidad_miembros === "number" && (
-                      <Chip
-                        size="sm"
-                        variant="soft"
-                        color="neutral"
-                        sx={{ ml: "auto" }}>
-                        {g.cantidad_miembros} miembros
-                      </Chip>
-                    )}
-                  </Stack>
-                  {g.descripcion ? (
-                    <Typography level="body-xs" color="neutral">
-                      {g.descripcion}
-                    </Typography>
-                  ) : null}
-                </Sheet>
-              ))
-            ) : (
-              <Typography level="body-sm" sx={{ p: 1 }}>
-                No hay grupos con ese filtro.
-              </Typography>
-            )}
-          </Sheet>
-        </Card>
-
-        {/* ===== Panel derecho: detalle del grupo ===== */}
-        <Card
-          variant="outlined"
-          sx={{ flex: 1, borderRadius: 16, boxShadow: "sm" }}>
-          {!sel ? (
-            <Sheet sx={{ p: 3, textAlign: "center" }}>
-              Selecciona un grupo…
-            </Sheet>
-          ) : (
-            <Stack spacing={1.25}>
-              {/* header acciones */}
-              <Stack
-                direction="row"
-                justifyContent="space-between"
-                alignItems="center">
-                <Typography level="title-md">{sel.nombre}</Typography>
-                <Stack direction="row" spacing={1}>
-                  {sel.activo ? (
-                    <Button
-                      size="sm"
-                      variant="outlined"
-                      color="danger"
-                      startDecorator={<Trash2 size={14} />}
-                      onClick={() => onEliminarGrupo(sel)}>
-                      Eliminar
-                    </Button>
-                  ) : (
-                    <Button
-                      size="sm"
-                      variant="outlined"
-                      color="success"
-                      onClick={() => onRestaurarGrupo(sel)}>
-                      Restaurar
-                    </Button>
-                  )}
-                  <Button
-                    size="sm"
-                    variant="solid"
-                    onClick={() => abrirEditarGrupo(sel)}>
-                    Editar
-                  </Button>
-                </Stack>
-              </Stack>
-
-              <Divider />
-
-              {/* Miembros */}
-              <Typography level="title-sm">Miembros</Typography>
-              <Sheet variant="soft" sx={{ p: 1.5, borderRadius: 12 }}>
-                <Stack
-                  direction="row"
-                  justifyContent="space-between"
-                  alignItems="center"
-                  sx={{ mb: 1 }}>
-                  <Typography level="body-sm" color="neutral">
-                    {miembros.length} miembros
-                  </Typography>
-                  <Button
-                    size="sm"
-                    onClick={() => setOpenMiembros(true)}
-                    startDecorator={<Plus size={14} />}>
-                    Agregar miembros
-                  </Button>
-                </Stack>
-                <Table size="sm" hoverRow>
+    <div className="flex flex-col gap-4">
+      {/* Toolbar */}
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative flex-1 min-w-[200px]">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted-foreground)]" />
+          <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar por clave o nombre..." className="pl-8" />
+        </div>
+        <Btn size="sm" variant="outline" onClick={load}><RefreshCw size={13} /> Recargar</Btn>
+        <Btn size="sm" onClick={() => { setEditando(null); setOpenForm(true); }}><Plus size={13} /> Nuevo evento</Btn>
+      </div>
+
+      {/* Tabla */}
+      <div className="border border-[var(--border)] rounded-2xl overflow-hidden bg-[var(--card)]">
+        {loading
+          ? <div className="flex justify-center py-12"><Spinner /></div>
+          : loadError
+            ? <EmptyState message={`Error al cargar: ${loadError}`} />
+            : filtrado.length === 0
+            ? <EmptyState message="No hay eventos. Crea uno para comenzar." />
+            : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
                   <thead>
-                    <tr>
-                      <th style={{ width: 220 }}>Nombre</th>
-                      <th>Email</th>
-                      <th>Usuario</th>
-                      <th style={{ width: 80 }}></th>
+                    <tr className="border-b border-[var(--border)] bg-[var(--muted)]/30">
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-[var(--muted-foreground)] uppercase tracking-wide">Clave</th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-[var(--muted-foreground)] uppercase tracking-wide">Nombre</th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-[var(--muted-foreground)] uppercase tracking-wide">Severidad</th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-[var(--muted-foreground)] uppercase tracking-wide">Estado</th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-[var(--muted-foreground)] uppercase tracking-wide">Grupos</th>
+                      <th className="text-right px-4 py-3 text-xs font-semibold text-[var(--muted-foreground)] uppercase tracking-wide">Acciones</th>
                     </tr>
                   </thead>
-                  <tbody>
-                    {(Array.isArray(miembros) ? miembros : []).map((m) => (
-                      <tr key={m.id_usuario}>
-                        <td>{m.nombre}</td>
-                        <td>{m.email}</td>
-                        <td>{m.username}</td>
-                        <td>
-                          <Tooltip title="Quitar">
-                            <IconButton
-                              size="sm"
-                              color="danger"
-                              variant="soft"
-                              onClick={() => quitarMiembro(m)}>
+                  <tbody className="divide-y divide-[var(--border)]">
+                    {filtrado.map((e) => (
+                      <tr key={e.id} className="hover:bg-[var(--muted)]/20 transition-colors">
+                        <td className="px-4 py-3">
+                          <code className="text-xs bg-[var(--muted)] px-1.5 py-0.5 rounded font-mono">{e.clave}</code>
+                        </td>
+                        <td className="px-4 py-3 text-[var(--foreground)]">{e.nombre}</td>
+                        <td className="px-4 py-3"><SevBadge value={e.severidad_def} /></td>
+                        <td className="px-4 py-3"><EstadoBadge activo={!!e.activo} /></td>
+                        <td className="px-4 py-3">
+                          <span className="text-xs text-[var(--muted-foreground)]">
+                            {typeof e.grupos_asignados === "number" ? `${e.grupos_asignados} grupo${e.grupos_asignados === 1 ? "" : "s"}` : "—"}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              onClick={() => { setEditando(e); setOpenForm(true); }}
+                              className="p-1.5 rounded-lg text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)] transition-colors"
+                              title="Editar">
+                              <Pencil size={14} />
+                            </button>
+                            <button
+                              onClick={() => onToggle(e)}
+                              className={`p-1.5 rounded-lg transition-colors ${e.activo ? "text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20" : "text-green-500 hover:bg-green-50 dark:hover:bg-green-900/20"}`}
+                              title={e.activo ? "Desactivar" : "Activar"}>
+                              {e.activo ? <ToggleLeft size={15} /> : <ToggleRight size={15} />}
+                            </button>
+                            <button
+                              onClick={() => { setEventoSel(e); setOpenGrupos(true); }}
+                              className="p-1.5 rounded-lg text-[var(--muted-foreground)] hover:text-[var(--primary)] hover:bg-[var(--primary)]/10 transition-colors"
+                              title="Configurar grupos">
+                              <Users size={14} />
+                            </button>
+                            <button
+                              onClick={() => onDelete(e)}
+                              className="p-1.5 rounded-lg text-[var(--muted-foreground)] hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                              title="Eliminar">
                               <Trash2 size={14} />
-                            </IconButton>
-                          </Tooltip>
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
-
-                    {(!Array.isArray(miembros) || miembros.length === 0) && (
-                      <tr>
-                        <td colSpan={4}>
-                          <Typography level="body-sm" color="neutral">
-                            Sin miembros todavía.
-                          </Typography>
-                        </td>
-                      </tr>
-                    )}
                   </tbody>
-                </Table>
-              </Sheet>
+                </table>
+              </div>
+            )}
+      </div>
 
-              {/* Canales */}
-              <Typography level="title-sm" sx={{ mt: 1 }}>
-                Canales
-              </Typography>
-              <Sheet variant="soft" sx={{ p: 1.5, borderRadius: 12 }}>
-                <Stack
-                  direction="row"
-                  spacing={2}
-                  alignItems="center"
-                  sx={{ flexWrap: "wrap" }}>
-                  <Chip size="sm" variant="soft" color="primary">
-                    <Mail size={12} /> email
-                  </Chip>
-                  <Switch
-                    checked={emailCfg.enabled}
-                    onChange={(e) =>
-                      setEmailCfg((c) => ({ ...c, enabled: e.target.checked }))
-                    }
-                  />
-                  <Typography level="body-sm">Habilitado</Typography>
-                  <Divider orientation="vertical" />
-                  <Typography level="body-sm">Severidad mínima</Typography>
-                  <Select
-                    size="sm"
-                    value={emailCfg.min_severity}
-                    onChange={(_, v) =>
-                      setEmailCfg((c) => ({ ...c, min_severity: v }))
-                    }>
-                    <Option value="low">low</Option>
-                    <Option value="medium">medium</Option>
-                    <Option value="high">high</Option>
-                    <Option value="critical">critical</Option>
-                  </Select>
-                  <Button
-                    size="sm"
-                    variant="outlined"
-                    startDecorator={<SaveIcon size={14} />}
-                    loading={savingChannel}
-                    onClick={guardarCanalEmail}>
-                    Guardar
-                  </Button>
-                  {canales.find((x) => x.canal === "email") && (
-                    <Button
-                      size="sm"
-                      variant="plain"
-                      color="danger"
-                      onClick={eliminarCanalEmail}>
-                      Eliminar
-                    </Button>
-                  )}
-                </Stack>
-              </Sheet>
-            </Stack>
-          )}
-        </Card>
-      </Stack>
-
-      {/* ===== Modal Crear/Editar Grupo ===== */}
-      <Modal open={openGrupo} onClose={() => setOpenGrupo(false)}>
-        <ModalDialog
-          component="form"
-          onSubmit={onSubmitGrupo}
-          sx={{ width: { xs: "100%", sm: 520 } }}>
-          <Typography level="title-lg">
-            {editGrupo ? "Editar grupo" : "Nuevo grupo"}
-          </Typography>
-          <Divider />
-          <Stack spacing={1.25} sx={{ mt: 1 }}>
-            <FormControl required>
-              <FormLabel>Nombre</FormLabel>
-              <Input
-                value={formGrupo.nombre}
-                onChange={(e) =>
-                  setFormGrupo((f) => ({ ...f, nombre: e.target.value }))
-                }
-              />
-            </FormControl>
-            <FormControl>
-              <FormLabel>Descripción</FormLabel>
-              <Textarea
-                minRows={3}
-                value={formGrupo.descripcion}
-                onChange={(e) =>
-                  setFormGrupo((f) => ({ ...f, descripcion: e.target.value }))
-                }
-              />
-            </FormControl>
-          </Stack>
-          <Stack
-            direction="row"
-            justifyContent="flex-end"
-            spacing={1}
-            sx={{ mt: 2 }}>
-            <Button variant="plain" onClick={() => setOpenGrupo(false)}>
-              Cancelar
-            </Button>
-            <Button type="submit" loading={savingGrupo}>
-              Guardar
-            </Button>
-          </Stack>
-        </ModalDialog>
-      </Modal>
-
-      {/* ===== Modal Agregar Miembros ===== */}
-      <Modal open={openMiembros} onClose={() => setOpenMiembros(false)}>
-        <ModalDialog sx={{ width: { xs: "100%", sm: 680 } }}>
-          <Typography level="title-lg">Agregar miembros al grupo</Typography>
-          <Divider />
-          <Stack spacing={1} sx={{ mt: 1 }}>
-            <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
-              <Input
-                placeholder="Buscar por nombre, email o usuario…"
-                value={buscaUser}
-                onChange={(e) => setBuscaUser(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    buscarUsuarios();
-                  }
-                }}
-                startDecorator={<SearchIcon size={14} />}
-              />
-
-              <Button
-                variant="outlined"
-                startDecorator={<RefreshCw size={14} />}
-                loading={searchingUsers}
-                onClick={buscarUsuarios}>
-                Buscar
-              </Button>
-            </Stack>
-
-            <Sheet
-              variant="soft"
-              sx={{ borderRadius: 12, p: 1, maxHeight: 320, overflow: "auto" }}>
-              <Table size="sm" hoverRow>
-                <thead>
-                  <tr>
-                    <th>Nombre</th>
-                    <th>Email</th>
-                    <th>Usuario</th>
-                    <th style={{ width: 110 }}>Agregar</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(resultUsers || []).map((u) => {
-                    const yaEsta = miembros.some(
-                      (m) => m.id_usuario === u.id_usuario
-                    );
-                    return (
-                      <tr key={u.id_usuario}>
-                        <td>{u.nombre}</td>
-                        <td>{u.email}</td>
-                        <td>{u.username}</td>
-                        <td>
-                          <Button
-                            size="sm"
-                            variant={yaEsta ? "soft" : "outlined"}
-                            color={yaEsta ? "success" : "neutral"}
-                            disabled={yaEsta}
-                            startDecorator={yaEsta ? <Check size={14} /> : null}
-                            onClick={() =>
-                              agregarMiembrosSeleccionados([u.id_usuario])
-                            }>
-                            {yaEsta ? "Agregado" : "Agregar"}
-                          </Button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                  {(!resultUsers || resultUsers.length === 0) && (
-                    <tr>
-                      <td colSpan={4}>
-                        <Typography level="body-sm" color="neutral">
-                          Sin resultados. Escribe un criterio y pulsa Buscar.
-                        </Typography>
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </Table>
-            </Sheet>
-
-            <Stack direction="row" justifyContent="flex-end" spacing={1}>
-              <Button variant="plain" onClick={() => setOpenMiembros(false)}>
-                Cerrar
-              </Button>
-              <Button
-                variant="solid"
-                loading={addingMembers}
-                onClick={() => setOpenMiembros(false)}>
-                Listo
-              </Button>
-            </Stack>
-          </Stack>
-        </ModalDialog>
-      </Modal>
-    </Box>
+      <EventoFormModal open={openForm} onClose={() => setOpenForm(false)} initial={editando} onSaved={load} />
+      <AsignarGruposModal open={openGrupos} onClose={() => setOpenGrupos(false)} evento={eventoSel} onSaved={load} />
+    </div>
   );
 }
 
+// ─── Page ────────────────────────────────────────────────────────────────────
+
+const TABS = [
+  { key: "grupos", label: "Grupos", icon: Users },
+  { key: "eventos", label: "Eventos & ruteo", icon: Link2 },
+];
+
 export default function Notificaciones() {
-  const [active, setActive] = useState("dashboard");
+  const [tab, setTab] = useState("grupos");
 
   return (
-    <Box>
-      <TopBar />
+    <div className="flex flex-col gap-6 p-4 md:p-6 h-full">
+      {/* Header */}
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-2xl bg-[var(--primary)]/10 flex items-center justify-center">
+          <Bell size={18} className="text-[var(--primary)]" />
+        </div>
+        <div>
+          <h1 className="text-lg font-black tracking-tight text-[var(--foreground)]">Notificaciones</h1>
+          <p className="text-xs text-[var(--muted-foreground)]">Gestiona grupos de destinatarios y eventos de alertas</p>
+        </div>
+      </div>
 
-      <Box
-        sx={{
-          maxWidth: 1200,
-          mx: "auto",
-          px: 2,
-          pt: 2,
-          borderRadius: "lg",
-        }}>
-        <Tabs
-          value={active}
-          onChange={(_, v) => setActive(v)}
-          sx={{
-            "--Tabs-gap": "12px",
-            "--Tab-minHeight": "40px",
-            "--Tab-radius": "999px", // control del redondeado global
-            bgcolor: "Background.surface",
-            borderRadius: "lg",
-          }}>
-          <TabList
-            disableUnderline
-            aria-label="Navegación de Notificaciones"
-            variant="plain"
-            size="md"
-            sx={{
-              mb: 2,
-              p: 1,
-              gap: 0.5,
-              maxWidth: "100%",
-              overflowX: "auto",
-              scrollbarWidth: "none",
-              "&::-webkit-scrollbar": { display: "none" },
-              "--TabsIndicator-thickness": "0px", // sin subrayado
-            }}>
-            {/* estilo base tipo Tailwind mock: borde claro, fondo blanco; activo: indigo sólido */}
-            <Tab
-              value="dashboard"
-              disableIndicator
-              sx={{
-                gap: 0.5,
-                px: 1.25,
-                py: 0.75,
-                borderRadius: "12px",
-                fontWeight: 600,
-                border: "1px solid",
-                borderColor: "#e2e8f0",
-                bgcolor: "#ffffff",
-                color: "#475569",
-                transition: "all 0.2s ease",
-                "&:hover": { borderColor: "#cbd5e1", bgcolor: "#ffffff" },
-                '&[aria-selected="true"]': {
-                  bgcolor: "#4f46e5",
-                  color: "#ffffff",
-                  borderColor: "#4f46e5",
-                  boxShadow: "0 4px 10px rgba(79,70,229,0.25)",
-                },
-                "&:focus-visible": {
-                  outline: "none",
-                  boxShadow: "0 0 0 3px rgba(79,70,229,0.35)",
-                },
-              }}>
-              <LayoutDashboard size={16} /> Dashboard
-            </Tab>
+      {/* Tabs */}
+      <div className="flex gap-1 p-1 bg-[var(--muted)]/40 rounded-2xl w-fit border border-[var(--border)]">
+        {TABS.map(({ key, label, icon: Icon }) => (
+          <button
+            key={key}
+            onClick={() => setTab(key)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 ${
+              tab === key
+                ? "bg-[var(--card)] text-[var(--foreground)] shadow-sm"
+                : "text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
+            }`}>
+            <Icon size={15} />
+            {label}
+          </button>
+        ))}
+      </div>
 
-            <Tab
-              value="eventos"
-              disableIndicator
-              sx={{
-                gap: 0.5,
-                px: 1.25,
-                py: 0.75,
-                borderRadius: "12px",
-                fontWeight: 600,
-                border: "1px solid",
-                borderColor: "#e2e8f0",
-                bgcolor: "#ffffff",
-                color: "#475569",
-                transition: "all 0.2s ease",
-                "&:hover": { borderColor: "#cbd5e1", bgcolor: "#ffffff" },
-                '&[aria-selected="true"]': {
-                  bgcolor: "#4f46e5",
-                  color: "#ffffff",
-                  borderColor: "#4f46e5",
-                  boxShadow: "0 4px 10px rgba(79,70,229,0.25)",
-                },
-                "&:focus-visible": {
-                  outline: "none",
-                  boxShadow: "0 0 0 3px rgba(79,70,229,0.35)",
-                },
-              }}>
-              <Link2 size={16} /> Eventos & ruteo
-            </Tab>
-
-            <Tab
-              value="plantillas"
-              disableIndicator
-              sx={{
-                gap: 0.5,
-                px: 1.25,
-                py: 0.75,
-                borderRadius: "12px",
-                fontWeight: 600,
-                border: "1px solid",
-                borderColor: "#e2e8f0",
-                bgcolor: "#ffffff",
-                color: "#475569",
-                transition: "all 0.2s ease",
-                "&:hover": { borderColor: "#cbd5e1", bgcolor: "#ffffff" },
-                '&[aria-selected="true"]': {
-                  bgcolor: "#4f46e5",
-                  color: "#ffffff",
-                  borderColor: "#4f46e5",
-                  boxShadow: "0 4px 10px rgba(79,70,229,0.25)",
-                },
-                "&:focus-visible": {
-                  outline: "none",
-                  boxShadow: "0 0 0 3px rgba(79,70,229,0.35)",
-                },
-              }}>
-              <FileText size={16} /> Plantillas
-            </Tab>
-
-            <Tab
-              value="grupos"
-              disableIndicator
-              sx={{
-                gap: 0.5,
-                px: 1.25,
-                py: 0.75,
-                borderRadius: "12px",
-                fontWeight: 600,
-                border: "1px solid",
-                borderColor: "#e2e8f0",
-                bgcolor: "#ffffff",
-                color: "#475569",
-                transition: "all 0.2s ease",
-                "&:hover": { borderColor: "#cbd5e1", bgcolor: "#ffffff" },
-                '&[aria-selected="true"]': {
-                  bgcolor: "#4f46e5",
-                  color: "#ffffff",
-                  borderColor: "#4f46e5",
-                  boxShadow: "0 4px 10px rgba(79,70,229,0.25)",
-                },
-                "&:focus-visible": {
-                  outline: "none",
-                  boxShadow: "0 0 0 3px rgba(79,70,229,0.35)",
-                },
-              }}>
-              <Users size={16} /> Grupos
-            </Tab>
-          </TabList>
-
-          <TabPanel value="dashboard" sx={{ p: 0 }}>
-            <DashboardView />
-          </TabPanel>
-          <TabPanel value="eventos" sx={{ p: 0 }}>
-            <EventosView />
-          </TabPanel>
-          <TabPanel value="plantillas" sx={{ p: 0 }}>
-            <PlantillasView />
-          </TabPanel>
-          <TabPanel value="grupos" sx={{ p: 0 }}>
-            <GruposView />
-          </TabPanel>
-        </Tabs>
-      </Box>
-
-      <Box sx={{ maxWidth: 1200, mx: "auto", px: 2, pb: 3 }}>
-        <Typography level="body-xs" color="neutral">
-          Admin · Notificaciones · Joy UI
-        </Typography>
-      </Box>
-    </Box>
+      {/* Content */}
+      <div className="flex-1 min-h-0">
+        {tab === "grupos" && <GruposTab />}
+        {tab === "eventos" && <EventosTab />}
+      </div>
+    </div>
   );
 }

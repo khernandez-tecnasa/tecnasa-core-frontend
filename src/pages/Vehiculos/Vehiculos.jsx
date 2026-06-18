@@ -635,14 +635,13 @@ export default function Vehiculos() {
         open={enUsoModal.open}
         onClose={() => setEnUsoModal({ open: false, registro: null })}
         registro={enUsoModal.registro}
-        vehiculoPlaca={vehiculoQR?.placa}
+        vehiculoPlaca={enUsoModal.registro?.placa}
         onNotificar={async () => {
-          const email = enUsoModal.registro?.email_empleado || enUsoModal.registro?.email;
           await sendNotificacionSalida({
-            to: [email],
             employeeName: enUsoModal.registro?.nombre_empleado,
-            vehicleName: vehiculoQR?.placa,
-            supervisorName: userData?.nombre || null,
+            vehicleName: enUsoModal.registro?.placa,
+            supervisorName: userData?.nombre || userData?.email || "Administración",
+            fechaSalida: enUsoModal.registro?.fecha_salida,
           });
         }}
       />

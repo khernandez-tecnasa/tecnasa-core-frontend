@@ -55,7 +55,7 @@ export async function sendNotificacionSalida(data) {
     const resBody = await res.json();
     console.log("📥 Respuesta del backend:", res.status, resBody);
 
-    if (!res.ok) throw new Error("No se pudo enviar el mail");
+    if (!res.ok) throw new Error(resBody?.error || "No se pudo enviar el mail");
 
     return resBody;
   } catch (err) {
