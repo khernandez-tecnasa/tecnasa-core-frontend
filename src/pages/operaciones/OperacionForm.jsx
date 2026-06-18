@@ -244,7 +244,7 @@ export default function OperacionForm({
       setImages([]);
       await refresh();
     } catch (err) {
-      showToast("Error en la operación de flota", "danger");
+      showToast(err?.message || "Error al procesar la operación", "danger");
     } finally {
       setLoading(false);
     }

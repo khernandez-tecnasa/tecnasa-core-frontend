@@ -445,7 +445,7 @@ export default function Seguridad({ initialData = {}, onSave }) {
           icon={Smartphone}
           title={t("settings.security.alerts.title")}
           desc={t("settings.security.alerts.desc")}
-          checked={!!initialData?.login_alerts}
+          checked={initialData?.login_alerts !== false}
           onChange={(e) => onSave({ login_alerts: e.target.checked })}
         />
       </div>

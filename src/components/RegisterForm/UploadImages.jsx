@@ -80,17 +80,20 @@ export default function UploadImages({
 
   const matchesAccept = useCallback(
     (file) => {
-      // if accept includes image/* and file.type startsWith image/ -> accept
       if (!file) return false;
       const ft = (file.type || "").toLowerCase();
       if (acceptMatchers.mime.includes("image/*") && ft.startsWith("image/"))
         return true;
-      // exact mime match
       if (acceptMatchers.mime.some((m) => m === ft)) return true;
-      // extension match fallback
       const name = (file.name || "").toLowerCase();
       const ext = name.split(".").pop();
       if (ext && acceptMatchers.exts.includes(ext)) return true;
+      // MIME vacío o genérico (frecuente en cámaras Android): aceptar si accept
+      // incluye image/* y la extensión es una imagen conocida
+      if (acceptMatchers.mime.includes("image/*") && (!ft || ft === "application/octet-stream")) {
+        const imgExts = ["jpg", "jpeg", "png", "gif", "bmp", "webp", "tiff", "heic", "heif", "avif"];
+        if (imgExts.includes(ext)) return true;
+      }
       return false;
     },
     [acceptMatchers]
