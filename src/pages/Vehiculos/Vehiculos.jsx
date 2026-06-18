@@ -642,6 +642,7 @@ export default function Vehiculos() {
             vehicleName: enUsoModal.registro?.placa,
             supervisorName: userData?.nombre || userData?.email || "Administración",
             fechaSalida: enUsoModal.registro?.fecha_salida,
+            employeeEmail: enUsoModal.registro?.email_empleado,
           });
         }}
       />
