@@ -17,6 +17,7 @@ import {
   Loader2,
   History,
   Wrench,
+  CalendarPlus,
 } from "lucide-react";
 
 import FullCalendar from "@fullcalendar/react";
@@ -30,6 +31,7 @@ import {
   iniciarReserva,
   finalizarReserva,
   cancelarReserva,
+  extenderReserva,
 } from "@/services/reservas.service";
 
 import { useToast } from "@/context/ToastContext";
@@ -53,6 +55,8 @@ export default function ReservasList() {
   const [viewMode, setViewMode] = useState("table");
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [cancelTarget, setCancelTarget] = useState(null);
+  const [extenderTarget, setExtenderTarget] = useState(null);
+  const [nuevaFechaFin, setNuevaFechaFin] = useState("");
   const [processing, setProcessing] = useState(false);
 
   const { showToast } = useToast();
@@ -70,6 +74,7 @@ export default function ReservasList() {
   const canCreate = can("create_reserva");
   const canDelete = can("delete_reserva");
   const canUpdate = can("update_reserva");
+  const canExtender = can("extender_reserva");
 
   const fetchReservas = async () => {
     if (!canView) return setLoading(false);
@@ -152,6 +157,32 @@ export default function ReservasList() {
     } else {
       showToast("Error al cancelar reserva", "danger");
     }
+  };
+
+  const confirmExtender = async () => {
+    if (!extenderTarget || !nuevaFechaFin) return;
+    setProcessing(true);
+    try {
+      await extenderReserva(extenderTarget.id, { nueva_fecha_fin: nuevaFechaFin });
+      showToast("Reserva extendida correctamente", "success");
+      setExtenderTarget(null);
+      setNuevaFechaFin("");
+      fetchReservas();
+    } catch (err) {
+      showToast(err.message || "Error al extender reserva", "danger");
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const getMinExtension = (fechaFin) => {
+    if (!fechaFin) return "";
+    // Un minuto después del fin actual como mínimo seleccionable
+    const d = new Date(fechaFin);
+    d.setMinutes(d.getMinutes() + 1);
+    // formato YYYY-MM-DDTHH:MM para datetime-local
+    const pad = (n) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
   };
 
   const handleEventDrop = async (info) => {
@@ -342,6 +373,24 @@ export default function ReservasList() {
             onClick={() => handleEstado(r.id, "finalizar")}
             className="rounded-xl cursor-pointer gap-2 text-sm text-emerald-600 focus:text-emerald-600 focus:bg-emerald-50 dark:focus:bg-emerald-500/10">
             <CheckCircle2 size={13} /> Finalizar viaje
+          </DropdownMenuItem>
+        )}
+
+        {r.estado === "En Uso" && canExtender && (
+          <DropdownMenuItem
+            onClick={() => {
+              setExtenderTarget(r);
+              // Inicializa con el día siguiente al fin actual, hora 08:00
+              const d = new Date(r.fecha_fin);
+              d.setDate(d.getDate() + 1);
+              d.setHours(8, 0, 0, 0);
+              const pad = (n) => String(n).padStart(2, "0");
+              setNuevaFechaFin(
+                `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T08:00`
+              );
+            }}
+            className="rounded-xl cursor-pointer gap-2 text-sm text-violet-600 focus:text-violet-600 focus:bg-violet-50 dark:focus:bg-violet-500/10">
+            <CalendarPlus size={13} /> Extender reserva
           </DropdownMenuItem>
         )}
 
@@ -749,6 +798,78 @@ export default function ReservasList() {
               <Button
                 variant="outline"
                 onClick={() => setDeleteTarget(null)}
+                disabled={processing}
+                className="flex-1 rounded-2xl h-10 font-bold">
+                Cancelar
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL: EXTENDER RESERVA ── */}
+      {extenderTarget && (
+        <div
+          className="fixed inset-0 z-50 bg-black/40 dark:bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center p-0 md:p-6 animate-in fade-in duration-200"
+          onClick={() => !processing && (setExtenderTarget(null), setNuevaFechaFin(""))}>
+          <div
+            className="w-full max-w-md bg-card dark:bg-slate-900 rounded-t-3xl md:rounded-3xl shadow-2xl dark:shadow-black/50 border border-border/40 p-6 space-y-5 animate-in slide-in-from-bottom md:zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start gap-4">
+              <div className="p-3 bg-violet-500/10 dark:bg-violet-500/15 rounded-2xl ring-1 ring-violet-500/20 shrink-0">
+                <CalendarPlus size={20} className="text-violet-500" />
+              </div>
+              <div>
+                <h2 className="text-base font-black tracking-tight">Extender Reserva</h2>
+                <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed">
+                  Vehículo{" "}
+                  <span className="font-bold text-foreground">
+                    "{extenderTarget.vehiculo_placa}"
+                  </span>{" "}
+                  — asignado a{" "}
+                  <span className="font-bold text-foreground">
+                    {extenderTarget.empleado_nombre || `ID ${extenderTarget.empleado_id}`}
+                  </span>
+                </p>
+              </div>
+            </div>
+
+            <div className="h-px bg-border/50" />
+
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                Nueva fecha y hora de regreso
+              </label>
+              <input
+                type="datetime-local"
+                value={nuevaFechaFin}
+                min={getMinExtension(extenderTarget.fecha_fin)}
+                onChange={(e) => setNuevaFechaFin(e.target.value)}
+                className="w-full bg-muted/40 dark:bg-slate-800/60 border border-border/60 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/15 transition-all"
+              />
+              <p className="text-[11px] text-muted-foreground">
+                Fecha fin actual:{" "}
+                <span className="font-semibold">{formatFechaLocal(extenderTarget.fecha_fin)}</span>
+              </p>
+            </div>
+
+            <div className="h-px bg-border/50" />
+
+            <div className="flex gap-2.5">
+              <Button
+                onClick={confirmExtender}
+                disabled={processing || !nuevaFechaFin}
+                className="flex-1 rounded-2xl h-10 bg-violet-600 hover:bg-violet-700 text-white font-bold shadow-md gap-2 disabled:opacity-60">
+                {processing ? (
+                  <Loader2 size={15} className="animate-spin" />
+                ) : (
+                  <CalendarPlus size={15} />
+                )}
+                {processing ? "Extendiendo..." : "Extender"}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => { setExtenderTarget(null); setNuevaFechaFin(""); }}
                 disabled={processing}
                 className="flex-1 rounded-2xl h-10 font-bold">
                 Cancelar

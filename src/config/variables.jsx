@@ -213,6 +213,7 @@ export const endpoints = {
   finalizarReserva: `${API_BASE_URL}/reservas/`,
   cancelarReserva: `${API_BASE_URL}/reservas/`,
   deleteReserva: `${API_BASE_URL}/reservas/`,
+  extenderReserva: `${API_BASE_URL}/reservas/`,
 
   // OPERACIONES
   operacionesSalida: `${API_BASE_URL}/operaciones/salida`,

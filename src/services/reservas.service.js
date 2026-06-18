@@ -129,6 +129,17 @@ export async function deleteReserva(id) {
   }
 }
 
+export async function extenderReserva(id, data) {
+  const res = await fetchConToken(`${endpoints.extenderReserva}${id}/extender`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+    headers: { "Content-Type": "application/json" },
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(body.error || "No se pudo extender la reserva");
+  return body;
+}
+
 export async function getDisponibilidad(inicio, fin) {
   try {
     const res = await fetchConToken(
