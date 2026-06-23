@@ -511,7 +511,7 @@ export default function Home() {
           label="Reservas activas"
           value={dataLoading ? "…" : (kpis?.reservas_activas ?? 0)}
           accent="violet"
-          onClick={kpis ? () => navigate("/admin/reservas") : null}
+          onClick={kpis ? () => navigate("/admin/reservas-vehiculos") : null}
         />
         <MiniKpi
           icon={Wallet}
