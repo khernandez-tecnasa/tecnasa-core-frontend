@@ -418,6 +418,7 @@
       "en_uso": "In Use",
       "en_mantenimiento": "Under Maintenance",
       "reservado": "Reserved",
+      "reservado_para_mantenimiento": "Reserved for Maintenance",
       "inactivo": "Inactive",
       "unknown": "Unknown"
     },

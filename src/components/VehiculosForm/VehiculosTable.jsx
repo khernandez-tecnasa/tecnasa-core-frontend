@@ -19,6 +19,8 @@ const STATUS_CLASSES = {
   en_mantenimiento:   "bg-red-100 dark:bg-red-950/60 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800",
   "en mantenimiento": "bg-red-100 dark:bg-red-950/60 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800",
   reservado:          "bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800",
+  reservado_para_mantenimiento: "bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-800",
+  "reservado para mantenimiento": "bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-800",
   inactivo:           "bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-700",
 };
 
@@ -196,7 +198,7 @@ export default function VehiculosTable({
               <div className="flex-1 min-w-0 space-y-0.5">
                 <div className="flex items-center gap-2 flex-wrap">
                   <p className="font-bold text-sm text-gray-900 dark:text-gray-100">{v.placa}</p>
-                  <EstadoBadge estado={v.estado} t={t} />
+                  <EstadoBadge estado={v.estado_efectivo || v.estado} t={t} />
                 </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
                   {[v.marca, v.modelo].filter(Boolean).join(" · ")}
@@ -273,7 +275,7 @@ export default function VehiculosTable({
                 <td className="px-5 py-3.5 text-sm text-gray-600 dark:text-gray-400">{v.marca || "—"}</td>
                 <td className="px-5 py-3.5 text-sm text-gray-600 dark:text-gray-400">{v.modelo || "—"}</td>
                 <td className="px-5 py-3.5">
-                  <EstadoBadge estado={v.estado} t={t} />
+                  <EstadoBadge estado={v.estado_efectivo || v.estado} t={t} />
                 </td>
                 <td className="px-5 py-3.5 text-sm text-gray-600 dark:text-gray-400">
                   {v.nombre_ubicacion || <span className="text-gray-300 dark:text-gray-600">—</span>}

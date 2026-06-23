@@ -379,7 +379,7 @@ export default function Home() {
           icon: CalendarCheck,
           accent: "blue",
           text: `${kpis.reservas_activas} reserva${kpis.reservas_activas !== 1 ? "s" : ""} activa${kpis.reservas_activas !== 1 ? "s" : ""} ahora mismo`,
-          to: "/admin/reservas",
+          to: "/admin/reservas-vehiculos",
         });
     } else {
       const upcoming = myReservas.filter(

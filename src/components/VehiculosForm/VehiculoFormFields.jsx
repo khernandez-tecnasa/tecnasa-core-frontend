@@ -134,7 +134,9 @@ export function SearchableSelect({
 
 /* ── Form fields — used by the full-page desktop form ───────────────── */
 
-const STATE_OPTIONS = ["Disponible", "En Uso", "En Mantenimiento", "Reservado", "Inactivo"];
+// "Reservado" / "Reservado para Mantenimiento" ya no son asignables manualmente:
+// se calculan automáticamente a partir de las reservas activas del vehículo.
+const STATE_OPTIONS = ["Disponible", "En Uso", "En Mantenimiento", "Inactivo"];
 
 export default function VehiculoFormFields({ formik, isBusy, ubicOptions = [], isLoadingUbics = false, t }) {
   const stateOpts = STATE_OPTIONS.map((s) => ({
