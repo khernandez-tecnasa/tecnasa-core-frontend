@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
   Car,
@@ -410,11 +410,25 @@ export default function Vehiculos() {
     });
   }, [vehiculos, showInactive, searchText]);
 
-  const { highlightId, focusedRef, highlightStyle } = useRowFocusHighlight({
-    items: filteredVehiculos,
-    getId: (v) => v.id,
-    paramName: "focus",
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const { highlightId, focusedRef, focusByToken } = useRowFocusHighlight({
+    rows: filteredVehiculos,
+    matchRow: (v, token) => String(v.id) === String(token),
+    getRowId: (v) => v.id,
+    highlightMs: 4000,
   });
+
+  useEffect(() => {
+    const token = searchParams.get("focus");
+    if (!token) return;
+    const next = new URLSearchParams(searchParams);
+    next.delete("focus");
+    setSearchParams(next, { replace: true });
+    setSearchText("");
+    focusByToken(token);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   const viewState = getViewState({
     checkingSession,
@@ -583,7 +597,6 @@ export default function Vehiculos() {
             canQR={canQR}
             highlightId={highlightId}
             focusedRef={focusedRef}
-            highlightStyle={highlightStyle}
           />
         )}
       </div>

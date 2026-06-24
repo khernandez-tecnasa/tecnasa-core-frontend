@@ -33,7 +33,7 @@ const CommandDialog = ({ children, ...props }) => {
       <DialogContent
         // Evita warning de descripción faltante
         aria-describedby={undefined}
-        className="overflow-hidden p-0">
+        className="top-[12%] translate-y-0 w-[95vw] max-w-2xl gap-0 overflow-hidden rounded-3xl sm:rounded-3xl border border-border/60 bg-card dark:bg-slate-900 p-0 shadow-2xl dark:shadow-black/60 data-[state=open]:slide-in-from-top-4">
         {/* Header/Title ocultos para accesibilidad (Radix feliz) */}
         <DialogHeader className="sr-only">
           <DialogTitle>Buscador rápido</DialogTitle>
@@ -42,20 +42,28 @@ const CommandDialog = ({ children, ...props }) => {
           </DialogDescription>
         </DialogHeader>
 
+        {/* Barra de acento, mismo patrón que los modales del resto de la app */}
+        <div className="h-1 w-full bg-gradient-to-r from-primary via-primary/70 to-primary/30 shrink-0" />
+
         <Command
           className={cn(
-            "[&_[cmdk-group-heading]]:px-2",
-            "[&_[cmdk-group-heading]]:font-medium",
-            "[&_[cmdk-group-heading]]:text-muted-foreground",
+            "bg-transparent",
+            "[&_[cmdk-group-heading]]:px-3",
+            "[&_[cmdk-group-heading]]:py-2",
+            "[&_[cmdk-group-heading]]:text-[10px]",
+            "[&_[cmdk-group-heading]]:font-black",
+            "[&_[cmdk-group-heading]]:uppercase",
+            "[&_[cmdk-group-heading]]:tracking-widest",
+            "[&_[cmdk-group-heading]]:text-muted-foreground/60",
             "[&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0",
             "[&_[cmdk-group]]:px-2",
-            "[&_[cmdk-input-wrapper]_svg]:h-5",
-            "[&_[cmdk-input-wrapper]_svg]:w-5",
-            "[&_[cmdk-input]]:h-12",
-            "[&_[cmdk-item]]:px-2",
-            "[&_[cmdk-item]]:py-3",
-            "[&_[cmdk-item]_svg]:h-5",
-            "[&_[cmdk-item]_svg]:w-5"
+            "[&_[cmdk-input-wrapper]_svg]:h-[18px]",
+            "[&_[cmdk-input-wrapper]_svg]:w-[18px]",
+            "[&_[cmdk-input]]:h-14",
+            "[&_[cmdk-item]]:px-3",
+            "[&_[cmdk-item]]:py-2.5",
+            "[&_[cmdk-item]]:rounded-xl",
+            "[&_[cmdk-item]]:my-0.5",
           )}>
           {children}
         </Command>
@@ -66,13 +74,17 @@ const CommandDialog = ({ children, ...props }) => {
 
 /* Input dentro del command */
 const CommandInput = React.forwardRef(({ className, ...props }, ref) => (
-  <div className="flex items-center border-b px-3" cmdk-input-wrapper="">
-    <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+  <div
+    className="flex items-center gap-2.5 border-b border-border/60 px-4"
+    cmdk-input-wrapper="">
+    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-primary/10 dark:bg-primary/15">
+      <Search className="h-4 w-4 text-primary" />
+    </div>
     <CommandPrimitive.Input
       ref={ref}
       className={cn(
-        "flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none",
-        "placeholder:text-muted-foreground",
+        "flex h-14 w-full rounded-md bg-transparent text-[15px] font-medium outline-none",
+        "placeholder:text-muted-foreground/50",
         "disabled:cursor-not-allowed disabled:opacity-50",
         className
       )}
@@ -86,7 +98,7 @@ CommandInput.displayName = CommandPrimitive.Input.displayName;
 const CommandList = React.forwardRef(({ className, ...props }, ref) => (
   <CommandPrimitive.List
     ref={ref}
-    className={cn("max-h-[300px] overflow-y-auto overflow-x-hidden", className)}
+    className={cn("max-h-[60vh] sm:max-h-[420px] overflow-y-auto overflow-x-hidden p-2", className)}
     {...props}
   />
 ));
@@ -96,7 +108,7 @@ CommandList.displayName = CommandPrimitive.List.displayName;
 const CommandEmpty = React.forwardRef((props, ref) => (
   <CommandPrimitive.Empty
     ref={ref}
-    className="py-6 text-center text-sm"
+    className="flex flex-col items-center justify-center gap-3 py-14 text-center"
     {...props}
   />
 ));
@@ -108,11 +120,13 @@ const CommandGroup = React.forwardRef(({ className, ...props }, ref) => (
     ref={ref}
     className={cn(
       "overflow-hidden p-1 text-foreground",
-      "[&_[cmdk-group-heading]]:px-2",
-      "[&_[cmdk-group-heading]]:py-1.5",
-      "[&_[cmdk-group-heading]]:text-xs",
-      "[&_[cmdk-group-heading]]:font-medium",
-      "[&_[cmdk-group-heading]]:text-muted-foreground",
+      "[&_[cmdk-group-heading]]:px-3",
+      "[&_[cmdk-group-heading]]:py-2",
+      "[&_[cmdk-group-heading]]:text-[10px]",
+      "[&_[cmdk-group-heading]]:font-black",
+      "[&_[cmdk-group-heading]]:uppercase",
+      "[&_[cmdk-group-heading]]:tracking-widest",
+      "[&_[cmdk-group-heading]]:text-muted-foreground/60",
       className
     )}
     {...props}
@@ -124,7 +138,7 @@ CommandGroup.displayName = CommandPrimitive.Group.displayName;
 const CommandSeparator = React.forwardRef(({ className, ...props }, ref) => (
   <CommandPrimitive.Separator
     ref={ref}
-    className={cn("-mx-1 h-px bg-border", className)}
+    className={cn("mx-2 my-1 h-px bg-border/60", className)}
     {...props}
   />
 ));
@@ -135,9 +149,9 @@ const CommandItem = React.forwardRef(({ className, ...props }, ref) => (
   <CommandPrimitive.Item
     ref={ref}
     className={cn(
-      "relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none",
+      "relative flex cursor-pointer select-none items-center gap-3 rounded-xl px-3 py-2.5 text-sm outline-none transition-colors",
       "data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50",
-      "data-[selected=true]:bg-accent data-[selected=true]:text-accent-foreground",
+      "data-[selected=true]:bg-muted dark:data-[selected=true]:bg-slate-800/70",
       "[&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
       className
     )}
@@ -151,7 +165,7 @@ const CommandShortcut = ({ className, ...props }) => {
   return (
     <span
       className={cn(
-        "ml-auto text-xs tracking-widest text-muted-foreground",
+        "ml-auto inline-flex h-5 items-center rounded-md border border-border/60 bg-muted/60 dark:bg-slate-800/60 px-1.5 text-[10px] font-bold tracking-wide text-muted-foreground/80",
         className
       )}
       {...props}

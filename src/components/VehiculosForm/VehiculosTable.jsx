@@ -77,7 +77,6 @@ export default function VehiculosTable({
   canQR = false,
   highlightId,
   focusedRef,
-  highlightStyle,
 }) {
   const isMobile = useIsMobile(768);
   const [sortField, setSortField] = useState("placa");
@@ -105,7 +104,6 @@ export default function VehiculosTable({
   }, [vehiculos, sortField, sortOrder]);
 
   const isInactive = (v) => (v?.estado || "").toLowerCase() === "inactivo";
-  const getStyle   = (id) => (typeof highlightStyle === "function" ? highlightStyle(id) : {});
   const hasActions = (canEdit && onEdit) || (canDelete && onDelete) || (canRestore && onRestore) || (canQR && onShowQR) || Boolean(onHistorial);
 
   /* ── Actions dropdown ── */
@@ -186,9 +184,10 @@ export default function VehiculosTable({
             <div
               key={v.id}
               ref={highlighted ? focusedRef : null}
-              style={getStyle(v.id)}
               className={`p-4 flex items-center gap-3 transition-colors ${
-                highlighted ? "" : "hover:bg-muted/20 dark:hover:bg-slate-800/30"
+                highlighted
+                  ? "bg-amber-50 dark:bg-amber-900/20"
+                  : "hover:bg-muted/20 dark:hover:bg-slate-800/30"
               } ${inactive ? "opacity-60" : ""}`}
             >
               <div className="w-10 h-10 shrink-0 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
@@ -259,9 +258,10 @@ export default function VehiculosTable({
               <tr
                 key={v.id}
                 ref={highlighted ? focusedRef : null}
-                style={getStyle(v.id)}
                 className={`border-b border-border/30 last:border-0 transition-colors ${
-                  highlighted ? "" : "hover:bg-muted/20 dark:hover:bg-slate-800/20"
+                  highlighted
+                    ? "bg-amber-50 dark:bg-amber-900/20"
+                    : "hover:bg-muted/20 dark:hover:bg-slate-800/20"
                 } ${inactive ? "opacity-60" : ""}`}
               >
                 <td className="px-5 py-3.5">
