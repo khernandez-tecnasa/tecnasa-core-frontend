@@ -1,4 +1,48 @@
-﻿## v2.10.0 - 2026-06-04
+﻿## v2.11.0 - 2026-06-24
+
+* chore(release): v2.11.0 (b699c64)
+* Merge pull request #18 from khernandez-tecnasa/fix/buscador-global-modulos-nuevos (7875055)
+* Merge pull request #17 from khernandez-tecnasa/fix/qr-publico-activos-sin-expiracion (100c8ca)
+* fix(buscador): resaltado de fila al enfocar + rediseno del Command Palette (3840b36)
+* fix(activos): rediseno de pagina publica de QR + link visible al QR (30ea198)
+* fix: se corrije en Home una ruta mala se cambia /admin/reservas/ por /admin/reservas-vehiculos/ (fa7e755)
+* Merge pull request #16 from khernandez-tecnasa/feat/no-bloqueo-salida-mantenimiento (1d7cf3a)
+* feat(operaciones): aviso de mantenimiento pendiente sin bloquear nueva salida (02747b0)
+* Merge pull request #15 from khernandez-tecnasa/fix/estado-vehiculo-computado (714ef43)
+* fix(dashboard): corregir link del KPI de reservas activas (091d00b)
+* fix(vehiculos): mostrar estado_efectivo y quitar Reservado del formulario manual (97d1386)
+* feat(reservas): extender reserva con fecha+hora y mejoras de notificaci├│n (62a3768)
+* feat(notificaciones): enviar email del empleado en aviso de vehiculo en uso (27933b5)
+* fix(notificaciones): pasar prop form al boton para submit externo al form (4dcea41)
+* feat(notificaciones): pagina de grupos/eventos y fix aviso de vehiculo en uso (37a5dd3)
+* fix: mejorar errores de operaci├│n, subida de im├ígenes y alerta de login (b27c80a)
+* feat(qr): preselecci├│n de veh├¡culo y alertas personalizadas en flujo QR (2ffa3fe)
+* fix(qr): corregir variable de entorno en getVehiculoPublicInfo (c39c03d)
+* fix(qr): validar registro activo del usuario y quitar columna color (204f782)
+* feat(qr): implementar flujo QR de veh├¡culos con login inline (55b342f)
+* fix(operaciones): alinear l├¡mite de imagen a 10MB (9236d78)
+* fix(operaciones): permitir selecci├│n de galer├¡a en subida de im├ígenes m├│vil (a488be3)
+* fix(auth): usar flushSync en logout para evitar redirecci├│n de vuelta a admin (27ee209)
+* Merge pull request #14 from khernandez-tecnasa/fix/reset-password-redirect (07d1f38)
+* chore: resolver conflictos de merge con main (6ca4ccd)
+* fix(auth): corregir cambio de contrase├▒a en perfil propio (4d64db4)
+* Merge pull request #13 from khernandez-tecnasa/fix/reset-password-redirect (404085a)
+* fix(auth): evitar redirecci├│n a login al abrir enlace de reset-password (a80a3ac)
+* Merge pull request #12 from khernandez-tecnasa/fix/operaciones-vehiculo-endpoints (a146a8c)
+* fix(account): cerrar sesi├│n autom├íticamente al cambiar contrase├▒a (f6795ec)
+* Merge pull request #11 from khernandez-tecnasa/fix/operaciones-vehiculo-endpoints (74d97b7)
+* feat(reservas): reservas horarias y flag de mantenimiento (cfc6067)
+* refactor(home): redise├▒o de p├ígina de inicio (7ed3194)
+* feat(operaciones): selector de combustible descriptivo y parqueos por ciudad (6f5a00b)
+* fix(routes): proteger ruta /dashboard con RequirePermission (2a95bf5)
+* Merge pull request #10 from khernandez-tecnasa/fix/operaciones-vehiculo-endpoints (971b5cc)
+* fix(operaciones): usar API_BASE_URL en endpoints de ultimo-estado y reserva activa (e3e6932)
+* Se arregla bug de la url ya que da no found (a3de280)
+* docs(changelog): v2.10.0 (8b96471)
+
+**Comparacion:** https://github.com/khernandez-tecnasa/tecnasa-core-frontend/compare/v2.10.0...v2.11.0
+
+## v2.10.0 - 2026-06-04
 
 * chore(release): v2.10.0 (1f27874)
 * Merge pull request #9 from khernandez-tecnasa/feature/reports-dashboard-backup (e04b5f8)
@@ -289,6 +333,7 @@
 - Full changelog: https://github.com/khernan14/AutoLog/compare/prod-2025-11-04...v1.0.0
 
 > Nota: si sigues **Conventional Commits** (`feat:`, `fix:`, `chore:`â€¦), herramientas como `conventional-changelog` te generan estas secciones solitas.
+
 
 
 
