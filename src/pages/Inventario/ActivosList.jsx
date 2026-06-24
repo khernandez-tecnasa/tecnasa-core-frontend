@@ -1092,6 +1092,15 @@ export default function ActivosList() {
                     logoUrl={logoTecnasa}
                     size={isMobile ? 200 : 220}
                   />
+                  {publicLink && (
+                    <a
+                      href={publicLink}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-sm text-blue-600 hover:underline">
+                      Ver página pública
+                    </a>
+                  )}
                 </div>
               )}
             </div>
