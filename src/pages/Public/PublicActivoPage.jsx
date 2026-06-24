@@ -1,66 +1,130 @@
-// src/pages/PublicActivoPage.jsx
-import { useEffect, useMemo, useState } from "react";
+// src/pages/Public/PublicActivoPage.jsx
+import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import {
-  Box,
-  Card,
-  CardContent,
-  Typography,
-  Chip,
-  Stack,
-  Divider,
-  LinearProgress,
-  Sheet,
-  Avatar,
-  Button,
-} from "@mui/joy";
-import useIsMobile from "../../hooks/useIsMobile";
+  Package,
+  MapPin,
+  Mail,
+  AlertTriangle,
+  Loader2,
+  Building2,
+  Factory,
+  Calendar,
+  Hash,
+  RotateCcw,
+} from "lucide-react";
 
-// Usa env var para no estar cambiando a mano entre dev/prod
+// Usa env var para no estar cambiando a mano entre dev/prod.
+// IMPORTANTE: el fallback NUNCA debe apuntar a producción — si la variable
+// no está configurada, debe quedar claro en local/staging que falta config,
+// no apuntar silenciosamente al backend real.
 const API_BASE =
-  import.meta.env.VITE_PUBLIC_API_BASE_URL ||
-  "https://autologapi-production.up.railway.app";
+  import.meta.env.VITE_API_BASE_URL_QR || "http://localhost:3000";
+
+const TECNASA_LOGO_URL =
+  "https://dgatthzqfkneyqmrnkom.supabase.co/storage/v1/object/public/Autolog/newLogoTecnasa.png";
 
 // Soporte
 const SUPPORT_EMAIL = "micros.teh@tecnasadesk.com";
-// Reemplaza por el número real en formato internacional SIN el "+" (ej: 5049xxxxxxx)
-const WHATSAPP_NUMBER = "15551901292";
 
-const StatusChip = ({ estatus }) => {
-  const color = useMemo(() => {
-    switch (estatus) {
-      case "Arrendado":
-        return "primary";
-      case "En Mantenimiento":
-        return "warning";
-      case "Inactivo":
-        return "neutral";
-      default:
-        return "success"; // Activo
-    }
-  }, [estatus]);
-  return (
-    <Chip variant="soft" color={color}>
-      {estatus || "—"}
-    </Chip>
-  );
+const ESTATUS_CLASSES = {
+  activo: "bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800",
+  arrendado: "bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800",
+  "en mantenimiento": "bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800",
+  inactivo: "bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-700",
 };
 
-const UbicacionChip = ({ tipo }) => {
+function EstatusBadge({ estatus }) {
+  const key = (estatus || "activo").toLowerCase();
+  const cls = ESTATUS_CLASSES[key] || ESTATUS_CLASSES.activo;
+  return (
+    <span className={`inline-flex items-center px-2.5 py-0.5 text-[11px] font-bold rounded-full border ${cls}`}>
+      {estatus || "Activo"}
+    </span>
+  );
+}
+
+function DestinoBadge({ tipo }) {
   if (!tipo) return null;
-  const color = tipo === "Cliente" ? "primary" : "neutral";
+  const isCliente = tipo === "Cliente";
   return (
-    <Chip size="sm" variant="solid" color={color}>
+    <span
+      className={`inline-flex items-center px-2 py-0.5 text-[10px] font-black uppercase tracking-wide rounded-full ${
+        isCliente
+          ? "bg-primary text-primary-foreground"
+          : "bg-muted text-muted-foreground"
+      }`}>
       {tipo}
-    </Chip>
+    </span>
   );
-};
+}
+
+function Row({ label, value }) {
+  return (
+    <div className="flex items-baseline gap-2 text-sm">
+      <span className="text-muted-foreground/70 font-semibold min-w-[88px] shrink-0">
+        {label}
+      </span>
+      <span className="font-semibold text-foreground truncate">{value ?? "—"}</span>
+    </div>
+  );
+}
+
+function OuterShell({ children }) {
+  return (
+    <div className="fixed inset-0 overflow-y-auto bg-muted/40 dark:bg-slate-950 px-3 py-6 sm:px-6 sm:py-10">
+      {children}
+    </div>
+  );
+}
+
+function StatePanel({ icon: Icon, title, description, code, danger, action }) {
+  return (
+    <OuterShell>
+      <div className="mx-auto w-full max-w-md">
+        <div className="bg-card dark:bg-slate-900 rounded-3xl border border-border/60 shadow-xl dark:shadow-black/40 p-6 sm:p-8 text-center space-y-3">
+          <div
+            className={`mx-auto w-14 h-14 rounded-2xl flex items-center justify-center ${
+              danger
+                ? "bg-rose-500/10 dark:bg-rose-500/15"
+                : "bg-primary/10 dark:bg-primary/15"
+            }`}>
+            <Icon
+              className={danger ? "text-rose-500" : "text-primary animate-spin"}
+              size={24}
+            />
+          </div>
+          <h1 className="font-black text-lg tracking-tight">{title}</h1>
+          {description && (
+            <p className="text-sm text-muted-foreground leading-relaxed">{description}</p>
+          )}
+          {code && (
+            <p className="text-xs text-muted-foreground/60 font-mono">Código: {code}</p>
+          )}
+          {action}
+        </div>
+      </div>
+    </OuterShell>
+  );
+}
+
+function formatDate(dt) {
+  if (!dt) return "—";
+  try {
+    return new Date(dt).toLocaleDateString("es-HN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+  } catch {
+    return String(dt);
+  }
+}
 
 export default function PublicActivoPage() {
   const { codigo } = useParams();
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token");
-  const isMobile = useIsMobile(768);
 
   const [data, setData] = useState(null);
   const [state, setState] = useState({ loading: true, error: null });
@@ -105,42 +169,30 @@ export default function PublicActivoPage() {
 
   if (state.loading) {
     return (
-      <OuterContainer>
-        <Card
-          variant="outlined"
-          sx={{ width: { xs: "100%", sm: 520 }, p: 3, mx: "auto" }}>
-          <Typography level="title-lg">Cargando activo…</Typography>
-          <LinearProgress sx={{ mt: 2 }} />
-          <Typography level="body-sm" sx={{ mt: 1 }} color="neutral">
-            Código: {codigo}
-          </Typography>
-        </Card>
-      </OuterContainer>
+      <StatePanel
+        icon={Loader2}
+        title="Cargando activo…"
+        code={codigo}
+      />
     );
   }
 
   if (state.error || !data) {
     return (
-      <OuterContainer>
-        <Card
-          variant="soft"
-          color="danger"
-          sx={{ width: { xs: "100%", sm: 520 }, p: 3, mx: "auto" }}>
-          <Typography level="title-lg">No se pudo mostrar el activo</Typography>
-          <Typography level="body-sm" sx={{ mt: 0.5 }}>
-            {state.error || "Activo no encontrado"}
-          </Typography>
-          <Typography level="body-xs" sx={{ mt: 1 }} color="neutral">
-            Código: {codigo}
-          </Typography>
-          <Button
-            sx={{ mt: 2 }}
+      <StatePanel
+        icon={AlertTriangle}
+        danger
+        title="No se pudo mostrar el activo"
+        description={state.error || "Activo no encontrado"}
+        code={codigo}
+        action={
+          <button
             onClick={() => window.location.reload()}
-            variant="soft">
-            Reintentar
-          </Button>
-        </Card>
-      </OuterContainer>
+            className="mt-2 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold bg-muted hover:bg-muted/80 dark:bg-slate-800 dark:hover:bg-slate-700 transition-colors">
+            <RotateCcw size={14} /> Reintentar
+          </button>
+        }
+      />
     );
   }
 
@@ -152,10 +204,7 @@ export default function PublicActivoPage() {
     estatus,
     fecha_registro,
     ubicacion_actual,
-    asignacion_vigente,
   } = data;
-
-  // ========= Links de soporte (correo + WhatsApp) =========
 
   // Correo: ticket directo
   const emailSubject = encodeURIComponent(
@@ -183,322 +232,146 @@ export default function PublicActivoPage() {
   );
   const emailHref = `mailto:${SUPPORT_EMAIL}?subject=${emailSubject}&body=${emailBody}`;
 
-  // WhatsApp: consulta rápida / fallas menores
-  // ⚠️ Este texto está formateado para que el bot pueda parsear Código/Modelo/Serie/Site.
-  const whatsappText = encodeURIComponent(
-    [
-      "Datos del equipo reportado:",
-      "",
-      `Código: ${codigo}`,
-      `Nombre: ${nombre || "—"}`,
-      `Modelo: ${modelo || "—"}`,
-      `Serie: ${serial_number || "—"}`,
-      `Site: ${ubicacion_actual?.site || "—"}`,
-      "",
-      "Descripción breve de la falla:",
-      "(escribe aquí lo que ocurre con el equipo)",
-    ].join("\n")
-  );
-
-  const whatsappHref = `https://wa.me/${WHATSAPP_NUMBER}?text=${whatsappText}`;
-
   return (
-    <OuterContainer>
-      <Card
-        variant="outlined"
-        sx={{
-          width: "100%",
-          maxWidth: 780,
-          borderRadius: "2xl",
-          boxShadow: "lg",
-          p: { xs: 2, sm: 3 },
-          mx: "auto",
-        }}>
-        {/* Header / branding */}
-        <Stack spacing={2}>
-          <Stack
-            direction={{ xs: "column", sm: "row" }}
-            alignItems={{ xs: "flex-start", sm: "center" }}
-            justifyContent="space-between"
-            spacing={2}>
-            <Stack direction="row" spacing={1.5} alignItems="center">
-              <Avatar
-                sx={{ "--Avatar-size": "64px" }}
-                src={data.tecnasa_logo_url || "/logo-tecnasa.png"}
-                alt="Tecnasa Honduras"
-                variant="soft"
-              />
-              <Box>
-                <Typography level="body-xs" color="neutral">
-                  Ficha de activo
-                </Typography>
-                <Typography level="h4">
-                  {nombre || "Activo sin nombre"}
-                </Typography>
-                <Stack direction="row" spacing={1} alignItems="center" mt={0.5}>
-                  <Typography level="body-sm" color="neutral">
-                    Código: <b>{codigo}</b>
-                  </Typography>
-                  {estatus && <StatusChip estatus={estatus} />}
-                </Stack>
-              </Box>
-            </Stack>
-
-            {/* Lado derecho: logo cliente / bodega / iniciales */}
-            {data.meta?.isEnCliente && data.cliente_logo_url ? (
-              <Sheet
-                variant="outlined"
-                sx={{
-                  p: 1.25,
-                  borderRadius: "lg",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  minWidth: 140,
-                }}>
-                <img
-                  src={data.cliente_logo_url}
-                  alt="Logo cliente"
-                  style={{ width: 140, height: 88, objectFit: "contain" }}
-                />
-              </Sheet>
-            ) : data.meta?.isEnBodega ? (
-              <Sheet
-                variant="soft"
-                sx={{ px: 1.25, py: 0.75, borderRadius: "lg" }}>
-                <Typography level="body-sm">
-                  <b>Bodega:</b> {data.ubicacion_actual?.bodega || "—"}
-                </Typography>
-              </Sheet>
-            ) : (
-              <Avatar
-                variant="outlined"
-                color="neutral"
-                sx={{ "--Avatar-size": "56px" }}>
-                {asignacion_vigente?.cliente?.slice(0, 2).toUpperCase() || "—"}
-              </Avatar>
-            )}
-          </Stack>
-
-          <Divider />
-
-          {/* Datos principales */}
-          <CardContent sx={{ pt: 0 }}>
-            <Stack
-              direction={{ xs: "column", sm: "row" }}
-              spacing={2}
-              alignItems="stretch">
-              <Sheet variant="soft" sx={{ flex: 1, p: 2, borderRadius: "lg" }}>
-                <Typography level="title-sm">Información del activo</Typography>
-                <Stack spacing={0.5} mt={1}>
-                  <Row label="Nombre" value={nombre} />
-                  <Row label="Modelo" value={modelo || "—"} />
-                  <Row label="Serie" value={serial_number || "—"} />
-                  <Row label="Tipo" value={tipo || "—"} />
-                  <Row
-                    label="Estatus"
-                    value={<StatusChip estatus={estatus} />}
+    <OuterShell>
+      <div className="mx-auto w-full max-w-2xl">
+        <div className="bg-card dark:bg-slate-900 rounded-3xl border border-border/60 shadow-xl dark:shadow-black/40 overflow-hidden">
+          {/* ── HEADER ── */}
+          <div className="p-5 sm:p-7 pb-5 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="flex items-center gap-3.5 min-w-0">
+                <div className="p-2 rounded-full bg-white ring-2 ring-primary/20 dark:ring-primary/30 shadow-sm shrink-0 w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center overflow-hidden">
+                  <img
+                    src={data.tecnasa_logo_url || TECNASA_LOGO_URL}
+                    alt="Tecnasa"
+                    className="max-w-full max-h-full object-contain"
+                    onError={(e) => {
+                      e.currentTarget.style.display = "none";
+                      e.currentTarget.nextSibling.style.display = "flex";
+                    }}
                   />
-                  <Row label="Registrado" value={formatDate(fecha_registro)} />
-                </Stack>
-              </Sheet>
+                  <Package
+                    size={26}
+                    className="text-primary hidden items-center justify-center"
+                  />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">
+                    Ficha de Activo
+                  </p>
+                  <h1 className="text-xl sm:text-2xl font-black tracking-tight leading-tight truncate">
+                    {nombre || "Activo sin nombre"}
+                  </h1>
+                  <div className="flex items-center gap-2 mt-1 flex-wrap">
+                    <span className="inline-flex items-center gap-1 text-xs font-mono font-semibold text-muted-foreground bg-muted/60 dark:bg-slate-800 px-2 py-0.5 rounded-lg">
+                      <Hash size={11} /> {codigo}
+                    </span>
+                    <EstatusBadge estatus={estatus} />
+                  </div>
+                </div>
+              </div>
 
-              <Sheet variant="soft" sx={{ flex: 1, p: 2, borderRadius: "lg" }}>
-                <Typography level="title-sm">Ubicación actual</Typography>
+              {/* Logo cliente / bodega */}
+              {data.meta?.isEnCliente && data.cliente_logo_url ? (
+                <div className="shrink-0 flex items-center justify-center bg-white rounded-2xl border border-border/60 p-2 w-full sm:w-36 h-16">
+                  <img
+                    src={data.cliente_logo_url}
+                    alt="Logo cliente"
+                    className="max-w-full max-h-full object-contain"
+                  />
+                </div>
+              ) : data.meta?.isEnBodega ? (
+                <div className="shrink-0 flex items-center gap-2 bg-muted/60 dark:bg-slate-800/60 rounded-xl px-3 py-2">
+                  <Factory size={16} className="text-muted-foreground" />
+                  <span className="text-xs font-bold truncate">
+                    {ubicacion_actual?.bodega || "—"}
+                  </span>
+                </div>
+              ) : null}
+            </div>
+          </div>
+
+          <div className="h-px bg-border/50" />
+
+          {/* ── INFO CARDS ── */}
+          <div className="p-5 sm:p-7 space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="bg-muted/40 dark:bg-slate-800/50 rounded-2xl p-4 space-y-2.5">
+                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 mb-1">
+                  Información del activo
+                </p>
+                <Row label="Modelo" value={modelo} />
+                <Row label="Serie" value={serial_number} />
+                <Row label="Tipo" value={tipo} />
+                <Row
+                  label="Registrado"
+                  value={
+                    <span className="inline-flex items-center gap-1">
+                      <Calendar size={12} className="text-muted-foreground/60" />
+                      {formatDate(fecha_registro)}
+                    </span>
+                  }
+                />
+              </div>
+
+              <div className="bg-muted/40 dark:bg-slate-800/50 rounded-2xl p-4 space-y-2.5">
+                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 mb-1">
+                  Ubicación actual
+                </p>
                 {ubicacion_actual ? (
-                  <Stack spacing={0.5} mt={1}>
-                    <Row
-                      label="Destino"
-                      value={
-                        <UbicacionChip tipo={ubicacion_actual.tipo_destino} />
-                      }
-                    />
+                  <>
+                    <div className="flex items-center gap-2 mb-1">
+                      <MapPin size={13} className="text-muted-foreground/60" />
+                      <DestinoBadge tipo={ubicacion_actual.tipo_destino} />
+                    </div>
                     {ubicacion_actual.tipo_destino === "Cliente" ? (
                       <>
                         <Row
                           label="Cliente"
-                          value={ubicacion_actual.cliente || "—"}
+                          value={
+                            <span className="inline-flex items-center gap-1">
+                              <Building2 size={12} className="text-muted-foreground/60" />
+                              {ubicacion_actual.cliente}
+                            </span>
+                          }
                         />
-                        <Row
-                          label="Site"
-                          value={ubicacion_actual.site || "—"}
-                        />
+                        <Row label="Site" value={ubicacion_actual.site} />
                       </>
                     ) : (
-                      <Row
-                        label="Bodega"
-                        value={ubicacion_actual.bodega || "—"}
-                      />
+                      <Row label="Bodega" value={ubicacion_actual.bodega} />
                     )}
-                    <Row
-                      label="Desde"
-                      value={formatDate(ubicacion_actual.desde)}
-                    />
+                    <Row label="Desde" value={formatDate(ubicacion_actual.desde)} />
                     {ubicacion_actual.motivo && (
                       <Row label="Motivo" value={ubicacion_actual.motivo} />
                     )}
-                  </Stack>
+                  </>
                 ) : (
-                  <Typography level="body-sm" color="neutral" mt={1}>
+                  <p className="text-sm text-muted-foreground/70">
                     Sin ubicación activa registrada.
-                  </Typography>
+                  </p>
                 )}
-              </Sheet>
-            </Stack>
+              </div>
+            </div>
 
-            {/* Asignación vigente */}
-            <Sheet variant="outlined" sx={{ mt: 2, p: 2, borderRadius: "lg" }}>
-              <Typography level="title-sm">
-                Asignación vigente (para facturación)
-              </Typography>
-              {asignacion_vigente ? (
-                <Stack
-                  direction={{ xs: "column", sm: "row" }}
-                  spacing={2}
-                  mt={1}>
-                  <Box flex={1}>
-                    <Row label="Cliente" value={asignacion_vigente.cliente} />
-                    <Row
-                      label="Contrato"
-                      value={asignacion_vigente.contrato_codigo}
-                    />
-                    <Row
-                      label="Adenda"
-                      value={asignacion_vigente.adenda_codigo}
-                    />
-                    <Row
-                      label="Modalidad"
-                      value={
-                        asignacion_vigente.es_temporal
-                          ? "Temporal"
-                          : "Permanente"
-                      }
-                    />
-                  </Box>
-                  <Box flex={1}>
-                    <Row
-                      label="Modelo (contrato)"
-                      value={asignacion_vigente.modelo_contrato}
-                    />
-                    <Row
-                      label="Arrendamiento"
-                      value={money(asignacion_vigente.precio_arrendamiento)}
-                    />
-                    <Row
-                      label="Costo B/N"
-                      value={perPage(asignacion_vigente.costo_impresion_bn)}
-                    />
-                    <Row
-                      label="Costo Color"
-                      value={perPage(asignacion_vigente.costo_impresion_color)}
-                    />
-                  </Box>
-                </Stack>
-              ) : (
-                <Typography level="body-sm" color="neutral" mt={1}>
-                  Sin asignación vigente.
-                </Typography>
-              )}
-            </Sheet>
-
-            {/* Soporte */}
-            <Sheet
-              variant="soft"
-              sx={{
-                mt: 2,
-                p: 1.5,
-                borderRadius: "lg",
-              }}>
-              <Stack
-                direction={{ xs: "column", sm: "row" }}
-                justifyContent="space-between"
-                alignItems={{ xs: "flex-start", sm: "center" }}
-                spacing={1.5}>
-                <Typography level="body-sm" color="neutral">
-                  ¿Tienes algún problema con este equipo? Para *consultas
-                  rápidas o fallas menores* puedes usar WhatsApp. Si deseas
-                  *aperturar un ticket directamente*, utiliza el correo.
-                </Typography>
-                <Stack
-                  direction="row"
-                  spacing={1}
-                  flexWrap="wrap"
-                  justifyContent={isMobile ? "flex-start" : "flex-end"}>
-                  <Button
-                    size="sm"
-                    variant="soft"
-                    color="success"
-                    component="a"
-                    href={whatsappHref}
-                    target="_blank"
-                    rel="noreferrer">
-                    WhatsApp · consulta rápida
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="soft"
-                    component="a"
-                    href={emailHref}>
-                    Aperturar ticket por correo
-                  </Button>
-                </Stack>
-              </Stack>
-            </Sheet>
-          </CardContent>
-        </Stack>
-      </Card>
-    </OuterContainer>
+            {/* ── SOPORTE ── */}
+            <div className="bg-primary/5 dark:bg-primary/10 border border-primary/15 dark:border-primary/20 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center gap-3.5">
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <div className="p-2 rounded-xl bg-primary/10 dark:bg-primary/15 shrink-0">
+                  <Mail size={16} className="text-primary" />
+                </div>
+                <p className="text-sm text-muted-foreground leading-snug">
+                  ¿Tienes algún problema con este equipo? Aperturar un ticket de soporte por correo.
+                </p>
+              </div>
+              <a
+                href={emailHref}
+                className="shrink-0 w-full sm:w-auto text-center inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold bg-primary text-primary-foreground hover:opacity-90 shadow-sm transition-opacity">
+                <Mail size={14} /> Reportar por correo
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </OuterShell>
   );
-}
-
-function OuterContainer({ children }) {
-  const isMobile = useIsMobile(768);
-  return (
-    <Box
-      sx={{
-        position: "fixed",
-        inset: 0,
-        overflowY: "auto",
-        WebkitOverflowScrolling: "touch",
-        height: { xs: "100svh", sm: "100dvh" },
-        bgcolor: "background.level1",
-        py: isMobile ? 2 : 3,
-        px: isMobile ? 1.5 : 3,
-      }}>
-      {children}
-    </Box>
-  );
-}
-
-function Row({ label, value }) {
-  return (
-    <Stack direction="row" spacing={1} alignItems="baseline">
-      <Typography level="body-sm" sx={{ minWidth: 140 }} color="neutral">
-        {label}
-      </Typography>
-      <Typography level="body-md">{value}</Typography>
-    </Stack>
-  );
-}
-
-function formatDate(dt) {
-  if (!dt) return "—";
-  try {
-    return new Date(dt).toLocaleString();
-  } catch {
-    return String(dt);
-  }
-}
-
-function money(n) {
-  if (n === null || n === undefined) return "—";
-  return new Intl.NumberFormat(undefined, {
-    style: "currency",
-    currency: "USD",
-  }).format(Number(n));
-}
-
-function perPage(n) {
-  if (n === null || n === undefined) return "—";
-  return `${Number(n).toFixed(4)} / pág`;
 }
