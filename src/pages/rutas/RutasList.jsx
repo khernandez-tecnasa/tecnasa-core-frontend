@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Plus,
   Search,
@@ -25,6 +25,7 @@ import { getPeajesByRuta } from "@/services/peajes.service";
 import { useToast } from "@/context/ToastContext";
 import { useAuth } from "@/context/AuthContext";
 import useIsMobile from "@/hooks/useIsMobile";
+import useRowFocusHighlight from "@/hooks/useRowFocusHighlight";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -225,6 +226,26 @@ export default function RutasList() {
     r.nombre.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const { highlightId, focusedRef, focusByToken } = useRowFocusHighlight({
+    rows: filteredRutas,
+    matchRow: (r, token) => String(r.id) === String(token),
+    getRowId: (r) => r.id,
+    highlightMs: 4000,
+  });
+
+  useEffect(() => {
+    const token = searchParams.get("focus");
+    if (!token) return;
+    const next = new URLSearchParams(searchParams);
+    next.delete("focus");
+    setSearchParams(next, { replace: true });
+    setSearchTerm("");
+    focusByToken(token);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
   if (!canView) {
     return (
       <div className="flex flex-col items-center justify-center h-[60vh] text-muted-foreground">
@@ -374,7 +395,12 @@ export default function RutasList() {
             {filteredRutas.map((ruta) => (
               <div
                 key={ruta.id}
-                className="p-5 active:bg-muted/50 transition-colors">
+                ref={highlightId === ruta.id ? focusedRef : null}
+                className={`p-5 transition-colors ${
+                  highlightId === ruta.id
+                    ? "bg-amber-50 dark:bg-amber-900/20"
+                    : "active:bg-muted/50"
+                }`}>
                 <div className="flex justify-between items-start mb-2">
                   <h3 className="font-bold text-lg leading-tight">
                     {ruta.nombre}
@@ -440,7 +466,12 @@ export default function RutasList() {
                   return (
                     <tr
                       key={ruta.id}
-                      className="border-b border-border/30 last:border-0 hover:bg-muted/20 dark:hover:bg-slate-800/20 transition-colors group">
+                      ref={highlightId === ruta.id ? focusedRef : null}
+                      className={`border-b border-border/30 last:border-0 transition-colors group ${
+                        highlightId === ruta.id
+                          ? "bg-amber-50 dark:bg-amber-900/20"
+                          : "hover:bg-muted/20 dark:hover:bg-slate-800/20"
+                      }`}>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <div className="w-9 h-9 shrink-0 rounded-xl bg-muted/60 dark:bg-slate-800 group-hover:bg-primary/10 group-hover:ring-1 ring-primary/20 flex items-center justify-center transition-all duration-200">

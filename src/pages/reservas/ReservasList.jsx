@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Plus,
   Car,
@@ -37,6 +37,7 @@ import {
 import { useToast } from "@/context/ToastContext";
 import { useAuth } from "@/context/AuthContext";
 import useIsMobile from "@/hooks/useIsMobile";
+import useRowFocusHighlight from "@/hooks/useRowFocusHighlight";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -288,6 +289,27 @@ export default function ReservasList() {
         .toLowerCase()
         .includes(searchTerm.toLowerCase()),
   );
+
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const { highlightId, focusedRef, focusByToken } = useRowFocusHighlight({
+    rows: filteredReservas,
+    matchRow: (r, token) => String(r.id) === String(token),
+    getRowId: (r) => r.id,
+    highlightMs: 4000,
+  });
+
+  useEffect(() => {
+    const token = searchParams.get("focus");
+    if (!token) return;
+    const next = new URLSearchParams(searchParams);
+    next.delete("focus");
+    setSearchParams(next, { replace: true });
+    setSearchTerm("");
+    setViewMode("table");
+    focusByToken(token);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   const getEventColors = (estado) => {
     switch (estado) {
@@ -577,7 +599,12 @@ export default function ReservasList() {
                 {filteredReservas.map((r) => (
                   <div
                     key={r.id}
-                    className="p-4 hover:bg-muted/20 dark:hover:bg-slate-800/30 transition-colors">
+                    ref={highlightId === r.id ? focusedRef : null}
+                    className={`p-4 transition-colors ${
+                      highlightId === r.id
+                        ? "bg-amber-50 dark:bg-amber-900/20"
+                        : "hover:bg-muted/20 dark:hover:bg-slate-800/30"
+                    }`}>
                     <div className="flex justify-between items-start mb-3">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 shrink-0 rounded-xl bg-muted/60 dark:bg-slate-800 flex items-center justify-center">
@@ -643,7 +670,12 @@ export default function ReservasList() {
                     {filteredReservas.map((r) => (
                       <tr
                         key={r.id}
-                        className="border-b border-border/30 last:border-0 hover:bg-muted/20 dark:hover:bg-slate-800/20 transition-colors group">
+                        ref={highlightId === r.id ? focusedRef : null}
+                        className={`border-b border-border/30 last:border-0 transition-colors group ${
+                          highlightId === r.id
+                            ? "bg-amber-50 dark:bg-amber-900/20"
+                            : "hover:bg-muted/20 dark:hover:bg-slate-800/20"
+                        }`}>
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
                             <div className="w-9 h-9 shrink-0 rounded-xl bg-muted/60 dark:bg-slate-800 group-hover:bg-primary/10 group-hover:ring-1 ring-primary/20 flex items-center justify-center transition-all duration-200">

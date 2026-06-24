@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Plus,
   Search,
@@ -19,6 +19,7 @@ import { useToast } from "@/context/ToastContext";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import useIsMobile from "@/hooks/useIsMobile";
+import useRowFocusHighlight from "@/hooks/useRowFocusHighlight";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -84,6 +85,26 @@ export default function PeajesList() {
   const filtered = peajes.filter((p) =>
     (p.nombre || "").toLowerCase().includes(searchTerm.toLowerCase()),
   );
+
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const { highlightId, focusedRef, focusByToken } = useRowFocusHighlight({
+    rows: filtered,
+    matchRow: (p, token) => String(p.id) === String(token),
+    getRowId: (p) => p.id,
+    highlightMs: 4000,
+  });
+
+  useEffect(() => {
+    const token = searchParams.get("focus");
+    if (!token) return;
+    const next = new URLSearchParams(searchParams);
+    next.delete("focus");
+    setSearchParams(next, { replace: true });
+    setSearchTerm("");
+    focusByToken(token);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   if (!canView) {
     return (
@@ -235,7 +256,12 @@ export default function PeajesList() {
             {filtered.map((p) => (
               <div
                 key={p.id}
-                className="p-4 flex items-center gap-3 hover:bg-muted/20 dark:hover:bg-slate-800/20 transition-colors">
+                ref={highlightId === p.id ? focusedRef : null}
+                className={`p-4 flex items-center gap-3 transition-colors ${
+                  highlightId === p.id
+                    ? "bg-amber-50 dark:bg-amber-900/20"
+                    : "hover:bg-muted/20 dark:hover:bg-slate-800/20"
+                }`}>
                 <div className="w-10 h-10 shrink-0 rounded-xl bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center">
                   <Milestone size={18} className="text-amber-600 dark:text-amber-500" />
                 </div>
@@ -272,7 +298,12 @@ export default function PeajesList() {
                 {filtered.map((p) => (
                   <tr
                     key={p.id}
-                    className="border-b border-border/30 last:border-0 hover:bg-muted/20 dark:hover:bg-slate-800/20 transition-colors group">
+                    ref={highlightId === p.id ? focusedRef : null}
+                    className={`border-b border-border/30 last:border-0 transition-colors group ${
+                      highlightId === p.id
+                        ? "bg-amber-50 dark:bg-amber-900/20"
+                        : "hover:bg-muted/20 dark:hover:bg-slate-800/20"
+                    }`}>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="w-9 h-9 shrink-0 rounded-xl bg-amber-50 dark:bg-amber-500/10 group-hover:bg-amber-100 dark:group-hover:bg-amber-500/15 group-hover:ring-1 ring-amber-500/20 flex items-center justify-center transition-all duration-200">

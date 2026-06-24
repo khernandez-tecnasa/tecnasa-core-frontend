@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Plus,
   Car,
@@ -40,6 +40,7 @@ import { useToast } from "@/context/ToastContext";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import useIsMobile from "@/hooks/useIsMobile";
+import useRowFocusHighlight from "@/hooks/useRowFocusHighlight";
 
 import {
   DropdownMenu,
@@ -364,6 +365,28 @@ export default function ViaticosList() {
     );
   });
 
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const { highlightId, focusedRef, focusByToken } = useRowFocusHighlight({
+    rows: filtered,
+    matchRow: (v, token) => String(v.id) === String(token),
+    getRowId: (v) => v.id,
+    highlightMs: 4000,
+  });
+
+  useEffect(() => {
+    const token = searchParams.get("focus");
+    if (!token) return;
+    const next = new URLSearchParams(searchParams);
+    next.delete("focus");
+    setSearchParams(next, { replace: true });
+    setSearchTerm("");
+    // "todos" para no ocultar el viático si está fuera del tab "Activos"
+    setTipoActivo("todos");
+    focusByToken(token);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
   // ─── Menú de acciones ─────────────────────────────────────────────────────
   const AccionesMenu = ({ v }) => (
     <DropdownMenu>
@@ -581,7 +604,12 @@ export default function ViaticosList() {
             {filtered.map((v) => (
               <div
                 key={v.id}
-                className="p-4 hover:bg-muted/20 dark:hover:bg-slate-800/30 transition-colors">
+                ref={highlightId === v.id ? focusedRef : null}
+                className={`p-4 transition-colors ${
+                  highlightId === v.id
+                    ? "bg-amber-50 dark:bg-amber-900/20"
+                    : "hover:bg-muted/20 dark:hover:bg-slate-800/30"
+                }`}>
                 <div className="flex items-start justify-between gap-2 mb-3">
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="w-10 h-10 shrink-0 rounded-xl bg-muted/60 dark:bg-slate-800 flex items-center justify-center">
@@ -651,7 +679,12 @@ export default function ViaticosList() {
                 {filtered.map((v) => (
                   <tr
                     key={v.id}
-                    className="border-b border-border/30 last:border-0 hover:bg-muted/20 dark:hover:bg-slate-800/20 transition-colors group">
+                    ref={highlightId === v.id ? focusedRef : null}
+                    className={`border-b border-border/30 last:border-0 transition-colors group ${
+                      highlightId === v.id
+                        ? "bg-amber-50 dark:bg-amber-900/20"
+                        : "hover:bg-muted/20 dark:hover:bg-slate-800/20"
+                    }`}>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="w-9 h-9 shrink-0 rounded-xl bg-muted/60 dark:bg-slate-800 group-hover:bg-primary/10 group-hover:ring-1 ring-primary/20 flex items-center justify-center transition-all duration-200">
