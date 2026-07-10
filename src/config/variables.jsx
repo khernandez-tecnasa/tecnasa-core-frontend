@@ -151,6 +151,48 @@ export const endpoints = {
   getActivosByBodega: `${API_BASE_URL}/inventario/activos/bodega/`,
   // getActivosEnBodegas: `${API_BASE_URL}/inventario/activos/bodegas/all`,
   getActivosGlobal: `${API_BASE_URL}/inventario/activos/all`,
+  buscarActivos: `${API_BASE_URL}/inventario/activos/buscar`,
+
+  // FACTURACION — Contratos
+  getContratosByCliente: `${API_BASE_URL}/facturacion/contratos/cliente/`,
+  getContratoById: `${API_BASE_URL}/facturacion/contratos/`,
+  createContrato: `${API_BASE_URL}/facturacion/contratos`,
+  updateContrato: `${API_BASE_URL}/facturacion/contratos/`,
+  deleteContrato: `${API_BASE_URL}/facturacion/contratos/`,
+
+  // FACTURACION — Items (impresoras en contrato)
+  getContratoItems: `${API_BASE_URL}/facturacion/contratos/`, // + :idContrato/items
+  addContratoItem: `${API_BASE_URL}/facturacion/contratos/items`,
+  updateContratoItem: `${API_BASE_URL}/facturacion/contratos/items/`,
+  deleteContratoItem: `${API_BASE_URL}/facturacion/contratos/items/`,
+
+  // FACTURACION — Monedas / Tipos de cambio
+  getMonedas: `${API_BASE_URL}/facturacion/monedas/`,
+
+  // FACTURACION — Grupos (bolsones)
+  getGruposByCliente: `${API_BASE_URL}/facturacion/grupos/cliente/`,
+  createGrupoFacturacion: `${API_BASE_URL}/facturacion/grupos`,
+  updateGrupoFacturacion: `${API_BASE_URL}/facturacion/grupos/`,
+  asignarItemAGrupo: `${API_BASE_URL}/facturacion/grupos/asignar-item/`,
+
+  // FACTURACION — Periodos / estados de cierre
+  getPeriodos: `${API_BASE_URL}/facturacion/periodos`,
+  createPeriodo: `${API_BASE_URL}/facturacion/periodos`,
+  getEstadoPeriodoCliente: `${API_BASE_URL}/facturacion/periodos/`, // + :periodoId/estado/:clienteId
+  changePeriodoEstado: `${API_BASE_URL}/facturacion/periodos/`, // + :id/estado
+
+  // FACTURACION — Lecturas mensuales
+  previsualizarLecturas: `${API_BASE_URL}/facturacion/previsualizar-lecturas`,
+  guardarLecturasDefinitivas: `${API_BASE_URL}/facturacion/guardar-lecturas`,
+
+  // FACTURACION — Reemplazos temporales
+  createReemplazo: `${API_BASE_URL}/facturacion/reemplazos`,
+  getReemplazosByPeriodo: `${API_BASE_URL}/facturacion/reemplazos/periodo/`,
+  deleteReemplazo: `${API_BASE_URL}/facturacion/reemplazos/`,
+  getUltimoReemplazo: `${API_BASE_URL}/facturacion/reemplazos/anterior`,
+
+  // FACTURACION — Reportes (proforma)
+  getReporteMensual: `${API_BASE_URL}/facturacion/reportes/`, // + :periodoId/cliente/:clienteId
 
   // Ubicaciones
   moverActivo: `${API_BASE_URL}/inventario/ubicaciones/mover`,

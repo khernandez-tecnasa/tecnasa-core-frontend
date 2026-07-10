@@ -10,6 +10,7 @@ import {
   Building,
   Building2,
   CalendarCheck,
+  CalendarRange,
   Car,
   ChevronDown,
   ClipboardList,
@@ -190,6 +191,17 @@ export default function Sidebar() {
     [isAdmin, hasPermiso],
   );
 
+  // Facturación: cualquiera de estos roles operativos del módulo (no solo
+  // quien administra contratos) debe poder ver el botón en el sidebar.
+  const puedeVerFacturacion = useMemo(
+    () =>
+      checkPermission("ver_contratos") ||
+      checkPermission("gestion_ingenieria") ||
+      checkPermission("gestion_finanzas") ||
+      checkPermission("gestion_operaciones"),
+    [checkPermission],
+  );
+
   /* ── Nav items data ─────────────────────────────────────────────── */
 
   const navItems = useMemo(
@@ -325,8 +337,17 @@ export default function Sidebar() {
         kind: "parking",
         group: "Gestión",
       },
+      {
+        path: "/admin/facturacion/periodos",
+        icon: <CalendarRange size={18} strokeWidth={1.8} />,
+        label: "Facturación",
+        perm: "ver_contratos",
+        canView: puedeVerFacturacion,
+        kind: "facturacion",
+        group: "Gestión",
+      },
     ],
-    [t, checkPermission],
+    [t, checkPermission, puedeVerFacturacion],
   );
 
   const inventoryItems = useMemo(
@@ -496,7 +517,8 @@ export default function Sidebar() {
     checkPermission("gestionar_companias") ||
     checkPermission("gestionar_paises") ||
     checkPermission("gestionar_ciudades") ||
-    checkPermission("gestionar_estacionamientos");
+    checkPermission("gestionar_estacionamientos") ||
+    puedeVerFacturacion;
 
   const showInventario =
     checkPermission("gestionar_bodegas") ||

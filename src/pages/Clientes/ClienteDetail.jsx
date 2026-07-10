@@ -10,9 +10,10 @@ import {
 } from "react-router-dom";
 import { ChevronLeft } from "lucide-react";
 
-import ClienteInfo    from "./ClienteInfo.jsx";
-import ClienteSites   from "./ClienteSites.jsx";
-import ClienteActivos from "./ClienteActivos.jsx";
+import ClienteInfo      from "./ClienteInfo.jsx";
+import ClienteSites     from "./ClienteSites.jsx";
+import ClienteActivos   from "./ClienteActivos.jsx";
+import ClienteContratos from "./ClienteContratos.jsx";
 
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -23,14 +24,16 @@ export default function ClienteDetail() {
 
   const [siteCount, setSiteCount]     = useState(0);
   const [activosCount, setActivosCount] = useState(null);
+  const [contratosCount, setContratosCount] = useState(null);
 
   const tabs = useMemo(
     () => [
       { key: "informacion", label: "Información" },
       { key: "sites",       label: "Sites",   count: siteCount },
       { key: "activos",     label: "Activos", count: activosCount },
+      { key: "contratos",   label: "Contratos", count: contratosCount },
     ],
-    [siteCount, activosCount]
+    [siteCount, activosCount, contratosCount]
   );
 
   const activeTab = useMemo(() => {
@@ -87,6 +90,7 @@ export default function ClienteDetail() {
           <Route path="informacion" element={<ClienteInfo />} />
           <Route path="sites"  element={<ClienteSites  onCountChange={setSiteCount} />} />
           <Route path="activos" element={<ClienteActivos onCountChange={setActivosCount} />} />
+          <Route path="contratos" element={<ClienteContratos onCountChange={setContratosCount} />} />
           <Route path="*" element={<Navigate to="informacion" replace />} />
         </Routes>
       </div>

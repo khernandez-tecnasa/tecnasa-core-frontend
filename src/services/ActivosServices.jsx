@@ -31,6 +31,15 @@ export async function getActivosGlobal() {
     return json;
 }
 
+// 🔹 Buscar activos por serial/código/modelo/ubicación, limitado (para selects tipo autocomplete)
+export async function buscarActivos(q, limit = 20) {
+    const params = new URLSearchParams({ q: q || "", limit: String(limit) });
+    const res = await fetchConToken(`${endpoints.buscarActivos}?${params.toString()}`);
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.message || "Error al buscar activos");
+    return json;
+}
+
 // 🔹 Crear activo
 export async function createActivo(data) {
     const res = await fetchConToken(endpoints.addActivo, {

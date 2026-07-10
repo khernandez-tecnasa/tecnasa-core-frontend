@@ -23,6 +23,7 @@ import {
   Activity,
   Settings,
   HelpCircle,
+  CalendarRange,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
@@ -59,6 +60,7 @@ const HUB_CATEGORIES = [
       { path: "/admin/countries", icon: Globe2, label: "Países", perm: ["gestionar_paises"] },
       { path: "/admin/cities", icon: MapPin, label: "Ciudades", perm: ["gestionar_ciudades"] },
       { path: "/admin/parkings", icon: SquareParking, label: "Estacionamientos", perm: ["gestionar_estacionamientos"] },
+      { path: "/admin/facturacion/periodos", icon: CalendarRange, label: "Facturación", perm: ["ver_contratos", "gestion_ingenieria", "gestion_finanzas", "gestion_operaciones"] },
     ],
   },
   {
