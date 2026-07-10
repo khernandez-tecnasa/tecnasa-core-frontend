@@ -84,6 +84,13 @@ import BackupRestorePage from "@/pages/Backup/BackupRestorePage";
 import RolesList    from "@/pages/Administration/Roles/RolesList.jsx";
 import RolHistorial from "@/pages/Administration/Roles/RolHistorial.jsx";
 
+// Facturación
+import PeriodosList             from "@/pages/Facturacion/PeriodosList.jsx";
+import PeriodoClientes          from "@/pages/Facturacion/PeriodoClientes.jsx";
+import PeriodoClienteWorkspace  from "@/pages/Facturacion/PeriodoClienteWorkspace.jsx";
+import ReportePeriodoCliente    from "@/pages/Facturacion/ReportePeriodoCliente.jsx";
+import MonedasPage              from "@/pages/Facturacion/MonedasPage.jsx";
+
 // Usuarios historial
 import UsuarioHistorial from "@/pages/Users/UsuarioHistorial.jsx";
 
@@ -157,6 +164,15 @@ export default function DashboardRoutes() {
           <Route path="edit/:id" element={<PeajesForm />} />
           <Route path="historial/:id" element={<PeajeHistorial />} />
         </Route>
+
+        {/* Facturación */}
+        <Route path="facturacion/periodos">
+          <Route index element={<PeriodosList />} />
+          <Route path=":periodoId" element={<PeriodoClientes />} />
+          <Route path=":periodoId/cliente/:clienteId" element={<PeriodoClienteWorkspace />} />
+          <Route path=":periodoId/cliente/:clienteId/reporte" element={<ReportePeriodoCliente />} />
+        </Route>
+        <Route path="facturacion/monedas" element={<MonedasPage />} />
 
         {/* Roles */}
         <Route path="roles">
