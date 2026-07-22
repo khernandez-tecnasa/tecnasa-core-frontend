@@ -167,7 +167,7 @@ export default function Dashboard() {
       setFuelTop(Array.isArray(fuel) ? fuel : []);
     } catch (e) {
       console.error(e);
-      setError("No se pudieron cargar los datos.");
+      setError(t("dashboard.load_error"));
     } finally {
       setLoading(false);
     }
@@ -190,7 +190,7 @@ export default function Dashboard() {
           <AlertTriangle size={15} className="text-rose-500 shrink-0 mt-0.5" />
           <p className="flex-1 text-sm font-semibold text-rose-700 dark:text-rose-400">{error}</p>
           <button onClick={load} className="shrink-0 text-xs font-bold px-3 py-1.5 rounded-lg bg-rose-100 dark:bg-rose-800 text-rose-700 dark:text-rose-300 hover:bg-rose-200 transition-colors">
-            Reintentar
+            {t("common.retry")}
           </button>
         </div>
       </div>
@@ -220,30 +220,30 @@ export default function Dashboard() {
 
       {/* ── KPI Fila A — Flota ──────────────────────────────────────────────── */}
       <div className="space-y-3">
-        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/50 px-1">Flota</p>
+        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/50 px-1">{t("dashboard.section.fleet")}</p>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 md:gap-4">
           <KpiCard
-            title="Vehículos en uso"
+            title={t("dashboard.kpi.fleet.vehicles_in_use")}
             value={`${K.vehiculos_en_uso ?? 0} / ${K.vehiculos_total ?? 0}`}
-            sub={`${K.vehiculos_total ?? 0} en flota total`}
+            sub={t("dashboard.kpi.fleet.total_sub", { count: K.vehiculos_total ?? 0 })}
             icon={Car} accent="blue"
           />
           <KpiCard
-            title="En mantenimiento"
+            title={t("dashboard.kpi.fleet.maintenance")}
             value={K.vehiculos_mantenimiento ?? 0}
-            sub="requieren atención"
+            sub={t("dashboard.kpi.fleet.maintenance_sub")}
             icon={Wrench} accent="amber"
           />
           <KpiCard
-            title="Registros hoy"
+            title={t("dashboard.kpi.fleet.today")}
             value={K.registros_hoy ?? 0}
-            sub="movimientos del día"
+            sub={t("dashboard.kpi.fleet.today_sub")}
             icon={CheckCircle2} accent="emerald"
           />
           <KpiCard
-            title="Registros semana"
+            title={t("dashboard.kpi.fleet.week")}
             value={K.registros_semana ?? 0}
-            sub="esta semana"
+            sub={t("dashboard.kpi.fleet.week_sub")}
             icon={CalendarDays} accent="sky"
           />
         </div>
@@ -251,32 +251,32 @@ export default function Dashboard() {
 
       {/* ── KPI Fila B — Operaciones ─────────────────────────────────────────── */}
       <div className="space-y-3">
-        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/50 px-1">Operaciones</p>
+        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/50 px-1">{t("dashboard.section.operations")}</p>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 md:gap-4">
           <KpiCard
-            title="Empleados activos"
+            title={t("dashboard.kpi.ops.employees")}
             value={K.empleados_total ?? 0}
-            sub="registrados en el sistema"
+            sub={t("dashboard.kpi.ops.employees_sub")}
             icon={Users2} accent="slate"
           />
           <KpiCard
-            title="Reservas activas"
+            title={t("dashboard.kpi.ops.reservations")}
             value={K.reservas_activas ?? 0}
-            sub={`${K.reservas_hoy ?? 0} iniciadas hoy`}
+            sub={t("dashboard.kpi.ops.reservations_sub", { count: K.reservas_hoy ?? 0 })}
             icon={CalendarCheck} accent="violet"
             onClick={() => navigate("/admin/reports?view=reservas-estado")}
           />
           <KpiCard
-            title="Viáticos pendientes"
+            title={t("dashboard.kpi.ops.viaticos")}
             value={K.viaticos_pendientes ?? 0}
-            sub="esperando aprobación"
+            sub={t("dashboard.kpi.ops.viaticos_sub")}
             icon={Wallet} accent="orange"
             onClick={() => navigate("/admin/reports?view=viaticos-estado")}
           />
           <KpiCard
-            title="Activos en inventario"
+            title={t("dashboard.kpi.ops.assets")}
             value={`${K.activos_activos ?? 0} / ${K.activos_total ?? 0}`}
-            sub="en estado activo"
+            sub={t("dashboard.kpi.ops.assets_sub")}
             icon={Package} accent="slate"
             onClick={() => navigate("/admin/reports?view=activos-estado")}
           />
@@ -290,14 +290,14 @@ export default function Dashboard() {
         <div className="bg-card dark:bg-slate-900/40 border border-border/60 rounded-3xl p-5 md:p-6 shadow-sm">
           <SectionTitle
             icon={Activity}
-            title="Actividad últimos 7 días"
-            linkLabel="Ver reporte"
+            title={t("dashboard.charts.activity_title")}
+            linkLabel={t("dashboard.view_report")}
             onLink={() => navigate("/admin/reports?view=registros-uso")}
           />
           {act7.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-40 gap-2">
               <Activity size={28} className="text-muted-foreground/20" />
-              <p className="text-xs text-muted-foreground">Sin movimientos recientes</p>
+              <p className="text-xs text-muted-foreground">{t("dashboard.charts.no_activity")}</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -324,10 +324,10 @@ export default function Dashboard() {
               </div>
               {/* Resumen debajo */}
               <div className="flex items-center gap-4 pt-1 border-t border-border/40">
-                <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-primary" /><span className="text-[10px] text-muted-foreground">Hoy</span></div>
-                <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-primary/40" /><span className="text-[10px] text-muted-foreground">Días anteriores</span></div>
+                <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-primary" /><span className="text-[10px] text-muted-foreground">{t("dashboard.charts.today")}</span></div>
+                <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-primary/40" /><span className="text-[10px] text-muted-foreground">{t("dashboard.charts.prev_days")}</span></div>
                 <span className="ml-auto text-[10px] text-muted-foreground font-medium">
-                  Total 7d: <span className="font-black text-foreground">{act7.reduce((s, d) => s + Number(d.total ?? 0), 0)}</span>
+                  {t("dashboard.charts.total_7d")} <span className="font-black text-foreground">{act7.reduce((s, d) => s + Number(d.total ?? 0), 0)}</span>
                 </span>
               </div>
             </div>
@@ -338,14 +338,14 @@ export default function Dashboard() {
         <div className="bg-card dark:bg-slate-900/40 border border-border/60 rounded-3xl p-5 md:p-6 shadow-sm">
           <SectionTitle
             icon={CalendarCheck}
-            title="Reservas por estado"
-            linkLabel="Ver reporte"
+            title={t("dashboard.charts.reservations_title")}
+            linkLabel={t("dashboard.view_report")}
             onLink={() => navigate("/admin/reports?view=reservas-estado")}
           />
           {reservasEstado.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-40 gap-2">
               <CalendarCheck size={28} className="text-muted-foreground/20" />
-              <p className="text-xs text-muted-foreground">Sin reservas registradas</p>
+              <p className="text-xs text-muted-foreground">{t("dashboard.charts.no_reservations")}</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -381,7 +381,7 @@ export default function Dashboard() {
                 </div>
               )}
               <p className="text-[10px] text-muted-foreground">
-                Total: <span className="font-black text-foreground">{totalReservas}</span> reservas
+                {t("dashboard.charts.reservations_total", { count: totalReservas })}
               </p>
             </div>
           )}
@@ -397,7 +397,7 @@ export default function Dashboard() {
             <SectionTitle
               icon={TrendingUp}
               title={t("dashboard.charts.top_employees", "Top empleados")}
-              linkLabel="Ver reporte"
+              linkLabel={t("dashboard.view_report")}
               onLink={() => navigate("/admin/reports?view=empleados-actividad")}
             />
           </div>
@@ -428,7 +428,7 @@ export default function Dashboard() {
             <SectionTitle
               icon={Car}
               title={t("dashboard.charts.top_vehicles", "Top vehículos")}
-              linkLabel="Ver reporte"
+              linkLabel={t("dashboard.view_report")}
               onLink={() => navigate("/admin/reports?view=vehiculos-uso")}
             />
           </div>
@@ -466,7 +466,7 @@ export default function Dashboard() {
             <SectionTitle
               icon={Gauge}
               title={t("dashboard.tables.km_title", "Kilometraje por empleado")}
-              linkLabel="Ver reporte"
+              linkLabel={t("dashboard.view_report")}
               onLink={() => navigate("/admin/reports?view=kilometraje-empleado")}
             />
           </div>
@@ -514,7 +514,7 @@ export default function Dashboard() {
             <SectionTitle
               icon={Fuel}
               title={t("dashboard.tables.fuel_title", "Consumo combustible")}
-              linkLabel="Ver reporte"
+              linkLabel={t("dashboard.view_report")}
               onLink={() => navigate("/admin/reports?view=consumo-combustible-vehiculo")}
             />
           </div>
@@ -563,7 +563,7 @@ export default function Dashboard() {
           className="flex items-center gap-2 px-5 py-2.5 rounded-2xl border border-border/60 bg-card dark:bg-slate-900/40 text-sm font-bold text-muted-foreground hover:text-foreground hover:border-primary/40 hover:bg-primary/5 transition-all"
         >
           <Clock size={14} />
-          Ver todos los reportes
+          {t("dashboard.view_all_reports")}
           <ArrowRight size={13} />
         </button>
       </div>
