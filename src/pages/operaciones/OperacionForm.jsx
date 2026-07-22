@@ -25,6 +25,7 @@ import OperacionVehiculo from "./OperacionVehiculo";
 import OperacionInfo from "./OperacionInfo";
 import UploadImages from "@/components/RegisterForm/UploadImages";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "react-i18next";
 
 // ─── Helpers visuales ────────────────────────────────────────────────────────
 
@@ -69,6 +70,7 @@ export default function OperacionForm({
   canRegister,
   vehiculoIdPreseleccionado = null,
 }) {
+  const { t } = useTranslation();
   const { userData, isAdmin, can } = useAuth();
   const { showToast } = useToast();
 
@@ -156,19 +158,19 @@ export default function OperacionForm({
     e.preventDefault();
     if (!userData) return;
     if (!canRegister)
-      return showToast("No tienes permiso para registrar", "warning");
+      return showToast(t("operaciones.toast.no_permission"), "warning");
 
     if (!operacionActiva && !vehiculo)
-      return showToast("Seleccione una unidad", "warning");
+      return showToast(t("operaciones.toast.select_unit"), "warning");
     if (!form.km || !form.ubicacion)
-      return showToast("Complete los campos obligatorios", "warning");
+      return showToast(t("operaciones.toast.required_fields"), "warning");
     if (images.length === 0)
-      return showToast("Debes subir al menos una imagen", "warning");
+      return showToast(t("operaciones.toast.required_images"), "warning");
 
     if (!operacionActiva && ultimoEstado) {
       if (form.km < ultimoEstado.km) {
         return showToast(
-          `El KM no puede ser menor al último registrado (${ultimoEstado.km})`,
+          t("operaciones.toast.km_too_low", { km: ultimoEstado.km }),
           "warning",
         );
       }
@@ -180,7 +182,7 @@ export default function OperacionForm({
 
       if (kmRegreso < kmSalida) {
         return showToast(
-          "El KM de regreso no puede ser menor al de salida",
+          t("operaciones.toast.km_return_low"),
           "warning",
         );
       }
@@ -189,7 +191,7 @@ export default function OperacionForm({
 
       if (diferencia > 1000) {
         return showToast(
-          "Kilometraje excesivo, verifique los datos",
+          t("operaciones.toast.km_excessive"),
           "warning",
         );
       }
@@ -206,7 +208,7 @@ export default function OperacionForm({
 
       if (dentro && !esDueno) {
         return showToast(
-          "Este vehículo está reservado para otro empleado",
+          t("operaciones.toast.reserved_other"),
           "warning",
         );
       }
@@ -225,7 +227,7 @@ export default function OperacionForm({
         fd.append("idUbicacionRegreso", form.ubicacion);
         images.forEach((img) => fd.append("files", img));
         await registrarRegreso(fd);
-        showToast("Retorno registrado exitosamente", "success");
+        showToast(t("operaciones.toast.return_success"), "success");
       } else {
         const fd = new FormData();
         fd.append("idEmpleado", userData.id);
@@ -237,14 +239,14 @@ export default function OperacionForm({
         fd.append("idUbicacionSalida", form.ubicacion);
         images.forEach((img) => fd.append("files", img));
         await registrarSalida(fd);
-        showToast("Salida de unidad confirmada", "success");
+        showToast(t("operaciones.toast.departure_success"), "success");
       }
       setForm({ km: "", combustible: "", comentario: "", ubicacion: "" });
       setVehiculo(null);
       setImages([]);
       await refresh();
     } catch (err) {
-      showToast(err?.message || "Error al procesar la operación", "danger");
+      showToast(err?.message || t("operaciones.toast.error_process"), "danger");
     } finally {
       setLoading(false);
     }
@@ -265,7 +267,7 @@ export default function OperacionForm({
         <div className="bg-card dark:bg-slate-900/40 rounded-3xl border border-border/60 shadow-sm p-5 md:p-6 space-y-4">
           <SectionLabel
             icon={<Car size={13} className="text-muted-foreground" />}
-            label="Selección de Unidad"
+            label={t("operaciones.form.section_unit")}
           />
           <OperacionVehiculo
             onSelect={setVehiculo}
@@ -291,21 +293,21 @@ export default function OperacionForm({
         <div className="bg-card dark:bg-slate-900/40 rounded-3xl border border-border/60 shadow-sm p-5 md:p-6 space-y-5">
           <SectionLabel
             icon={<Info size={13} className="text-muted-foreground" />}
-            label="Estado Técnico"
+            label={t("operaciones.form.section_technical")}
           />
 
           {isAutofilled && !operacionActiva && (
             <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-primary/5 dark:bg-primary/10 border border-primary/20 text-primary">
               <Sparkles size={13} className="shrink-0" />
               <p className="text-xs font-semibold">
-                Datos cargados del último registro
+                {t("operaciones.form.autofilled")}
               </p>
             </div>
           )}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* KM */}
-            <Field label="Odómetro (KM)" icon={<Gauge size={15} />}>
+            <Field label={t("operaciones.form.field_km")} icon={<Gauge size={15} />}>
               <input
                 type="number"
                 min={0}
@@ -313,7 +315,7 @@ export default function OperacionForm({
                 inputMode="numeric"
                 value={form.km}
                 readOnly={isAutofilled}
-                placeholder="Kilometraje actual"
+                placeholder={t("operaciones.form.ph_km")}
                 onChange={(e) => {
                   let value = Number(e.target.value);
                   if (value < 0) return;
@@ -323,7 +325,7 @@ export default function OperacionForm({
               />
               {kmDiff !== null && (
                 <p className="text-xs text-muted-foreground mt-1.5 pl-1">
-                  Recorrido estimado:{" "}
+                  {t("operaciones.form.km_diff")}{" "}
                   <span className="font-semibold text-foreground">
                     {kmDiff} km
                   </span>
@@ -332,7 +334,7 @@ export default function OperacionForm({
             </Field>
 
             {/* UBICACIÓN */}
-            <Field label="Punto de Control" icon={<MapPin size={15} />}>
+            <Field label={t("operaciones.form.field_location")} icon={<MapPin size={15} />}>
               <select
                 value={form.ubicacion}
                 disabled={isAutofilled}
@@ -340,7 +342,7 @@ export default function OperacionForm({
                   setForm({ ...form, ubicacion: e.target.value })
                 }
                 className={`${inputCls} appearance-none cursor-pointer`}>
-                <option value="">Seleccione punto...</option>
+                <option value="">{t("operaciones.form.ph_location")}</option>
                 {visibleParkings.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.nombre_ubicacion}
@@ -350,7 +352,7 @@ export default function OperacionForm({
             </Field>
 
             {/* COMBUSTIBLE */}
-            <Field label="Nivel de Combustible" icon={<Fuel size={15} />}>
+            <Field label={t("operaciones.form.field_fuel")} icon={<Fuel size={15} />}>
               <select
                 value={form.combustible}
                 disabled={isAutofilled}
@@ -358,19 +360,19 @@ export default function OperacionForm({
                   setForm({ ...form, combustible: Number(e.target.value) })
                 }
                 className={`${inputCls} appearance-none cursor-pointer`}>
-                <option value="">Seleccione nivel...</option>
-                <option value={100}>Full</option>
+                <option value="">{t("operaciones.form.ph_fuel")}</option>
+                <option value={100}>{t("operaciones.form.fuel_full")}</option>
                 <option value={75}>3/4</option>
-                <option value={50}>Medio</option>
+                <option value={50}>{t("operaciones.form.fuel_half")}</option>
                 <option value={25}>1/4</option>
-                <option value={0}>Vacío</option>
+                <option value={0}>{t("operaciones.form.fuel_empty")}</option>
               </select>
             </Field>
 
             {/* COMENTARIO */}
             <div className="sm:col-span-2 space-y-1.5">
               <label className="block text-[11px] font-black uppercase tracking-widest text-muted-foreground">
-                Observaciones
+                {t("operaciones.form.field_observations")}
               </label>
               <div className="relative">
                 <FileText
@@ -378,7 +380,7 @@ export default function OperacionForm({
                   size={15}
                 />
                 <textarea
-                  placeholder="Novedades técnicas o estéticas..."
+                  placeholder={t("operaciones.form.ph_observations")}
                   value={form.comentario}
                   onChange={(e) =>
                     setForm({ ...form, comentario: e.target.value })
@@ -394,7 +396,7 @@ export default function OperacionForm({
           <div className="space-y-3 pt-1">
             <SectionLabel
               icon={<Camera size={13} className="text-muted-foreground" />}
-              label="Evidencia Fotográfica"
+              label={t("operaciones.form.section_photos")}
             />
             <UploadImages
               value={images}
@@ -414,7 +416,7 @@ export default function OperacionForm({
             variante="outline"
             onClick={() => setVehiculo(null)}
             className="flex-1 rounded-2xl h-10 font-bold">
-            Cancelar
+            {t("common.actions.cancel")}
           </Button>
 
           <Button
@@ -427,7 +429,7 @@ export default function OperacionForm({
             ) : (
               <Save size={17} />
             )}
-            {isActive ? "Confirmar Retorno" : "Confirmar Salida"}
+            {isActive ? t("operaciones.form.btn_return") : t("operaciones.form.btn_departure")}
           </Button>
         </div>
       )}

@@ -1,6 +1,8 @@
 import { Car, AlertTriangle, Gauge, Fuel, MapPin } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export default function OperacionInfo({ vehiculo, operacionActiva, reserva }) {
+  const { t } = useTranslation();
   const unidad = operacionActiva || vehiculo;
   if (!unidad && !reserva) return null;
 
@@ -25,7 +27,7 @@ export default function OperacionInfo({ vehiculo, operacionActiva, reserva }) {
 
           <div className="min-w-0 flex-1">
             <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-              Unidad en Gestión
+              {t("operaciones.info.unit_label")}
             </p>
             <p className="text-xl font-black tracking-tight text-foreground truncate leading-tight">
               {unidad.placa}
@@ -39,7 +41,7 @@ export default function OperacionInfo({ vehiculo, operacionActiva, reserva }) {
                 : "bg-emerald-100 text-emerald-700 dark:bg-emerald-800/50 dark:text-emerald-300"
             }`}
           >
-            {operacionActiva ? "En Uso" : "Listo"}
+            {operacionActiva ? t("operaciones.info.status_in_use") : t("operaciones.info.status_ready")}
           </span>
         </div>
       )}
@@ -48,9 +50,9 @@ export default function OperacionInfo({ vehiculo, operacionActiva, reserva }) {
       {operacionActiva && (
         <div className="grid grid-cols-3 gap-3">
           {[
-            { icon: <Gauge size={13} />, label: "KM salida",    value: operacionActiva.km_salida },
-            { icon: <Fuel size={13} />,  label: "Combustible",  value: `${operacionActiva.combustible_salida}%` },
-            { icon: <MapPin size={13} />,label: "Ubicación",    value: operacionActiva.nombre_ubicacion },
+            { icon: <Gauge size={13} />, label: t("operaciones.info.km_departure"), value: operacionActiva.km_salida },
+            { icon: <Fuel size={13} />,  label: t("operaciones.info.fuel"),          value: `${operacionActiva.combustible_salida}%` },
+            { icon: <MapPin size={13} />,label: t("operaciones.info.location"),      value: operacionActiva.nombre_ubicacion },
           ].map(({ icon, label, value }) => (
             <div key={label} className="bg-muted/50 dark:bg-slate-800/50 rounded-2xl p-3 text-center space-y-1">
               <div className="flex items-center justify-center gap-1 text-muted-foreground">
@@ -69,15 +71,15 @@ export default function OperacionInfo({ vehiculo, operacionActiva, reserva }) {
           <AlertTriangle size={17} className="text-amber-500 shrink-0 mt-0.5" />
           <div>
             <p className="text-[10px] font-black uppercase tracking-widest text-amber-700 dark:text-amber-400">
-              Reserva Confirmada Detectada
+              {t("operaciones.info.reservation_detected")}
             </p>
             <p className="text-sm font-medium text-amber-700 dark:text-amber-300 mt-0.5">
               {reserva.motivo}
               <br />
               <span className="text-xs text-muted-foreground">
-                Inicio: {new Date(reserva.fecha_inicio).toLocaleDateString()}
+                {t("operaciones.info.start")} {new Date(reserva.fecha_inicio).toLocaleDateString()}
                 {" — "}
-                Fin: {new Date(reserva.fecha_fin).toLocaleDateString()}
+                {t("operaciones.info.end")} {new Date(reserva.fecha_fin).toLocaleDateString()}
               </span>
             </p>
           </div>
