@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   getSites,
   createSite,
@@ -31,6 +32,7 @@ import EditIcon from "@mui/icons-material/Edit";
 import { useToast } from "../../context/ToastContext";
 
 export default function SitesList() {
+  const { t } = useTranslation();
   const [rows, setRows] = useState([]);
   const [clientes, setClientes] = useState([]);
   const [ciudades, setCiudades] = useState([]);
@@ -68,8 +70,8 @@ export default function SitesList() {
     } catch (err) {
       setError(
         err.message.includes("Failed to fetch")
-          ? "No hay conexión con el servidor."
-          : "No se pudieron cargar los datos."
+          ? t("clients.sites.errors.no_connection")
+          : t("clients.sites.errors.load_error")
       );
     } finally {
       setLoading(false);
@@ -94,16 +96,16 @@ export default function SitesList() {
       });
       setOpen(true);
     } catch (err) {
-      showToast("Error al cargar site", "danger");
+      showToast(t("clients.sites.errors.load_failed"), "danger");
     }
   }
 
   async function onSubmit(e) {
     e.preventDefault();
 
-    if (!form.id_cliente) return showToast("Seleccione un cliente", "warning");
+    if (!form.id_cliente) return showToast(t("clients.sites.form.select_client"), "warning");
     if (!form.nombre.trim())
-      return showToast("El nombre es requerido", "warning");
+      return showToast(t("clients.sites.errors.name_required"), "warning");
 
     setSaving(true);
     try {
@@ -112,11 +114,11 @@ export default function SitesList() {
       } else {
         await createSite(form);
       }
-      showToast("Site guardado correctamente", "success");
+      showToast(t("clients.sites.success.saved"), "success");
       setOpen(false);
       load();
     } catch (err) {
-      showToast(err.message || "Error al guardar site", "danger");
+      showToast(err.message || t("clients.sites.errors.save_failed"), "danger");
     } finally {
       setSaving(false);
     }
@@ -130,15 +132,15 @@ export default function SitesList() {
         alignItems="center"
         mb={2}
         spacing={1}>
-        <Typography level="h4">Sites</Typography>
+        <Typography level="h4">{t("clients.tabs.sites")}</Typography>
         <Button startDecorator={<AddIcon />} onClick={newSite}>
-          Nuevo
+          {t("clients.sites.actions.new_short")}
         </Button>
       </Stack>
 
       <Card variant="outlined" sx={{ overflowX: "auto" }}>
         {loading ? (
-          <Sheet p={2}>Cargando…</Sheet>
+          <Sheet p={2}>{t("common.loading")}</Sheet>
         ) : error ? (
           <Card
             variant="soft"
@@ -146,21 +148,21 @@ export default function SitesList() {
             sx={{ p: 3, textAlign: "center" }}>
             <Typography level="title-md">{error}</Typography>
             <Button sx={{ mt: 2 }} onClick={load}>
-              Reintentar
+              {t("common.retry")}
             </Button>
           </Card>
         ) : rows.length === 0 ? (
           <Sheet p={2} variant="soft">
-            Sin sites
+            {t("clients.sites.empty.title")}
           </Sheet>
         ) : (
           <Table size="sm" stickyHeader>
             <thead>
               <tr>
-                <th>Cliente</th>
-                <th>Nombre</th>
-                <th>Descripción</th>
-                <th>Ciudad</th>
+                <th>{t("clients.columns.client")}</th>
+                <th>{t("clients.sites.columns.name")}</th>
+                <th>{t("clients.sites.columns.description")}</th>
+                <th>{t("clients.sites.columns.city")}</th>
                 <th></th>
               </tr>
             </thead>
@@ -190,12 +192,12 @@ export default function SitesList() {
           onSubmit={onSubmit}
           sx={{ width: { xs: "100%", sm: 520 } }}>
           <Typography level="title-lg">
-            {editing ? "Editar" : "Nuevo"} Site
+            {editing ? t("clients.sites.edit_title") : t("clients.sites.create_title")}
           </Typography>
           <Divider />
           <Stack spacing={1.5} mt={1}>
             <FormControl required>
-              <FormLabel>Cliente</FormLabel>
+              <FormLabel>{t("clients.columns.client")}</FormLabel>
               <Select
                 disabled={saving}
                 value={form.id_cliente}
@@ -208,7 +210,7 @@ export default function SitesList() {
               </Select>
             </FormControl>
             <FormControl required>
-              <FormLabel>Nombre</FormLabel>
+              <FormLabel>{t("clients.sites.columns.name")}</FormLabel>
               <Input
                 disabled={saving}
                 value={form.nombre}
@@ -216,7 +218,7 @@ export default function SitesList() {
               />
             </FormControl>
             <FormControl>
-              <FormLabel>Descripción</FormLabel>
+              <FormLabel>{t("clients.sites.columns.description")}</FormLabel>
               <Input
                 disabled={saving}
                 value={form.descripcion}
@@ -226,7 +228,7 @@ export default function SitesList() {
               />
             </FormControl>
             <FormControl>
-              <FormLabel>Ciudad</FormLabel>
+              <FormLabel>{t("clients.sites.columns.city")}</FormLabel>
               <Select
                 disabled={saving}
                 value={form.id_ciudad ? String(form.id_ciudad) : ""}
@@ -245,10 +247,10 @@ export default function SitesList() {
               variant="plain"
               onClick={() => setOpen(false)}
               disabled={saving}>
-              Cancelar
+              {t("common.actions.cancel")}
             </Button>
             <Button type="submit" loading={saving} disabled={saving}>
-              Guardar
+              {t("common.actions.save")}
             </Button>
           </Stack>
         </ModalDialog>

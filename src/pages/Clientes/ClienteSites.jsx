@@ -1,6 +1,7 @@
 // src/pages/Clientes/ClienteSites.jsx
 import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import {
   Plus,
   Search,
@@ -158,6 +159,7 @@ function SearchableSelect({ value, onChange, onBlur, options, placeholder, disab
 // ── Componente principal ──────────────────────────────────────────────────────
 
 export default function ClienteSites({ onCountChange }) {
+  const { t }                                     = useTranslation();
   const { id }                                    = useParams();
   const [searchParams, setSearchParams]           = useSearchParams();
   const { showToast }                             = useToast();
@@ -218,7 +220,7 @@ export default function ClienteSites({ onCountChange }) {
       setSelectedIds([]);
       onCountChange?.(sites.length);
     } catch (err) {
-      setError(err?.message || "Error al cargar los sites");
+      setError(err?.message || t("clients.sites.errors.load_failed"));
     } finally {
       setLoading(false);
     }
@@ -278,7 +280,7 @@ export default function ClienteSites({ onCountChange }) {
 
   // ── CRUD ─────────────────────────────────────────────────────────────────────
   function newSite() {
-    if (!canCreate) return showToast("Sin permisos", "warning");
+    if (!canCreate) return showToast(t("common.no_permission"), "warning");
     setEditing(null);
     setForm({ nombre: "", descripcion: "", id_ciudad: "", activo: "1" });
     setFormError({});
@@ -286,7 +288,7 @@ export default function ClienteSites({ onCountChange }) {
   }
 
   function editSite(row) {
-    if (!canEdit) return showToast("Sin permisos", "warning");
+    if (!canEdit) return showToast(t("common.no_permission"), "warning");
     setEditing(row);
     setForm({ nombre: row.nombre, descripcion: row.descripcion || "", id_ciudad: row.id_ciudad ? String(row.id_ciudad) : "", activo: isActivoVal(row.activo) ? "1" : "0" });
     setFormError({});
@@ -295,31 +297,31 @@ export default function ClienteSites({ onCountChange }) {
 
   async function onSubmit() {
     const errors = {};
-    if (!form.nombre.trim()) errors.nombre = "El nombre es obligatorio";
+    if (!form.nombre.trim()) errors.nombre = t("clients.sites.errors.name_required");
     if (Object.keys(errors).length) { setFormError(errors); return; }
     setFormError({});
     setSaving(true);
     try {
       const payload = { nombre: form.nombre.trim(), descripcion: form.descripcion.trim() || null, id_ciudad: form.id_ciudad || null, id_cliente: id, activo: form.activo === "1" ? 1 : 0 };
       if (editing) {
-        if (!canEdit) throw new Error("Sin permisos");
+        if (!canEdit) throw new Error(t("common.no_permission"));
         await updateSite(editing.id, payload);
-        showToast("Site actualizado", "success");
+        showToast(t("clients.sites.success.updated"), "success");
       } else {
-        if (!canCreate) throw new Error("Sin permisos");
+        if (!canCreate) throw new Error(t("common.no_permission"));
         await createSite(payload);
-        showToast("Site creado", "success");
+        showToast(t("clients.sites.success.created"), "success");
       }
       setOpen(false); setEditing(null); load();
     } catch (err) {
-      showToast(err?.message || "Error al guardar", "danger");
+      showToast(err?.message || t("clients.sites.errors.save_failed"), "danger");
     } finally {
       setSaving(false);
     }
   }
 
   async function bulkUpdateActivo(newActivo) {
-    if (!canEdit) return showToast("Sin permisos", "warning");
+    if (!canEdit) return showToast(t("common.no_permission"), "warning");
     if (!selectedIds.length) return;
     setBulkSaving(true);
     try {
@@ -330,10 +332,10 @@ export default function ClienteSites({ onCountChange }) {
           return updateSite(idSite, { id_cliente: id, nombre: row.nombre, descripcion: row.descripcion || null, id_ciudad: row.id_ciudad || null, activo: newActivo ? 1 : 0 });
         })
       );
-      showToast("Sites actualizados", "success");
+      showToast(t("clients.sites.success.bulk_updated"), "success");
       setSelectedIds([]); load();
     } catch (err) {
-      showToast(err?.message || "Error al actualizar", "danger");
+      showToast(err?.message || t("clients.sites.errors.bulk_failed"), "danger");
     } finally {
       setBulkSaving(false);
     }
@@ -365,7 +367,7 @@ export default function ClienteSites({ onCountChange }) {
         </DropdownMenuLabel>
         {canEdit && (
           <DropdownMenuItem onClick={() => editSite(row)} className="rounded-xl cursor-pointer gap-2 text-sm">
-            <Edit3 size={13} /> Editar
+            <Edit3 size={13} /> {t("common.actions.edit")}
           </DropdownMenuItem>
         )}
       </DropdownMenuContent>
@@ -382,7 +384,7 @@ export default function ClienteSites({ onCountChange }) {
             <MapPin size={18} className="text-primary" />
           </div>
           <div>
-            <h3 className="text-base font-black tracking-tight">Sites</h3>
+            <h3 className="text-base font-black tracking-tight">{t("clients.tabs.sites")}</h3>
             <p className="text-xs text-muted-foreground mt-0.5">
               {totalSites} total · {totalActivos} activo{totalActivos !== 1 ? "s" : ""} · {totalSites - totalActivos} inactivo{(totalSites - totalActivos) !== 1 ? "s" : ""}
             </p>
@@ -391,7 +393,7 @@ export default function ClienteSites({ onCountChange }) {
         {canCreate && (
           <Button onClick={newSite} className="rounded-2xl px-4 h-9 font-bold gap-2 shadow-md shadow-primary/15 shrink-0">
             <Plus size={15} strokeWidth={2.5} />
-            Nuevo Site
+            {t("clients.sites.actions.new")}
           </Button>
         )}
       </div>
@@ -402,7 +404,7 @@ export default function ClienteSites({ onCountChange }) {
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/50 group-focus-within:text-primary transition-colors pointer-events-none" />
           <input
             type="text"
-            placeholder="Buscar por nombre, ciudad..."
+            placeholder={t("clients.sites.search_placeholder")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full bg-card border border-border/60 rounded-xl pl-9 pr-8 py-2 text-sm outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/15 transition-all placeholder:text-muted-foreground/50 shadow-sm"
@@ -423,7 +425,7 @@ export default function ClienteSites({ onCountChange }) {
               : "border-border/60 text-muted-foreground hover:text-foreground hover:border-border",
           ].join(" ")}>
           <SlidersHorizontal size={14} />
-          Filtros
+          {t("clients.sites.filters_title")}
           {hasActiveFilters && <span className="w-4 h-4 rounded-full bg-primary text-primary-foreground text-[9px] font-bold flex items-center justify-center">!</span>}
         </button>
 
@@ -438,7 +440,7 @@ export default function ClienteSites({ onCountChange }) {
                 : "bg-muted border-border/60 text-muted-foreground hover:text-foreground",
             ].join(" ")}>
             {bulkSaving ? <Loader2 size={12} className="animate-spin" /> : bulkIsActivate ? <ToggleRight size={14} /> : <ToggleLeft size={14} />}
-            {bulkIsActivate ? "Activar" : "Desactivar"} ({selectedIds.length})
+            {bulkIsActivate ? t("clients.sites.actions.activate") : t("clients.sites.actions.deactivate")} ({selectedIds.length})
           </button>
         )}
 
@@ -457,16 +459,16 @@ export default function ClienteSites({ onCountChange }) {
             <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center">
               <Loader2 className="animate-spin text-primary" size={18} />
             </div>
-            <p className="text-sm text-muted-foreground font-medium">Cargando sites...</p>
+            <p className="text-sm text-muted-foreground font-medium">{t("clients.sites.loading")}</p>
           </div>
         ) : error ? (
           <div className="flex flex-col items-center justify-center gap-4 py-16">
             <AlertTriangle size={28} className="text-rose-500/50" />
             <div className="text-center">
-              <p className="font-bold text-sm">Error al cargar</p>
+              <p className="font-bold text-sm">{t("clients.sites.error_loading")}</p>
               <p className="text-xs text-muted-foreground mt-1">{error}</p>
             </div>
-            <Button onClick={load} variant="outline" size="sm" className="rounded-xl">Reintentar</Button>
+            <Button onClick={load} variant="outline" size="sm" className="rounded-xl">{t("common.retry")}</Button>
           </div>
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-3 py-16">
@@ -474,9 +476,9 @@ export default function ClienteSites({ onCountChange }) {
               <MapPin size={24} className="text-muted-foreground/40" />
             </div>
             <div className="text-center">
-              <p className="font-bold text-sm">{search ? "Sin resultados" : "Sin sites"}</p>
+              <p className="font-bold text-sm">{search ? t("clients.sites.empty.no_results") : t("clients.sites.empty.title")}</p>
               <p className="text-xs text-muted-foreground mt-1">
-                {search ? `No hay coincidencias para "${search}"` : "Agrega el primer site usando el botón de arriba"}
+                {search ? t("clients.sites.empty.no_match", { search }) : t("clients.sites.empty.create_hint")}
               </p>
             </div>
           </div>
@@ -517,11 +519,11 @@ export default function ClienteSites({ onCountChange }) {
                       )}
                       {isActivo ? (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-semibold rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                          <span className="w-1 h-1 rounded-full bg-emerald-500" />Activo
+                          <span className="w-1 h-1 rounded-full bg-emerald-500" />{t("common.status.active")}
                         </span>
                       ) : (
                         <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-semibold rounded-full bg-muted text-muted-foreground border border-border/60">
-                          Inactivo
+                          {t("common.status.inactive")}
                         </span>
                       )}
                     </div>
@@ -549,7 +551,7 @@ export default function ClienteSites({ onCountChange }) {
                         className="rounded accent-primary cursor-pointer"
                       />
                     </th>
-                    {["Site", "Descripción", "Ciudad", "Estado", ""].map((h, i) => (
+                    {[t("clients.sites.title"), t("clients.sites.columns.description"), t("clients.sites.columns.city"), t("clients.sites.columns.status"), ""].map((h, i) => (
                       <th key={i} className={`px-6 py-3.5 ${i === 4 ? "text-right" : "text-left"}`}>
                         <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70">{h}</span>
                       </th>
@@ -600,11 +602,11 @@ export default function ClienteSites({ onCountChange }) {
                         <td className="px-6 py-4">
                           {isActivo ? (
                             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-semibold rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />Activo
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />{t("common.status.active")}
                             </span>
                           ) : (
                             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-semibold rounded-full bg-muted text-muted-foreground border border-border/60">
-                              Inactivo
+                              {t("common.status.inactive")}
                             </span>
                           )}
                         </td>
@@ -624,7 +626,7 @@ export default function ClienteSites({ onCountChange }) {
             {rows.length > 0 && (
               <div className="flex items-center justify-between px-6 py-3 border-t border-border/50 bg-muted/10 dark:bg-slate-800/10">
                 <p className="text-xs text-muted-foreground">
-                  Mostrando {paginatedRows.length} de {filtered.length}
+                  {t("common.showing_results", { count: paginatedRows.length, total: filtered.length })}
                 </p>
                 <PaginationLite page={page} count={totalPages} onChange={setPage} />
               </div>
@@ -645,7 +647,7 @@ export default function ClienteSites({ onCountChange }) {
           ].join(" ")}>
             <div className="flex-none flex items-center gap-3 px-6 py-4 border-b border-border/60">
               <SlidersHorizontal size={18} className="text-primary" />
-              <h3 className="font-black tracking-tight flex-1">Filtros</h3>
+              <h3 className="font-black tracking-tight flex-1">{t("clients.sites.filters_title")}</h3>
               <button onClick={() => setFilterOpen(false)} className="p-2 hover:bg-muted dark:hover:bg-slate-800 rounded-xl text-muted-foreground">
                 <X size={16} />
               </button>
@@ -653,19 +655,19 @@ export default function ClienteSites({ onCountChange }) {
             <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
               {/* Ciudad */}
               <div className="space-y-1.5">
-                <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">Ciudad</label>
+                <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">{t("clients.sites.columns.city")}</label>
                 <SearchableSelect
                   value={draftCity}
                   onChange={setDraftCity}
-                  options={[{ value: "", label: "Todas las ciudades" }, ...availableCities]}
-                  placeholder="Todas las ciudades"
+                  options={[{ value: "", label: t("common.all_cities") }, ...availableCities]}
+                  placeholder={t("common.all_cities")}
                 />
               </div>
               {/* Estatus */}
               <div className="space-y-1.5">
-                <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">Estado</label>
+                <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">{t("clients.sites.columns.status")}</label>
                 <div className="space-y-1.5">
-                  {[["activos", "Activos"], ["inactivos", "Inactivos"], ["todos", "Todos"]].map(([val, label]) => (
+                  {[["activos", t("clients.filter.active")], ["inactivos", t("clients.filter.inactive")], ["todos", t("clients.filter.all")]].map(([val, label]) => (
                     <button
                       key={val}
                       onClick={() => setDraftStatus(val)}
@@ -684,13 +686,13 @@ export default function ClienteSites({ onCountChange }) {
                 <Button
                   onClick={() => { setCityFilter(draftCity); setStatusFilter(draftStatus); setFilterOpen(false); }}
                   className="flex-1 rounded-2xl h-10 font-bold gap-2">
-                  Aplicar
+                  {t("common.actions.apply")}
                 </Button>
                 <Button
                   variant="outline"
                   onClick={() => { setDraftCity(""); setDraftStatus("activos"); setCityFilter(""); setStatusFilter("activos"); setFilterOpen(false); }}
                   className="flex-1 rounded-2xl h-10 font-bold">
-                  Limpiar
+                  {t("common.actions.clear")}
                 </Button>
               </div>
             </div>
@@ -720,9 +722,9 @@ export default function ClienteSites({ onCountChange }) {
                 <MapPin size={18} className="text-primary" />
               </div>
               <div className="flex-1 min-w-0">
-                <h2 className="text-base font-black tracking-tight">{editing ? "Editar Site" : "Nuevo Site"}</h2>
+                <h2 className="text-base font-black tracking-tight">{editing ? t("clients.sites.edit_title") : t("clients.sites.create_title")}</h2>
                 <p className="text-[11px] text-muted-foreground mt-0.5">
-                  {editing ? `Modificando: ${editing.nombre}` : "Completa la información requerida"}
+                  {editing ? t("clients.sites.form.edit_subtitle", { name: editing.nombre }) : t("clients.sites.form.create_subtitle")}
                 </p>
               </div>
               <button
@@ -743,28 +745,28 @@ export default function ClienteSites({ onCountChange }) {
                     <MapPin size={13} className="text-muted-foreground" />
                   </div>
                   <h3 className="text-xs font-black uppercase tracking-widest text-muted-foreground">
-                    Información básica
+                    {t("clients.sites.form.section_basic")}
                   </h3>
                 </div>
 
-                <Field label="Nombre" required error={formError.nombre}>
+                <Field label={t("clients.sites.form.name")} required error={formError.nombre}>
                   <input
                     autoFocus
                     value={form.nombre}
                     onChange={(e) => { setForm({ ...form, nombre: e.target.value }); setFormError((p) => ({ ...p, nombre: "" })); }}
                     disabled={saving}
-                    placeholder="Nombre del site..."
+                    placeholder={t("clients.sites.form.name_placeholder")}
                     className={inputCls(!!formError.nombre)}
                   />
                 </Field>
 
-                <Field label="Descripción">
+                <Field label={t("clients.sites.form.description")}>
                   <textarea
                     rows={2}
                     value={form.descripcion}
                     onChange={(e) => setForm({ ...form, descripcion: e.target.value })}
                     disabled={saving}
-                    placeholder="Descripción opcional..."
+                    placeholder={t("clients.sites.form.description_placeholder")}
                     className={`${inputCls(false)} resize-none`}
                   />
                 </Field>
@@ -777,25 +779,25 @@ export default function ClienteSites({ onCountChange }) {
                     <Globe2 size={13} className="text-muted-foreground" />
                   </div>
                   <h3 className="text-xs font-black uppercase tracking-widest text-muted-foreground">
-                    Ubicación y Estado
+                    {t("clients.sites.form.section_location")}
                   </h3>
                 </div>
 
-                <Field label="Ciudad">
+                <Field label={t("clients.sites.form.city")}>
                   <SearchableSelect
                     value={form.id_ciudad}
                     onChange={(val) => setForm({ ...form, id_ciudad: val })}
                     options={cityOptions}
-                    placeholder="Selecciona una ciudad..."
+                    placeholder={t("clients.sites.form.city_placeholder")}
                     disabled={saving}
-                    emptyLabel="Sin ciudades disponibles"
+                    emptyLabel={t("clients.sites.form.no_cities")}
                   />
                 </Field>
 
                 <div className="space-y-1.5">
-                  <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">Estado</label>
+                  <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">{t("clients.sites.form.status")}</label>
                   <div className="flex gap-2">
-                    {[["1", "Activo", "bg-emerald-500/10 border-emerald-500/40 text-emerald-600 dark:text-emerald-400"], ["0", "Inactivo", "bg-muted border-border text-foreground"]].map(([val, label, activeClass]) => (
+                    {[["1", t("common.status.active"), "bg-emerald-500/10 border-emerald-500/40 text-emerald-600 dark:text-emerald-400"], ["0", t("common.status.inactive"), "bg-muted border-border text-foreground"]].map(([val, label, activeClass]) => (
                       <button
                         key={val}
                         type="button"
@@ -822,10 +824,10 @@ export default function ClienteSites({ onCountChange }) {
                   onClick={onSubmit}
                   className="flex-1 rounded-2xl h-10 font-bold shadow-md shadow-primary/15 hover:shadow-primary/25 transition-all gap-2 disabled:opacity-60">
                   {saving ? <Loader2 size={15} className="animate-spin" /> : editing ? <Save size={15} /> : <Plus size={15} />}
-                  {saving ? "Guardando..." : editing ? "Guardar Cambios" : "Crear Site"}
+                  {saving ? t("clients.sites.form.saving") : editing ? t("common.actions.save_changes") : t("clients.sites.actions.create")}
                 </Button>
                 <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={saving} className="flex-1 rounded-2xl h-10 font-bold">
-                  Cancelar
+                  {t("common.actions.cancel")}
                 </Button>
               </div>
             </div>

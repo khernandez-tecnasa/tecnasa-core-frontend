@@ -1,5 +1,6 @@
 // src/pages/Clientes/ClienteContratos.jsx
 import { useEffect, useState, useCallback, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
 import {
   FileText,
@@ -38,6 +39,8 @@ import { useAuth } from "@/context/AuthContext";
 import useIsMobile from "@/hooks/useIsMobile";
 import { Button } from "@/components/ui/button";
 
+const MONTH_NAMES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+
 const normalize = (val) =>
   (val || "").toString().toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, "");
 
@@ -51,6 +54,7 @@ const money = (n) =>
   `L ${Number(n || 0).toLocaleString("es-HN", { minimumFractionDigits: 4, maximumFractionDigits: 4 })}`;
 
 export default function ClienteContratos({ onCountChange }) {
+  const { t } = useTranslation();
   const { id } = useParams();
   const { userData, hasPermiso } = useAuth();
 
@@ -81,7 +85,7 @@ export default function ClienteContratos({ onCountChange }) {
       setContratos(arr);
       onCountChange?.(arr.length);
     } catch (err) {
-      setError(err?.message || "Error al cargar los contratos");
+      setError(err?.message || t("clients.contracts.loading"));
     } finally {
       setLoading(false);
     }
@@ -108,7 +112,7 @@ export default function ClienteContratos({ onCountChange }) {
     return (
       <div className="flex flex-col items-center justify-center py-16 gap-3 text-muted-foreground">
         <FileText size={32} className="opacity-30" />
-        <p className="text-sm font-medium">No tienes permisos para ver los contratos.</p>
+        <p className="text-sm font-medium">{t("clients.contracts.no_permission")}</p>
       </div>
     );
   }
@@ -122,7 +126,7 @@ export default function ClienteContratos({ onCountChange }) {
             <FileText size={18} className="text-primary" />
           </div>
           <div>
-            <h3 className="text-base font-black tracking-tight">Contratos de facturación</h3>
+            <h3 className="text-base font-black tracking-tight">{t("clients.contracts.title")}</h3>
             <p className="text-xs text-muted-foreground mt-0.5">
               {contratos.length} contrato{contratos.length !== 1 ? "s" : ""}
             </p>
@@ -137,7 +141,7 @@ export default function ClienteContratos({ onCountChange }) {
               setOpenNuevo(true);
             }}
             className="rounded-xl gap-2 text-xs font-bold h-9">
-            <Plus size={14} /> Nuevo contrato
+            <Plus size={14} /> {t("clients.contracts.new")}
           </Button>
         )}
       </div>
@@ -149,21 +153,21 @@ export default function ClienteContratos({ onCountChange }) {
             <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center">
               <Loader2 className="animate-spin text-primary" size={18} />
             </div>
-            <p className="text-sm text-muted-foreground font-medium">Cargando contratos...</p>
+            <p className="text-sm text-muted-foreground font-medium">{t("clients.contracts.loading")}</p>
           </div>
         ) : error ? (
           <div className="flex flex-col items-center justify-center gap-4 py-16">
             <AlertTriangle size={28} className="text-rose-500/50" />
             <p className="text-sm font-bold">{error}</p>
-            <Button onClick={load} variant="outline" size="sm" className="rounded-xl">Reintentar</Button>
+            <Button onClick={load} variant="outline" size="sm" className="rounded-xl">{t("common.retry")}</Button>
           </div>
         ) : agrupados.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-3 py-16">
             <div className="w-14 h-14 rounded-3xl bg-muted/50 dark:bg-slate-800/50 flex items-center justify-center">
               <FileText size={24} className="text-muted-foreground/40" />
             </div>
-            <p className="font-bold text-sm">Sin contratos registrados</p>
-            <p className="text-xs text-muted-foreground">Crea el primer contrato usando el botón de arriba</p>
+            <p className="font-bold text-sm">{t("clients.contracts.empty.title")}</p>
+            <p className="text-xs text-muted-foreground">{t("clients.contracts.empty.hint")}</p>
           </div>
         ) : (
           <div className="divide-y divide-border/50">
@@ -178,7 +182,7 @@ export default function ClienteContratos({ onCountChange }) {
                   <div className="flex-1 min-w-0">
                     <p className="font-bold text-sm truncate">{c.nombre}</p>
                     <p className="text-[11px] text-muted-foreground">
-                      {formatFecha(c.fecha_inicio)} — {c.fecha_fin ? formatFecha(c.fecha_fin) : "indefinido"}
+                      {formatFecha(c.fecha_inicio)} — {c.fecha_fin ? formatFecha(c.fecha_fin) : t("clients.contracts.indefinite")}
                     </p>
                   </div>
                   <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-black uppercase rounded-full bg-primary/10 text-primary border border-primary/20 shrink-0">
@@ -194,7 +198,7 @@ export default function ClienteContratos({ onCountChange }) {
                         setOpenNuevo(true);
                       }}
                       className="shrink-0 inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-bold rounded-lg border border-border/60 text-muted-foreground hover:text-foreground hover:border-border transition-colors">
-                      <GitBranch size={11} /> Adenda
+                      <GitBranch size={11} /> {t("clients.contracts.adenda")}
                     </span>
                   )}
                   <ChevronRight size={16} className="text-muted-foreground/50 shrink-0" />
@@ -268,6 +272,7 @@ export default function ClienteContratos({ onCountChange }) {
 ────────────────────────────────────────────────────────────────────────── */
 
 function NuevoContratoModal({ clienteId, parent, editing, onClose, onCreated }) {
+  const { t } = useTranslation();
   const { showToast } = useToast();
   const isEdit = !!editing;
   const [nombre, setNombre] = useState(
@@ -304,7 +309,7 @@ function NuevoContratoModal({ clienteId, parent, editing, onClose, onCreated }) 
 
   const submit = async () => {
     if (!nombre.trim() || !fechaInicio) {
-      return showToast("Nombre y fecha de inicio son obligatorios", "warning");
+      return showToast(t("clients.contracts.form.required"), "warning");
     }
     setSaving(true);
     try {
@@ -320,7 +325,7 @@ function NuevoContratoModal({ clienteId, parent, editing, onClose, onCreated }) 
           contrato_padre_id: editing.contrato_padre_id || null,
           ...payloadMoneda,
         });
-        showToast("Contrato actualizado", "success");
+        showToast(t("clients.contracts.success.updated"), "success");
       } else {
         await createContrato({
           cliente_id: Number(clienteId),
@@ -330,7 +335,7 @@ function NuevoContratoModal({ clienteId, parent, editing, onClose, onCreated }) 
           contrato_padre_id: parent?.id || null,
           ...payloadMoneda,
         });
-        showToast(parent ? "Adenda creada" : "Contrato creado", "success");
+        showToast(parent ? t("clients.contracts.success.adenda_created") : t("clients.contracts.success.created"), "success");
       }
       onCreated();
     } catch (err) {
@@ -353,11 +358,11 @@ function NuevoContratoModal({ clienteId, parent, editing, onClose, onCreated }) 
           </div>
           <div>
             <h2 className="text-base font-black tracking-tight">
-              {isEdit ? "Editar Contrato" : parent ? "Nueva Adenda" : "Nuevo Contrato"}
+              {isEdit ? t("clients.contracts.modal.edit_title") : parent ? t("clients.contracts.modal.new_adenda") : t("clients.contracts.modal.new_title")}
             </h2>
             {parent && !isEdit && (
               <p className="text-sm text-muted-foreground mt-1">
-                Subcontrato de <span className="font-bold text-foreground">{parent.nombre}</span>
+                {t("clients.contracts.modal.sub_of")} <span className="font-bold text-foreground">{parent.nombre}</span>
               </p>
             )}
           </div>
@@ -368,19 +373,19 @@ function NuevoContratoModal({ clienteId, parent, editing, onClose, onCreated }) 
         <div className="space-y-3">
           <div className="space-y-1.5">
             <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">
-              Nombre <span className="text-primary">*</span>
+              {t("clients.contracts.form.name")} <span className="text-primary">*</span>
             </label>
             <input
               value={nombre}
               onChange={(e) => setNombre(e.target.value)}
-              placeholder="Ej: Contrato 2026, Adenda 1"
+              placeholder={t("clients.contracts.form.name_placeholder")}
               className="w-full rounded-xl border border-border bg-background dark:bg-slate-900/60 px-4 py-2.5 text-sm outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/20 transition-all"
             />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">
-                Fecha inicio <span className="text-primary">*</span>
+                {t("clients.contracts.form.start_date")} <span className="text-primary">*</span>
               </label>
               <input
                 type="date"
@@ -391,7 +396,7 @@ function NuevoContratoModal({ clienteId, parent, editing, onClose, onCreated }) 
             </div>
             <div className="space-y-1.5">
               <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">
-                Fecha fin
+                {t("clients.contracts.form.end_date")}
               </label>
               <input
                 type="date"
@@ -404,7 +409,7 @@ function NuevoContratoModal({ clienteId, parent, editing, onClose, onCreated }) 
 
           <div className="space-y-1.5">
             <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">
-              Moneda de facturación
+              {t("clients.contracts.form.currency")}
             </label>
             <select
               value={monedaId}
@@ -419,18 +424,18 @@ function NuevoContratoModal({ clienteId, parent, editing, onClose, onCreated }) 
           {!esUSD && (
             <div className="space-y-1.5">
               <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">
-                Tasa de cambio fija (opcional)
+                {t("clients.contracts.form.exchange_rate")}
               </label>
               <input
                 type="number"
                 step="0.0001"
                 value={tipoCambioFijo}
                 onChange={(e) => setTipoCambioFijo(e.target.value)}
-                placeholder="Vacío = usar la tasa del periodo"
+                placeholder={t("clients.contracts.form.exchange_rate_placeholder")}
                 className="w-full rounded-xl border border-border bg-background dark:bg-slate-900/60 px-4 py-2.5 text-sm outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/20 transition-all"
               />
               <p className="text-[11px] text-muted-foreground">
-                Si el contrato fijó la tasa al firmarse, escríbela aquí — se usará siempre, sin importar cómo cambie el dólar después. Si se deja vacía, se usa la tasa vigente de cada periodo.
+                {t("clients.contracts.form.exchange_rate_hint")}
               </p>
             </div>
           )}
@@ -444,10 +449,10 @@ function NuevoContratoModal({ clienteId, parent, editing, onClose, onCreated }) 
             disabled={saving}
             className="flex-1 rounded-2xl h-10 font-bold gap-2 disabled:opacity-60">
             {saving ? <Loader2 size={15} className="animate-spin" /> : <Plus size={15} />}
-            {saving ? "Guardando..." : isEdit ? "Guardar cambios" : "Crear"}
+            {saving ? t("clients.contracts.form.saving") : isEdit ? t("clients.contracts.form.save_changes") : t("clients.contracts.form.create")}
           </Button>
           <Button variant="outline" onClick={onClose} disabled={saving} className="flex-1 rounded-2xl h-10 font-bold">
-            Cancelar
+            {t("common.actions.cancel")}
           </Button>
         </div>
       </div>
@@ -460,6 +465,7 @@ function NuevoContratoModal({ clienteId, parent, editing, onClose, onCreated }) 
 ────────────────────────────────────────────────────────────────────────── */
 
 function ContratoDetailDrawer({ contrato, clienteId, canEdit, onClose, onChanged, onEdit, onDeactivated }) {
+  const { t } = useTranslation();
   const { showToast } = useToast();
   const isMobile = useIsMobile(768);
   const esContratoPadre = !contrato.contrato_padre_id;
@@ -478,11 +484,11 @@ function ContratoDetailDrawer({ contrato, clienteId, canEdit, onClose, onChanged
   const [searchItems, setSearchItems] = useState("");
 
   const handleDeactivate = async () => {
-    if (!confirm(`¿Desactivar el contrato "${contrato.nombre}"? Dejará de aparecer en el listado.`)) return;
+    if (!confirm(t("clients.contracts.deactivate_confirm", { name: contrato.nombre }))) return;
     setDeactivating(true);
     try {
       await desactivarContrato(contrato.id);
-      showToast("Contrato desactivado", "success");
+      showToast(t("clients.contracts.success.deactivated"), "success");
       onDeactivated();
     } catch (err) {
       showToast(err.message, "danger");
@@ -532,10 +538,10 @@ function ContratoDetailDrawer({ contrato, clienteId, canEdit, onClose, onChanged
   }, [items, searchItems]);
 
   const handleRemoveItem = async (item) => {
-    if (!confirm(`¿Retirar "${item.codigo}" de este contrato?`)) return;
+    if (!confirm(t("clients.contracts.remove_printer_confirm", { code: item.codigo }))) return;
     try {
       await removeContratoItem(item.id);
-      showToast("Impresora retirada del contrato", "success");
+      showToast(t("clients.contracts.success.printer_removed"), "success");
       loadItems();
       onChanged();
     } catch (err) {
@@ -564,7 +570,7 @@ function ContratoDetailDrawer({ contrato, clienteId, canEdit, onClose, onChanged
           <div className="flex-1 min-w-0">
             <h2 className="text-base font-black tracking-tight truncate">{contrato.nombre}</h2>
             <p className="text-[11px] text-muted-foreground mt-0.5">
-              {formatFecha(contrato.fecha_inicio)} — {contrato.fecha_fin ? formatFecha(contrato.fecha_fin) : "indefinido"}
+              {formatFecha(contrato.fecha_inicio)} — {contrato.fecha_fin ? formatFecha(contrato.fecha_fin) : t("clients.contracts.indefinite")}
             </p>
           </div>
           {canEdit && (
@@ -596,8 +602,8 @@ function ContratoDetailDrawer({ contrato, clienteId, canEdit, onClose, onChanged
             y se usa también para asignar impresoras de sus adendas. */}
         <div className="flex-none flex gap-1 px-6 pt-3 bg-muted/20 dark:bg-slate-800/20 border-b border-border/60">
           {[
-            { key: "impresoras", label: "Impresoras", icon: Printer },
-            ...(esContratoPadre ? [{ key: "grupos", label: "Grupos / Bolsones", icon: Layers }] : []),
+            { key: "impresoras", label: t("clients.contracts.tabs.printers"), icon: Printer },
+            ...(esContratoPadre ? [{ key: "grupos", label: t("clients.contracts.tabs.groups"), icon: Layers }] : []),
           ].map((t) => (
             <button
               key={t.key}
@@ -626,7 +632,7 @@ function ContratoDetailDrawer({ contrato, clienteId, canEdit, onClose, onChanged
                     variant="outline"
                     onClick={() => setOpenAddItem(true)}
                     className="rounded-xl gap-1.5 text-xs font-bold h-8">
-                    <Plus size={13} /> Vincular impresora
+                    <Plus size={13} /> {t("clients.contracts.printers.link")}
                   </Button>
                 )}
               </div>
@@ -637,7 +643,7 @@ function ContratoDetailDrawer({ contrato, clienteId, canEdit, onClose, onChanged
                   <input
                     value={searchItems}
                     onChange={(e) => setSearchItems(e.target.value)}
-                    placeholder="Buscar por modelo, serial o código..."
+                    placeholder={t("clients.contracts.printers.content_search")}
                     className="w-full rounded-xl border border-border bg-background dark:bg-slate-900/60 pl-8 pr-4 py-2 text-xs outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-muted-foreground/40"
                   />
                 </div>
@@ -650,10 +656,10 @@ function ContratoDetailDrawer({ contrato, clienteId, canEdit, onClose, onChanged
               ) : items.length === 0 ? (
                 <div className="flex flex-col items-center justify-center gap-2 py-10 text-center">
                   <Printer size={24} className="text-muted-foreground/30" />
-                  <p className="text-sm text-muted-foreground">Sin impresoras vinculadas todavía</p>
+                  <p className="text-sm text-muted-foreground">{t("clients.contracts.printers.empty")}</p>
                 </div>
               ) : filteredItems.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-6">Sin resultados para "{searchItems}"</p>
+                <p className="text-sm text-muted-foreground text-center py-6">{t("clients.contracts.printers.no_results")}</p>
               ) : (
                 <div className="space-y-2">
                   {filteredItems.map((it) => (
@@ -667,7 +673,7 @@ function ContratoDetailDrawer({ contrato, clienteId, canEdit, onClose, onChanged
                       onAsignarGrupo={async (grupoId) => {
                         try {
                           await asignarItemAGrupo(it.id, grupoId || null);
-                          showToast("Impresora reasignada", "success");
+                          showToast(t("clients.contracts.success.printer_reassigned"), "success");
                           loadItems();
                           loadGrupos();
                         } catch (err) {
@@ -694,7 +700,7 @@ function ContratoDetailDrawer({ contrato, clienteId, canEdit, onClose, onChanged
                       setOpenNuevoGrupo(true);
                     }}
                     className="rounded-xl gap-1.5 text-xs font-bold h-8">
-                    <Plus size={13} /> Nuevo grupo
+                    <Plus size={13} /> {t("clients.contracts.groups.new")}
                   </Button>
                 )}
               </div>
@@ -706,9 +712,9 @@ function ContratoDetailDrawer({ contrato, clienteId, canEdit, onClose, onChanged
               ) : grupos.length === 0 ? (
                 <div className="flex flex-col items-center justify-center gap-2 py-10 text-center">
                   <Layers size={24} className="text-muted-foreground/30" />
-                  <p className="text-sm text-muted-foreground">Sin grupos de facturación todavía</p>
+                  <p className="text-sm text-muted-foreground">{t("clients.contracts.groups.empty_title")}</p>
                   <p className="text-xs text-muted-foreground/70 max-w-[280px]">
-                    Un grupo agrupa varias impresoras bajo una sola bolsa de impresiones (ej. "Finca Santa Rita")
+                    {t("clients.contracts.groups.empty_hint")}
                   </p>
                 </div>
               ) : (
@@ -721,7 +727,7 @@ function ContratoDetailDrawer({ contrato, clienteId, canEdit, onClose, onChanged
                         <p className="font-bold text-sm flex-1 truncate">{g.nombre}</p>
                         {!!g.es_bolson && (
                           <span className="shrink-0 px-2 py-0.5 text-[9px] font-black uppercase rounded-full bg-violet-100 dark:bg-violet-950/60 text-violet-700 dark:text-violet-400 border border-violet-200 dark:border-violet-800">
-                            Bolsón
+                            {t("clients.contracts.groups.bolson_badge")}
                           </span>
                         )}
                         {canEdit && (
@@ -737,23 +743,23 @@ function ContratoDetailDrawer({ contrato, clienteId, canEdit, onClose, onChanged
                       </div>
                       <div className="grid grid-cols-2 gap-2 text-xs">
                         <span className="text-muted-foreground">
-                          Bolsa mono: <b className="text-foreground">{g.bolsa_mono ?? 0}</b>
+                          {t("clients.contracts.groups.mono_bag")}: <b className="text-foreground">{g.bolsa_mono ?? 0}</b>
                         </span>
                         <span className="text-muted-foreground">
-                          Bolsa color: <b className="text-foreground">{g.bolsa_color ?? 0}</b>
+                          {t("clients.contracts.groups.color_bag")}: <b className="text-foreground">{g.bolsa_color ?? 0}</b>
                         </span>
                         <span className="text-muted-foreground">
-                          Renta base: <b className="text-foreground">{money(g.precio_fijo_mensual)}</b>
+                          {t("clients.contracts.groups.base_rent")}: <b className="text-foreground">{money(g.precio_fijo_mensual)}</b>
                         </span>
                         <span className="text-muted-foreground">
-                          Impresoras: <b className="text-foreground">{g.total_impresoras_asignadas ?? 0}</b>
+                          {t("clients.contracts.groups.printers_label")}: <b className="text-foreground">{g.total_impresoras_asignadas ?? 0}</b>
                         </span>
                         <span className="col-span-2 text-muted-foreground">
-                          Excedente:{" "}
+                          {t("clients.contracts.groups.surplus_freq")}:{" "}
                           <b className="text-foreground">
                             {g.frecuencia_excedentes === "ANUAL"
-                              ? `Anual — ${["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"][(g.mes_cierre_anual ?? 12) - 1]}`
-                              : "Mensual"}
+                              ? t("clients.contracts.groups.annual_month", { month: MONTH_NAMES[(g.mes_cierre_anual ?? 12) - 1] })
+                              : t("clients.contracts.groups.monthly")}
                           </b>
                         </span>
                       </div>
@@ -804,6 +810,7 @@ function ContratoDetailDrawer({ contrato, clienteId, canEdit, onClose, onChanged
 ────────────────────────────────────────────────────────────────────────── */
 
 function ItemRow({ item, canEdit, grupos, onRemove, onSavedPrecios, onAsignarGrupo }) {
+  const { t } = useTranslation();
   const { showToast } = useToast();
   const [editing, setEditing] = useState(false);
   const [renta, setRenta] = useState(item.precio_renta);
@@ -819,7 +826,7 @@ function ItemRow({ item, canEdit, grupos, onRemove, onSavedPrecios, onAsignarGru
         precio_clic_mono: Number(mono) || 0,
         precio_clic_color: Number(color) || 0,
       });
-      showToast("Precios actualizados", "success");
+      showToast(t("clients.contracts.success.prices_updated"), "success");
       setEditing(false);
       onSavedPrecios();
     } catch (err) {
@@ -859,7 +866,7 @@ function ItemRow({ item, canEdit, grupos, onRemove, onSavedPrecios, onAsignarGru
         <div className="space-y-2">
           <div className="grid grid-cols-3 gap-2">
             <div>
-              <label className="text-[10px] font-black uppercase text-muted-foreground">Renta</label>
+              <label className="text-[10px] font-black uppercase text-muted-foreground">{t("clients.contracts.printers.rent")}</label>
               <input
                 type="number"
                 step="0.0001"
@@ -869,7 +876,7 @@ function ItemRow({ item, canEdit, grupos, onRemove, onSavedPrecios, onAsignarGru
               />
             </div>
             <div>
-              <label className="text-[10px] font-black uppercase text-muted-foreground">Clic mono</label>
+              <label className="text-[10px] font-black uppercase text-muted-foreground">{t("clients.contracts.printers.mono")}</label>
               <input
                 type="number"
                 step="0.0001"
@@ -879,7 +886,7 @@ function ItemRow({ item, canEdit, grupos, onRemove, onSavedPrecios, onAsignarGru
               />
             </div>
             <div>
-              <label className="text-[10px] font-black uppercase text-muted-foreground">Clic color</label>
+              <label className="text-[10px] font-black uppercase text-muted-foreground">{t("clients.contracts.printers.color")}</label>
               <input
                 type="number"
                 step="0.0001"
@@ -891,18 +898,18 @@ function ItemRow({ item, canEdit, grupos, onRemove, onSavedPrecios, onAsignarGru
           </div>
           <div className="flex gap-2">
             <Button size="sm" disabled={saving} onClick={guardarPrecios} className="rounded-xl h-8 text-xs font-bold flex-1">
-              {saving ? <Loader2 size={12} className="animate-spin" /> : "Guardar"}
+              {saving ? <Loader2 size={12} className="animate-spin" /> : t("common.actions.save")}
             </Button>
             <Button size="sm" variant="outline" onClick={() => setEditing(false)} className="rounded-xl h-8 text-xs font-bold flex-1">
-              Cancelar
+              {t("common.actions.cancel")}
             </Button>
           </div>
         </div>
       ) : (
         <div className="grid grid-cols-3 gap-2 text-xs">
-          <span className="text-muted-foreground">Renta: <b className="text-foreground">{money(item.precio_renta)}</b></span>
-          <span className="text-muted-foreground">Mono: <b className="text-foreground">{money(item.precio_clic_mono)}</b></span>
-          <span className="text-muted-foreground">Color: <b className="text-foreground">{money(item.precio_clic_color)}</b></span>
+          <span className="text-muted-foreground">{t("clients.contracts.printers.rent")}: <b className="text-foreground">{money(item.precio_renta)}</b></span>
+          <span className="text-muted-foreground">{t("clients.contracts.printers.mono")}: <b className="text-foreground">{money(item.precio_clic_mono)}</b></span>
+          <span className="text-muted-foreground">{t("clients.contracts.printers.color")}: <b className="text-foreground">{money(item.precio_clic_color)}</b></span>
         </div>
       )}
 
@@ -913,7 +920,7 @@ function ItemRow({ item, canEdit, grupos, onRemove, onSavedPrecios, onAsignarGru
             value={item.grupo_id || ""}
             onChange={(e) => onAsignarGrupo(e.target.value || null)}
             className="flex-1 rounded-lg border border-border bg-background dark:bg-slate-900/60 px-2 py-1 text-xs outline-none focus:border-primary/60">
-            <option value="">Sin grupo (cobro individual)</option>
+            <option value="">{t("clients.contracts.printers.no_group")}</option>
             {grupos.map((g) => (
               <option key={g.id} value={g.id}>{g.nombre}</option>
             ))}
@@ -929,6 +936,7 @@ function ItemRow({ item, canEdit, grupos, onRemove, onSavedPrecios, onAsignarGru
 ────────────────────────────────────────────────────────────────────────── */
 
 function AddItemModal({ contratoId, clienteId, grupos, onClose, onAdded }) {
+  const { t } = useTranslation();
   const { showToast } = useToast();
   const [activos, setActivos] = useState([]);
   const [loadingActivos, setLoadingActivos] = useState(true);
@@ -943,7 +951,7 @@ function AddItemModal({ contratoId, clienteId, grupos, onClose, onAdded }) {
   useEffect(() => {
     getActivosByCliente(clienteId)
       .then((data) => setActivos(Array.isArray(data) ? data : []))
-      .catch(() => showToast("Error al cargar activos", "danger"))
+      .catch(() => showToast(t("clients.contracts.printers.load_error"), "danger"))
       .finally(() => setLoadingActivos(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -957,7 +965,7 @@ function AddItemModal({ contratoId, clienteId, grupos, onClose, onAdded }) {
   }, [activos, search]);
 
   const submit = async () => {
-    if (!selectedId) return showToast("Selecciona una impresora", "warning");
+    if (!selectedId) return showToast(t("clients.contracts.printers.select_printer"), "warning");
     setSaving(true);
     try {
       await addContratoItem({
@@ -968,7 +976,7 @@ function AddItemModal({ contratoId, clienteId, grupos, onClose, onAdded }) {
         precio_clic_mono: Number(precioMono) || 0,
         precio_clic_color: Number(precioColor) || 0,
       });
-      showToast("Impresora vinculada al contrato", "success");
+      showToast(t("clients.contracts.success.printer_linked"), "success");
       onAdded();
     } catch (err) {
       showToast(err.message, "danger");
@@ -989,9 +997,9 @@ function AddItemModal({ contratoId, clienteId, grupos, onClose, onAdded }) {
             <Printer size={20} className="text-primary" />
           </div>
           <div>
-            <h2 className="text-base font-black tracking-tight">Vincular impresora existente</h2>
+            <h2 className="text-base font-black tracking-tight">{t("clients.contracts.printers.title")}</h2>
             <p className="text-sm text-muted-foreground mt-1">
-              Busca un activo ya registrado en inventario para vincularlo a este contrato.
+              {t("clients.contracts.printers.subtitle")}
             </p>
           </div>
         </div>
@@ -1000,25 +1008,25 @@ function AddItemModal({ contratoId, clienteId, grupos, onClose, onAdded }) {
 
         <div className="space-y-1.5">
           <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">
-            Impresora <span className="text-primary">*</span>
+            {t("clients.contracts.printers.label")} <span className="text-primary">*</span>
           </label>
           <div className="relative">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/50" />
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar por código, nombre o serial..."
+              placeholder={t("clients.contracts.printers.search")}
               className="w-full rounded-xl border border-border bg-background dark:bg-slate-900/60 pl-9 pr-4 py-2.5 text-sm outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/20 transition-all"
             />
           </div>
           {loadingActivos ? (
             <div className="flex items-center gap-2 py-3 text-muted-foreground">
-              <Loader2 size={14} className="animate-spin" /> <span className="text-sm">Cargando activos...</span>
+              <Loader2 size={14} className="animate-spin" /> <span className="text-sm">{t("clients.contracts.printers.loading_assets")}</span>
             </div>
           ) : (
             <div className="max-h-48 overflow-y-auto border border-border/60 rounded-xl divide-y divide-border/40">
               {filtrados.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-4">Sin resultados</p>
+                <p className="text-sm text-muted-foreground text-center py-4">{t("clients.contracts.printers.no_results")}</p>
               ) : (
                 filtrados.map((a) => (
                   <button
@@ -1038,13 +1046,13 @@ function AddItemModal({ contratoId, clienteId, grupos, onClose, onAdded }) {
         {grupos.length > 0 && (
           <div className="space-y-1.5">
             <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">
-              Grupo de facturación (opcional)
+              {t("clients.contracts.printers.group_label")}
             </label>
             <select
               value={grupoId}
               onChange={(e) => setGrupoId(e.target.value)}
               className="w-full rounded-xl border border-border bg-background dark:bg-slate-900/60 px-4 py-2.5 text-sm outline-none focus:border-primary/60">
-              <option value="">Sin grupo (cobro individual)</option>
+              <option value="">{t("clients.contracts.printers.no_group")}</option>
               {grupos.map((g) => (
                 <option key={g.id} value={g.id}>{g.nombre}</option>
               ))}
@@ -1054,17 +1062,17 @@ function AddItemModal({ contratoId, clienteId, grupos, onClose, onAdded }) {
 
         <div className="grid grid-cols-3 gap-3">
           <div className="space-y-1.5">
-            <label className="text-[11px] font-black uppercase text-muted-foreground">Renta</label>
+            <label className="text-[11px] font-black uppercase text-muted-foreground">{t("clients.contracts.printers.rent")}</label>
             <input type="number" step="0.0001" value={precioRenta} onChange={(e) => setPrecioRenta(e.target.value)}
               className="w-full rounded-xl border border-border bg-background dark:bg-slate-900/60 px-3 py-2 text-sm outline-none focus:border-primary/60" />
           </div>
           <div className="space-y-1.5">
-            <label className="text-[11px] font-black uppercase text-muted-foreground">Clic mono</label>
+            <label className="text-[11px] font-black uppercase text-muted-foreground">{t("clients.contracts.printers.mono")}</label>
             <input type="number" step="0.0001" value={precioMono} onChange={(e) => setPrecioMono(e.target.value)}
               className="w-full rounded-xl border border-border bg-background dark:bg-slate-900/60 px-3 py-2 text-sm outline-none focus:border-primary/60" />
           </div>
           <div className="space-y-1.5">
-            <label className="text-[11px] font-black uppercase text-muted-foreground">Clic color</label>
+            <label className="text-[11px] font-black uppercase text-muted-foreground">{t("clients.contracts.printers.color")}</label>
             <input type="number" step="0.0001" value={precioColor} onChange={(e) => setPrecioColor(e.target.value)}
               className="w-full rounded-xl border border-border bg-background dark:bg-slate-900/60 px-3 py-2 text-sm outline-none focus:border-primary/60" />
           </div>
@@ -1075,10 +1083,10 @@ function AddItemModal({ contratoId, clienteId, grupos, onClose, onAdded }) {
         <div className="flex gap-2.5">
           <Button onClick={submit} disabled={saving || !selectedId} className="flex-1 rounded-2xl h-10 font-bold gap-2 disabled:opacity-60">
             {saving ? <Loader2 size={15} className="animate-spin" /> : <Plus size={15} />}
-            {saving ? "Vinculando..." : "Vincular"}
+            {saving ? t("clients.contracts.printers.linking") : t("clients.contracts.printers.link_btn")}
           </Button>
           <Button variant="outline" onClick={onClose} disabled={saving} className="flex-1 rounded-2xl h-10 font-bold">
-            Cancelar
+            {t("common.actions.cancel")}
           </Button>
         </div>
       </div>
@@ -1091,6 +1099,7 @@ function AddItemModal({ contratoId, clienteId, grupos, onClose, onAdded }) {
 ────────────────────────────────────────────────────────────────────────── */
 
 function NuevoGrupoModal({ clienteId, editing, onClose, onCreated }) {
+  const { t } = useTranslation();
   const { showToast } = useToast();
   const isEdit = !!editing;
   const [nombre, setNombre] = useState(editing?.nombre || "");
@@ -1126,7 +1135,7 @@ function NuevoGrupoModal({ clienteId, editing, onClose, onCreated }) {
   const esUSD = !monedaSeleccionada || monedaSeleccionada.codigo === "USD";
 
   const submit = async () => {
-    if (!nombre.trim()) return showToast("El nombre es obligatorio", "warning");
+    if (!nombre.trim()) return showToast(t("clients.contracts.groups.name_required"), "warning");
     setSaving(true);
     try {
       const payload = {
@@ -1144,10 +1153,10 @@ function NuevoGrupoModal({ clienteId, editing, onClose, onCreated }) {
       };
       if (isEdit) {
         await updateGrupoFacturacion(editing.id, payload);
-        showToast("Grupo actualizado", "success");
+        showToast(t("clients.contracts.success.group_updated"), "success");
       } else {
         await createGrupoFacturacion({ cliente_id: clienteId, ...payload });
-        showToast("Grupo creado", "success");
+        showToast(t("clients.contracts.success.group_created"), "success");
       }
       onCreated();
     } catch (err) {
@@ -1170,10 +1179,10 @@ function NuevoGrupoModal({ clienteId, editing, onClose, onCreated }) {
           </div>
           <div>
             <h2 className="text-base font-black tracking-tight">
-              {isEdit ? "Editar Grupo de Facturación" : "Nuevo Grupo de Facturación"}
+              {isEdit ? t("clients.contracts.groups.modal_edit") : t("clients.contracts.groups.modal_new")}
             </h2>
             <p className="text-sm text-muted-foreground mt-1">
-              Ej: "Finca Santa Rita" — varias impresoras compartiendo una bolsa de impresiones.
+              {t("clients.contracts.groups.modal_hint")}
             </p>
           </div>
         </div>
@@ -1182,7 +1191,7 @@ function NuevoGrupoModal({ clienteId, editing, onClose, onCreated }) {
 
         <div className="space-y-1.5">
           <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">
-            Nombre <span className="text-primary">*</span>
+            {t("clients.contracts.form.name")} <span className="text-primary">*</span>
           </label>
           <input
             value={nombre}
@@ -1194,8 +1203,8 @@ function NuevoGrupoModal({ clienteId, editing, onClose, onCreated }) {
         <label className="flex items-center gap-2.5 cursor-pointer select-none">
           <input type="checkbox" checked={esBolson} onChange={(e) => setEsBolson(e.target.checked)} className="rounded accent-primary" />
           <div>
-            <p className="text-sm font-semibold">Es bolsón</p>
-            <p className="text-[11px] text-muted-foreground">Suma los contadores de todas las impresoras del grupo bajo una sola bolsa de impresiones</p>
+            <p className="text-sm font-semibold">{t("clients.contracts.groups.is_bolson")}</p>
+            <p className="text-[11px] text-muted-foreground">{t("clients.contracts.groups.is_bolson_desc")}</p>
           </div>
         </label>
 
@@ -1203,28 +1212,28 @@ function NuevoGrupoModal({ clienteId, editing, onClose, onCreated }) {
           <>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <label className="text-[11px] font-black uppercase text-muted-foreground">Bolsa mono</label>
+                <label className="text-[11px] font-black uppercase text-muted-foreground">{t("clients.contracts.groups.mono_bag")}</label>
                 <input type="number" value={bolsaMono} onChange={(e) => setBolsaMono(e.target.value)}
                   className="w-full rounded-xl border border-border bg-background dark:bg-slate-900/60 px-3 py-2 text-sm outline-none focus:border-primary/60" />
               </div>
               <div className="space-y-1.5">
-                <label className="text-[11px] font-black uppercase text-muted-foreground">Bolsa color</label>
+                <label className="text-[11px] font-black uppercase text-muted-foreground">{t("clients.contracts.groups.color_bag")}</label>
                 <input type="number" value={bolsaColor} onChange={(e) => setBolsaColor(e.target.value)}
                   className="w-full rounded-xl border border-border bg-background dark:bg-slate-900/60 px-3 py-2 text-sm outline-none focus:border-primary/60" />
               </div>
               <div className="space-y-1.5">
-                <label className="text-[11px] font-black uppercase text-muted-foreground">Renta base</label>
+                <label className="text-[11px] font-black uppercase text-muted-foreground">{t("clients.contracts.groups.base_rent")}</label>
                 <input type="number" step="0.01" value={precioFijo} onChange={(e) => setPrecioFijo(e.target.value)}
                   className="w-full rounded-xl border border-border bg-background dark:bg-slate-900/60 px-3 py-2 text-sm outline-none focus:border-primary/60" />
               </div>
               <div />
               <div className="space-y-1.5">
-                <label className="text-[11px] font-black uppercase text-muted-foreground">Excedente mono</label>
+                <label className="text-[11px] font-black uppercase text-muted-foreground">{t("clients.contracts.groups.mono_surplus")}</label>
                 <input type="number" step="0.0001" value={precioExcMono} onChange={(e) => setPrecioExcMono(e.target.value)}
                   className="w-full rounded-xl border border-border bg-background dark:bg-slate-900/60 px-3 py-2 text-sm outline-none focus:border-primary/60" />
               </div>
               <div className="space-y-1.5">
-                <label className="text-[11px] font-black uppercase text-muted-foreground">Excedente color</label>
+                <label className="text-[11px] font-black uppercase text-muted-foreground">{t("clients.contracts.groups.color_surplus")}</label>
                 <input type="number" step="0.0001" value={precioExcColor} onChange={(e) => setPrecioExcColor(e.target.value)}
                   className="w-full rounded-xl border border-border bg-background dark:bg-slate-900/60 px-3 py-2 text-sm outline-none focus:border-primary/60" />
               </div>
@@ -1233,12 +1242,12 @@ function NuevoGrupoModal({ clienteId, editing, onClose, onCreated }) {
             {/* Frecuencia de cobro del excedente */}
             <div className="space-y-2">
               <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">
-                Frecuencia de cobro del excedente
+                {t("clients.contracts.groups.frequency")}
               </label>
               <div className="flex gap-2">
                 {[
-                  { value: "MENSUAL", label: "Mensual" },
-                  { value: "ANUAL", label: "Anual" },
+                  { value: "MENSUAL", label: t("clients.contracts.groups.monthly_label") },
+                  { value: "ANUAL", label: t("clients.contracts.groups.annual_label") },
                 ].map((opt) => (
                   <button
                     key={opt.value}
@@ -1256,25 +1265,25 @@ function NuevoGrupoModal({ clienteId, editing, onClose, onCreated }) {
               {frecuencia === "ANUAL" && (
                 <div className="space-y-1.5 pt-1">
                   <label className="text-[11px] font-black uppercase text-muted-foreground">
-                    Mes de cobro anual
+                    {t("clients.contracts.groups.annual_month_label")}
                   </label>
                   <select
                     value={mesCierre}
                     onChange={(e) => setMesCierre(e.target.value)}
                     className="w-full rounded-xl border border-border bg-background dark:bg-slate-900/60 px-3 py-2 text-sm outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/20 transition-all">
-                    {["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"].map((mes, i) => (
+                    {MONTH_NAMES.map((mes, i) => (
                       <option key={i + 1} value={i + 1}>{mes}</option>
                     ))}
                   </select>
                   <p className="text-[11px] text-muted-foreground/70 italic">
-                    El excedente acumulado del año se cobra en el período de este mes.
+                    {t("clients.contracts.groups.annual_month_hint")}
                   </p>
                 </div>
               )}
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-[11px] font-black uppercase text-muted-foreground">Moneda de facturación</label>
+              <label className="text-[11px] font-black uppercase text-muted-foreground">{t("clients.contracts.groups.currency")}</label>
               <select
                 value={monedaId}
                 onChange={(e) => setMonedaId(e.target.value)}
@@ -1287,13 +1296,13 @@ function NuevoGrupoModal({ clienteId, editing, onClose, onCreated }) {
 
             {!esUSD && (
               <div className="space-y-1.5">
-                <label className="text-[11px] font-black uppercase text-muted-foreground">Tasa de cambio fija (opcional)</label>
+                <label className="text-[11px] font-black uppercase text-muted-foreground">{t("clients.contracts.groups.exchange_rate")}</label>
                 <input
                   type="number"
                   step="0.0001"
                   value={tipoCambioFijo}
                   onChange={(e) => setTipoCambioFijo(e.target.value)}
-                  placeholder="Vacío = usar la tasa del periodo"
+                  placeholder={t("clients.contracts.groups.exchange_rate_placeholder")}
                   className="w-full rounded-xl border border-border bg-background dark:bg-slate-900/60 px-3 py-2 text-sm outline-none focus:border-primary/60"
                 />
               </div>
@@ -1306,10 +1315,10 @@ function NuevoGrupoModal({ clienteId, editing, onClose, onCreated }) {
         <div className="flex gap-2.5">
           <Button onClick={submit} disabled={saving} className="flex-1 rounded-2xl h-10 font-bold gap-2 disabled:opacity-60">
             {saving ? <Loader2 size={15} className="animate-spin" /> : <Plus size={15} />}
-            {saving ? "Guardando..." : isEdit ? "Guardar cambios" : "Crear grupo"}
+            {saving ? t("clients.contracts.groups.saving") : isEdit ? t("clients.contracts.groups.save_changes") : t("clients.contracts.groups.create_btn")}
           </Button>
           <Button variant="outline" onClick={onClose} disabled={saving} className="flex-1 rounded-2xl h-10 font-bold">
-            Cancelar
+            {t("common.actions.cancel")}
           </Button>
         </div>
       </div>
