@@ -7,12 +7,13 @@ import {
 import ExportDialog from "@/components/Exports/ExportDialog";
 import { getReservasEstadoReport } from "@/services/ReportServices";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "react-i18next";
 
 const fmtDateInput = (d) => { if (!d) return ""; const p = (n) => String(n).padStart(2,"0"); const dt = d instanceof Date ? d : new Date(d); return `${dt.getFullYear()}-${p(dt.getMonth()+1)}-${p(dt.getDate())}`; };
 const todayStr = () => fmtDateInput(new Date());
 const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate()+n); return x; };
 
-const RANGE_LABELS = { all: "Todo", today: "Hoy", "7d": "7 días", month: "Este mes", custom: "Personalizado" };
+const RANGE_KEYS = ["all", "today", "7d", "month", "custom"];
 
 const ESTADO_STYLE = {
   Reservado:  { bg: "bg-amber-50 dark:bg-amber-900/20",  border: "border-amber-200 dark:border-amber-800/40",  text: "text-amber-700 dark:text-amber-400",  dot: "bg-amber-500",   label: "Pendiente" },
@@ -23,6 +24,7 @@ const ESTADO_STYLE = {
 const DEFAULT_STYLE = { bg: "bg-muted/30", border: "border-border/50", text: "text-muted-foreground", dot: "bg-muted-foreground", label: "" };
 
 export default function ReservasEstado() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { search } = useLocation();
   const qs = useMemo(() => new URLSearchParams(search), [search]);
@@ -47,7 +49,7 @@ export default function ReservasEstado() {
     (async () => {
       setLoading(true); setErr(null);
       try { const d = await getReservasEstadoReport({ from: from || undefined, to: to || undefined }); setRaw(Array.isArray(d) ? d : []); }
-      catch (e) { console.error(e); setErr("Error al cargar el reporte."); }
+      catch (e) { console.error(e); setErr("reports.common.error_detail"); }
       finally { setLoading(false); }
     })();
   }, [from, to]);
@@ -71,30 +73,30 @@ export default function ReservasEstado() {
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-2xl bg-purple-500/10 dark:bg-purple-500/15 ring-1 ring-purple-500/20 shadow-sm shrink-0"><CalendarCheck size={20} className="text-purple-600 dark:text-purple-400" /></div>
             <div>
-              <h1 className="text-xl md:text-2xl font-black tracking-tight leading-none">Reservas por Estado</h1>
-              <p className="text-muted-foreground text-xs font-medium mt-0.5">{loading ? "Cargando..." : `${total} reserva${total !== 1 ? "s" : ""} en total`}</p>
+              <h1 className="text-xl md:text-2xl font-black tracking-tight leading-none">{t("reports.reservasEstado.title")}</h1>
+              <p className="text-muted-foreground text-xs font-medium mt-0.5">{loading ? t("reports.reservasEstado.loading") : t("reports.reservasEstado.count", { count: total })}</p>
             </div>
           </div>
         </div>
-        <Button onClick={() => setOpenExport(true)} disabled={raw.length === 0 || loading} className="rounded-2xl px-5 h-10 font-bold gap-2 shrink-0"><Download size={15} /><span className="hidden sm:inline">Exportar</span></Button>
+        <Button onClick={() => setOpenExport(true)} disabled={raw.length === 0 || loading} className="rounded-2xl px-5 h-10 font-bold gap-2 shrink-0"><Download size={15} /><span className="hidden sm:inline">{t("reports.common.export")}</span></Button>
       </div>
 
       {/* Filtros */}
       <div className="bg-card dark:bg-slate-900/40 border border-border/60 rounded-3xl p-4 shadow-sm">
         <div className="flex items-center gap-2 flex-wrap">
-          <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground shrink-0"><Calendar size={13} />Período</div>
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground shrink-0"><Calendar size={13} />{t("reports.common.period")}</div>
           <div className="flex gap-1.5 flex-wrap">
-            {Object.entries(RANGE_LABELS).map(([r, label]) => (
-              <button key={r} onClick={() => setRange(r)} className={`px-3 py-1 rounded-full text-xs font-bold border transition-all ${range === r ? "bg-primary text-primary-foreground border-primary shadow-sm" : "bg-muted/50 border-border/50 text-muted-foreground hover:bg-muted hover:text-foreground"}`}>{label}</button>
+            {RANGE_KEYS.map((r) => (
+              <button key={r} onClick={() => setRange(r)} className={`px-3 py-1 rounded-full text-xs font-bold border transition-all ${range === r ? "bg-primary text-primary-foreground border-primary shadow-sm" : "bg-muted/50 border-border/50 text-muted-foreground hover:bg-muted hover:text-foreground"}`}>{t(`reports.ranges.${r}`)}</button>
             ))}
           </div>
-          {range !== "all" && <button onClick={() => { setRange("all"); setFrom(""); setTo(""); }} className="ml-auto text-[11px] font-semibold text-muted-foreground hover:text-rose-500 flex items-center gap-1"><X size={11} />Limpiar</button>}
+          {range !== "all" && <button onClick={() => { setRange("all"); setFrom(""); setTo(""); }} className="ml-auto text-[11px] font-semibold text-muted-foreground hover:text-rose-500 flex items-center gap-1"><X size={11} />{t("reports.common.clear")}</button>}
         </div>
         {range === "custom" && (
           <div className="flex items-center gap-2 flex-wrap pt-3">
-            <span className="text-xs text-muted-foreground font-medium">Desde</span>
+            <span className="text-xs text-muted-foreground font-medium">{t("reports.common.from")}</span>
             <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="bg-muted/40 border border-border/50 rounded-xl px-3 py-1.5 text-sm outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/15 transition-all" />
-            <span className="text-xs text-muted-foreground font-medium">Hasta</span>
+            <span className="text-xs text-muted-foreground font-medium">{t("reports.common.to")}</span>
             <input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="bg-muted/40 border border-border/50 rounded-xl px-3 py-1.5 text-sm outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/15 transition-all" />
           </div>
         )}
@@ -104,18 +106,18 @@ export default function ReservasEstado() {
       {loading ? (
         <div className="flex flex-col items-center justify-center gap-4 py-24">
           <div className="w-12 h-12 rounded-2xl bg-purple-500/10 flex items-center justify-center"><Loader2 size={22} className="animate-spin text-purple-500" /></div>
-          <p className="text-sm text-muted-foreground font-medium">Cargando reservas...</p>
+          <p className="text-sm text-muted-foreground font-medium">{t("reports.reservasEstado.loading")}</p>
         </div>
       ) : err ? (
         <div className="bg-rose-50 dark:bg-rose-900/10 border border-rose-200 rounded-3xl p-6 flex items-start gap-3">
           <AlertCircle size={18} className="text-rose-500 shrink-0 mt-0.5" />
-          <div><p className="text-sm font-bold text-rose-700 dark:text-rose-400">Error al cargar</p><p className="text-xs text-rose-600 mt-0.5">{err}</p></div>
+          <div><p className="text-sm font-bold text-rose-700 dark:text-rose-400">{t("reports.common.error_title")}</p><p className="text-xs text-rose-600 mt-0.5">{t(err)}</p></div>
         </div>
       ) : raw.length === 0 ? (
         <div className="bg-card dark:bg-slate-900/40 border border-border/60 rounded-3xl flex flex-col items-center justify-center gap-4 py-20">
           <div className="w-16 h-16 rounded-3xl bg-muted/50 flex items-center justify-center"><CalendarCheck size={28} className="text-muted-foreground/40" /></div>
-          <p className="font-bold text-sm">Sin reservas</p>
-          <p className="text-xs text-muted-foreground">No hay reservas en el período seleccionado</p>
+          <p className="font-bold text-sm">{t("reports.reservasEstado.empty_title")}</p>
+          <p className="text-xs text-muted-foreground">{t("reports.reservasEstado.empty_period")}</p>
         </div>
       ) : (
         <>
@@ -135,8 +137,8 @@ export default function ReservasEstado() {
                   </div>
                   <p className={`text-3xl font-black tabular-nums ${s.text}`}>{r.total}</p>
                   <div className="space-y-1">
-                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground"><Car size={11} />{r.vehiculos_distintos ?? 0} vehículos</div>
-                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground"><Users size={11} />{r.empleados_distintos ?? 0} empleados</div>
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground"><Car size={11} />{t("reports.reservasEstado.card_vehicles", { count: r.vehiculos_distintos ?? 0 })}</div>
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground"><Users size={11} />{t("reports.reservasEstado.card_employees", { count: r.empleados_distintos ?? 0 })}</div>
                   </div>
                   {/* Barra de porcentaje */}
                   <div className="h-1 bg-black/10 dark:bg-white/10 rounded-full overflow-hidden">
@@ -150,7 +152,7 @@ export default function ReservasEstado() {
           {/* Barra apilada */}
           {total > 0 && (
             <div className="bg-card dark:bg-slate-900/40 border border-border/60 rounded-3xl p-5 shadow-sm space-y-3">
-              <p className="text-xs font-black uppercase tracking-widest text-muted-foreground/60">Distribución total</p>
+              <p className="text-xs font-black uppercase tracking-widest text-muted-foreground/60">{t("reports.reservasEstado.chart_title")}</p>
               <div className="flex h-4 rounded-full overflow-hidden gap-px">
                 {raw.map((r) => {
                   const s = ESTADO_STYLE[r.estado] || DEFAULT_STYLE;
@@ -176,7 +178,7 @@ export default function ReservasEstado() {
         </>
       )}
 
-      <ExportDialog open={openExport} onClose={() => setOpenExport(false)} rows={raw} columns={columnsExport} defaultTitle="Reservas por Estado" defaultFilenameBase="reservas_estado" />
+      <ExportDialog open={openExport} onClose={() => setOpenExport(false)} rows={raw} columns={columnsExport} defaultTitle={t("reports.reservasEstado.export_title")} defaultFilenameBase="reservas_estado" />
     </div>
   );
 }

@@ -17,6 +17,7 @@ import ExportDialog from "@/components/Exports/ExportDialog";
 import { getVehiculosMasUtilizadosReport } from "@/services/ReportServices";
 import { Button } from "@/components/ui/button";
 import useIsMobile from "@/hooks/useIsMobile";
+import { useTranslation } from "react-i18next";
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 const debounced = (fn, ms = 250) => {
@@ -76,6 +77,7 @@ function UsageBar({ value, max }) {
 
 // ── Componente principal ───────────────────────────────────────────────────────
 export default function VehiculosMasUtilizados() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { search } = useLocation();
   const isMobile = useIsMobile();
@@ -109,7 +111,7 @@ export default function VehiculosMasUtilizados() {
         setRaw(Array.isArray(data) ? data : []);
       } catch (e) {
         console.error(e);
-        setErr("Error al cargar el reporte. Intenta nuevamente.");
+        setErr("reports.common.error_detail");
       } finally {
         setLoading(false);
       }
@@ -173,12 +175,12 @@ export default function VehiculosMasUtilizados() {
             </div>
             <div>
               <h1 className="text-xl md:text-2xl font-black tracking-tight leading-none">
-                Vehículos más Utilizados
+                {t("reports.vehiculos.title")}
               </h1>
               <p className="text-muted-foreground text-xs font-medium mt-0.5">
                 {loading
-                  ? "Cargando..."
-                  : `${filtered.length} vehículo${filtered.length !== 1 ? "s" : ""} en el ranking`}
+                  ? t("reports.vehiculos.loading")
+                  : t("reports.vehiculos.count", { count: filtered.length })}
               </p>
             </div>
           </div>
@@ -189,7 +191,7 @@ export default function VehiculosMasUtilizados() {
           disabled={filtered.length === 0 || loading}
           className="rounded-2xl px-5 h-10 font-bold shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all duration-200 gap-2 shrink-0 disabled:opacity-50">
           <Download size={15} />
-          <span className="hidden sm:inline">Exportar</span>
+          <span className="hidden sm:inline">{t("reports.common.export")}</span>
         </Button>
       </div>
 
@@ -201,7 +203,7 @@ export default function VehiculosMasUtilizados() {
         />
         <input
           type="text"
-          placeholder="Buscar por marca, modelo o placa..."
+          placeholder={t("reports.vehiculos.search_placeholder")}
           defaultValue={query}
           onChange={(e) => onChangeQuery(e.target.value)}
           className="w-full bg-card border border-border/60 rounded-2xl pl-9 pr-10 py-2.5 text-sm outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/15 transition-all placeholder:text-muted-foreground/50 shadow-sm"
@@ -221,14 +223,14 @@ export default function VehiculosMasUtilizados() {
           <div className="w-12 h-12 rounded-2xl bg-violet-500/10 dark:bg-violet-500/15 flex items-center justify-center">
             <Loader2 size={22} className="animate-spin text-violet-500" />
           </div>
-          <p className="text-sm text-muted-foreground font-medium">Cargando ranking...</p>
+          <p className="text-sm text-muted-foreground font-medium">{t("reports.vehiculos.loading")}</p>
         </div>
       ) : err ? (
         <div className="bg-rose-50 dark:bg-rose-900/10 border border-rose-200 dark:border-rose-900/30 rounded-3xl p-6 flex items-start gap-3">
           <AlertCircle size={18} className="text-rose-500 shrink-0 mt-0.5" />
           <div>
-            <p className="text-sm font-bold text-rose-700 dark:text-rose-400">Error al cargar</p>
-            <p className="text-xs text-rose-600 dark:text-rose-500 mt-0.5">{err}</p>
+            <p className="text-sm font-bold text-rose-700 dark:text-rose-400">{t("reports.common.error_title")}</p>
+            <p className="text-xs text-rose-600 dark:text-rose-500 mt-0.5">{t(err)}</p>
           </div>
         </div>
       ) : (
@@ -241,18 +243,18 @@ export default function VehiculosMasUtilizados() {
                 <Car size={28} className="text-muted-foreground/40" />
               </div>
               <div className="text-center">
-                <p className="font-bold text-sm">Sin resultados</p>
+                <p className="font-bold text-sm">{t("reports.vehiculos.empty_title")}</p>
                 <p className="text-xs text-muted-foreground mt-1">
                   {query
-                    ? `No hay vehículos que coincidan con "${query}"`
-                    : "No hay datos disponibles para el ranking"}
+                    ? t("reports.vehiculos.empty_query", { query })
+                    : t("reports.vehiculos.empty_period")}
                 </p>
               </div>
               {query && (
                 <button
                   onClick={() => { setQuery(""); setPage(1); }}
                   className="text-xs font-semibold text-primary hover:underline">
-                  Ver todos los vehículos
+                  {t("reports.vehiculos.see_all")}
                 </button>
               )}
             </div>
@@ -284,7 +286,7 @@ export default function VehiculosMasUtilizados() {
                     {/* Usos */}
                     <div className="shrink-0 text-right">
                       <p className="text-sm font-black text-primary">{r.total_usos ?? 0}</p>
-                      <p className="text-[10px] text-muted-foreground">usos</p>
+                      <p className="text-[10px] text-muted-foreground">{t("reports.vehiculos.mobile_uses")}</p>
                     </div>
                   </div>
                 );
@@ -300,13 +302,13 @@ export default function VehiculosMasUtilizados() {
                       <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70">#</span>
                     </th>
                     <th className="px-5 py-3.5 text-left">
-                      <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70">Vehículo</span>
+                      <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70">{t("reports.vehiculos.col_vehicle")}</span>
                     </th>
                     <th className="px-5 py-3.5 text-left">
-                      <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70">Placa</span>
+                      <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70">{t("reports.vehiculos.col_plate")}</span>
                     </th>
                     <th className="px-5 py-3.5 text-right">
-                      <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70">Total de Usos</span>
+                      <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70">{t("reports.vehiculos.col_total")}</span>
                     </th>
                   </tr>
                 </thead>
@@ -372,7 +374,7 @@ export default function VehiculosMasUtilizados() {
           {pageItems.length > 0 && (
             <div className="px-5 py-3.5 border-t border-border/40 flex items-center justify-between gap-4 bg-muted/10 dark:bg-slate-800/20">
               <p className="text-xs text-muted-foreground font-medium">
-                Página {pageSafe} de {totalPages} · {filtered.length} vehículo{filtered.length !== 1 ? "s" : ""}
+                {t("reports.common.page_of", { page: pageSafe, total: totalPages })} · {t("reports.vehiculos.count", { count: filtered.length })}
               </p>
               <PaginationLite page={pageSafe} count={totalPages} onChange={setPage} size="sm" />
             </div>
@@ -386,8 +388,8 @@ export default function VehiculosMasUtilizados() {
         onClose={() => setOpenExport(false)}
         rows={filtered}
         columns={columnsExport}
-        defaultTitle="Vehículos más Utilizados"
-        defaultSheetName="Vehículos"
+        defaultTitle={t("reports.vehiculos.export_title")}
+        defaultSheetName={t("reports.vehiculos.export_sheet")}
         defaultFilenameBase={filenameBase}
         defaultOrientation="portrait"
       />

@@ -18,6 +18,7 @@ import ExportDialog from "@/components/Exports/ExportDialog";
 import { getConsumoCombustibleVehiculoReport } from "@/services/ReportServices";
 import { Button } from "@/components/ui/button";
 import useIsMobile from "@/hooks/useIsMobile";
+import { useTranslation } from "react-i18next";
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 const debounced = (fn, ms = 250) => {
@@ -44,13 +45,7 @@ const addDays = (date, days) => {
   return d;
 };
 
-const RANGE_LABELS = {
-  all: "Todo",
-  today: "Hoy",
-  "7d": "7 días",
-  month: "Este mes",
-  custom: "Personalizado",
-};
+const RANGE_KEYS = ["all", "today", "7d", "month", "custom"];
 
 // ── Color semántico del consumo ────────────────────────────────────────────────
 // Alto consumo (%) = malo → rose; medio → amber; bajo → emerald
@@ -107,6 +102,7 @@ function ConsumptionBadge({ value }) {
 
 // ── Componente principal ───────────────────────────────────────────────────────
 export default function ConsumoCombustibleVehiculo() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { search } = useLocation();
   const isMobile = useIsMobile();
@@ -168,7 +164,7 @@ export default function ConsumoCombustibleVehiculo() {
         setRaw(Array.isArray(data) ? data : []);
       } catch (e) {
         console.error(e);
-        setErr("Error al cargar el reporte. Intenta nuevamente.");
+        setErr("reports.common.error_detail");
       } finally {
         setLoading(false);
       }
@@ -237,12 +233,12 @@ export default function ConsumoCombustibleVehiculo() {
             </div>
             <div>
               <h1 className="text-xl md:text-2xl font-black tracking-tight leading-none">
-                Consumo de Combustible
+                {t("reports.combustible.title")}
               </h1>
               <p className="text-muted-foreground text-xs font-medium mt-0.5">
                 {loading
-                  ? "Cargando..."
-                  : `${filtered.length} vehículo${filtered.length !== 1 ? "s" : ""} con registros`}
+                  ? t("reports.combustible.loading")
+                  : t("reports.combustible.count", { count: filtered.length })}
               </p>
             </div>
           </div>
@@ -253,7 +249,7 @@ export default function ConsumoCombustibleVehiculo() {
           disabled={filtered.length === 0 || loading}
           className="rounded-2xl px-5 h-10 font-bold shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all duration-200 gap-2 shrink-0 disabled:opacity-50">
           <Download size={15} />
-          <span className="hidden sm:inline">Exportar</span>
+          <span className="hidden sm:inline">{t("reports.common.export")}</span>
         </Button>
       </div>
 
@@ -261,15 +257,15 @@ export default function ConsumoCombustibleVehiculo() {
       <div className="flex items-center gap-3 flex-wrap text-[11px] font-semibold text-muted-foreground">
         <span className="flex items-center gap-1.5">
           <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" />
-          Bajo consumo (≤ 40%)
+          {t("reports.combustible.legend_low")}
         </span>
         <span className="flex items-center gap-1.5">
           <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0" />
-          Consumo medio (41–70%)
+          {t("reports.combustible.legend_mid")}
         </span>
         <span className="flex items-center gap-1.5">
           <span className="w-2.5 h-2.5 rounded-full bg-rose-500 shrink-0" />
-          Alto consumo (&gt; 70%)
+          {t("reports.combustible.legend_high")}
         </span>
       </div>
 
@@ -283,7 +279,7 @@ export default function ConsumoCombustibleVehiculo() {
           />
           <input
             type="text"
-            placeholder="Buscar por marca, modelo o placa..."
+            placeholder={t("reports.combustible.search_placeholder")}
             defaultValue={query}
             onChange={(e) => onChangeQuery(e.target.value)}
             className="w-full bg-muted/40 dark:bg-slate-800/50 border border-border/50 rounded-2xl pl-9 pr-10 py-2.5 text-sm outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/15 focus:bg-card transition-all placeholder:text-muted-foreground/50"
@@ -301,10 +297,10 @@ export default function ConsumoCombustibleVehiculo() {
         <div className="flex items-center gap-2 flex-wrap">
           <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground shrink-0">
             <Calendar size={13} />
-            Período
+            {t("reports.common.period")}
           </div>
           <div className="flex gap-1.5 flex-wrap">
-            {Object.entries(RANGE_LABELS).map(([r, label]) => (
+            {RANGE_KEYS.map((r) => (
               <button
                 key={r}
                 onClick={() => setRange(r)}
@@ -313,7 +309,7 @@ export default function ConsumoCombustibleVehiculo() {
                     ? "bg-primary text-primary-foreground border-primary shadow-sm"
                     : "bg-muted/50 dark:bg-slate-800 border-border/50 text-muted-foreground hover:bg-muted dark:hover:bg-slate-700 hover:text-foreground"
                 }`}>
-                {label}
+                {t(`reports.ranges.${r}`)}
               </button>
             ))}
           </div>
@@ -323,7 +319,7 @@ export default function ConsumoCombustibleVehiculo() {
               onClick={() => { setQuery(""); setRange("all"); setFrom(""); setTo(""); setPage(1); }}
               className="ml-auto text-[11px] font-semibold text-muted-foreground hover:text-rose-500 transition-colors flex items-center gap-1">
               <X size={11} />
-              Limpiar
+              {t("reports.common.clear")}
             </button>
           )}
         </div>
@@ -331,14 +327,14 @@ export default function ConsumoCombustibleVehiculo() {
         {/* Inputs fecha personalizada */}
         {range === "custom" && (
           <div className="flex items-center gap-2 flex-wrap pt-1">
-            <span className="text-xs text-muted-foreground font-medium">Desde</span>
+            <span className="text-xs text-muted-foreground font-medium">{t("reports.common.from")}</span>
             <input
               type="date"
               value={from}
               onChange={(e) => { setFrom(e.target.value); setPage(1); }}
               className="bg-muted/40 dark:bg-slate-800/50 border border-border/50 rounded-xl px-3 py-1.5 text-sm outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/15 transition-all"
             />
-            <span className="text-xs text-muted-foreground font-medium">Hasta</span>
+            <span className="text-xs text-muted-foreground font-medium">{t("reports.common.to")}</span>
             <input
               type="date"
               value={to}
@@ -355,14 +351,14 @@ export default function ConsumoCombustibleVehiculo() {
           <div className="w-12 h-12 rounded-2xl bg-orange-500/10 dark:bg-orange-500/15 flex items-center justify-center">
             <Loader2 size={22} className="animate-spin text-orange-500" />
           </div>
-          <p className="text-sm text-muted-foreground font-medium">Cargando reporte...</p>
+          <p className="text-sm text-muted-foreground font-medium">{t("reports.combustible.loading")}</p>
         </div>
       ) : err ? (
         <div className="bg-rose-50 dark:bg-rose-900/10 border border-rose-200 dark:border-rose-900/30 rounded-3xl p-6 flex items-start gap-3">
           <AlertCircle size={18} className="text-rose-500 shrink-0 mt-0.5" />
           <div>
-            <p className="text-sm font-bold text-rose-700 dark:text-rose-400">Error al cargar</p>
-            <p className="text-xs text-rose-600 dark:text-rose-500 mt-0.5">{err}</p>
+            <p className="text-sm font-bold text-rose-700 dark:text-rose-400">{t("reports.common.error_title")}</p>
+            <p className="text-xs text-rose-600 dark:text-rose-500 mt-0.5">{t(err)}</p>
           </div>
         </div>
       ) : (
@@ -375,18 +371,18 @@ export default function ConsumoCombustibleVehiculo() {
                 <Fuel size={28} className="text-muted-foreground/40" />
               </div>
               <div className="text-center">
-                <p className="font-bold text-sm">Sin resultados</p>
+                <p className="font-bold text-sm">{t("reports.combustible.empty_title")}</p>
                 <p className="text-xs text-muted-foreground mt-1">
                   {query
-                    ? `No hay vehículos que coincidan con "${query}"`
-                    : "No hay datos disponibles para el período seleccionado"}
+                    ? t("reports.combustible.empty_query", { query })
+                    : t("reports.combustible.empty_period")}
                 </p>
               </div>
               {hasFilters && (
                 <button
                   onClick={() => { setQuery(""); setRange("all"); setFrom(""); setTo(""); setPage(1); }}
                   className="text-xs font-semibold text-primary hover:underline">
-                  Ver todos los vehículos
+                  {t("reports.combustible.see_all")}
                 </button>
               )}
             </div>
@@ -435,13 +431,13 @@ export default function ConsumoCombustibleVehiculo() {
                       <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70">#</span>
                     </th>
                     <th className="px-5 py-3.5 text-left">
-                      <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70">Vehículo</span>
+                      <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70">{t("reports.combustible.col_vehicle")}</span>
                     </th>
                     <th className="px-5 py-3.5 text-left">
-                      <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70">Placa</span>
+                      <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70">{t("reports.combustible.col_plate")}</span>
                     </th>
                     <th className="px-5 py-3.5 text-right">
-                      <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70">Consumo Promedio</span>
+                      <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70">{t("reports.combustible.col_avg")}</span>
                     </th>
                   </tr>
                 </thead>
@@ -502,7 +498,7 @@ export default function ConsumoCombustibleVehiculo() {
           {pageItems.length > 0 && (
             <div className="px-5 py-3.5 border-t border-border/40 flex items-center justify-between gap-4 bg-muted/10 dark:bg-slate-800/20">
               <p className="text-xs text-muted-foreground font-medium">
-                Página {pageSafe} de {totalPages} · {filtered.length} vehículo{filtered.length !== 1 ? "s" : ""}
+                {t("reports.common.page_of", { page: pageSafe, total: totalPages })} · {t("reports.combustible.count", { count: filtered.length })}
               </p>
               <PaginationLite page={pageSafe} count={totalPages} onChange={setPage} size="sm" />
             </div>
@@ -517,8 +513,8 @@ export default function ConsumoCombustibleVehiculo() {
         rows={filtered}
         pageRows={pageItems}
         columns={columnsExport}
-        defaultTitle="Consumo de Combustible por Vehículo"
-        defaultSheetName="Consumo"
+        defaultTitle={t("reports.combustible.export_title")}
+        defaultSheetName={t("reports.combustible.export_sheet")}
         defaultFilenameBase={filenameBase}
         defaultOrientation="portrait"
         includeGeneratedStamp

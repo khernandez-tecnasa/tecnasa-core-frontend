@@ -7,6 +7,7 @@ import {
 import ExportDialog from "@/components/Exports/ExportDialog";
 import { getBodegasOcupacionReport } from "@/services/ReportServices";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "react-i18next";
 
 function OccupancyBar({ activos, otros, total }) {
   const pctActivos = total > 0 ? Math.round((activos / total) * 100) : 0;
@@ -20,6 +21,7 @@ function OccupancyBar({ activos, otros, total }) {
 }
 
 export default function BodegasOcupacion() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   const [raw, setRaw]               = useState([]);
@@ -34,7 +36,7 @@ export default function BodegasOcupacion() {
       try {
         const d = await getBodegasOcupacionReport();
         setRaw(Array.isArray(d) ? d : []);
-      } catch (e) { console.error(e); setErr("Error al cargar el reporte."); }
+      } catch (e) { console.error(e); setErr("reports.common.error_detail"); }
       finally { setLoading(false); }
     })();
   }, []);
@@ -74,14 +76,14 @@ export default function BodegasOcupacion() {
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-2xl bg-stone-500/10 dark:bg-stone-500/15 ring-1 ring-stone-500/20 shadow-sm shrink-0"><Warehouse size={20} className="text-stone-600 dark:text-stone-400" /></div>
             <div>
-              <h1 className="text-xl md:text-2xl font-black tracking-tight leading-none">Ocupación de Bodegas</h1>
+              <h1 className="text-xl md:text-2xl font-black tracking-tight leading-none">{t("reports.bodegas.title")}</h1>
               <p className="text-muted-foreground text-xs font-medium mt-0.5">
-                {loading ? "Cargando..." : `${totals.bodegas} bodega${totals.bodegas !== 1 ? "s" : ""} · ${totals.activos} activo${totals.activos !== 1 ? "s" : ""} en total`}
+                {loading ? t("reports.bodegas.loading") : t("reports.bodegas.count", { warehouses: totals.bodegas, assets: totals.activos })}
               </p>
             </div>
           </div>
         </div>
-        <Button onClick={() => setOpenExport(true)} disabled={raw.length === 0 || loading} className="rounded-2xl px-5 h-10 font-bold gap-2 shrink-0"><Download size={15} /><span className="hidden sm:inline">Exportar</span></Button>
+        <Button onClick={() => setOpenExport(true)} disabled={raw.length === 0 || loading} className="rounded-2xl px-5 h-10 font-bold gap-2 shrink-0"><Download size={15} /><span className="hidden sm:inline">{t("reports.common.export")}</span></Button>
       </div>
 
       {/* Búsqueda */}
@@ -93,7 +95,7 @@ export default function BodegasOcupacion() {
               type="text"
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="Buscar por bodega o ciudad..."
+              placeholder={t("reports.bodegas.search_placeholder")}
               className="w-full pl-8 pr-4 py-2 bg-muted/40 border border-border/50 rounded-xl text-sm outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/15 transition-all"
             />
             {q && <button onClick={() => setQ("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"><X size={13} /></button>}
@@ -105,43 +107,43 @@ export default function BodegasOcupacion() {
       {loading ? (
         <div className="flex flex-col items-center justify-center gap-4 py-24">
           <div className="w-12 h-12 rounded-2xl bg-stone-500/10 flex items-center justify-center"><Loader2 size={22} className="animate-spin text-stone-500" /></div>
-          <p className="text-sm text-muted-foreground font-medium">Cargando ocupación de bodegas...</p>
+          <p className="text-sm text-muted-foreground font-medium">{t("reports.bodegas.loading")}</p>
         </div>
       ) : err ? (
         <div className="bg-rose-50 dark:bg-rose-900/10 border border-rose-200 rounded-3xl p-6 flex items-start gap-3">
           <AlertCircle size={18} className="text-rose-500 shrink-0 mt-0.5" />
-          <div><p className="text-sm font-bold text-rose-700 dark:text-rose-400">Error al cargar</p><p className="text-xs text-rose-600 mt-0.5">{err}</p></div>
+          <div><p className="text-sm font-bold text-rose-700 dark:text-rose-400">{t("reports.common.error_title")}</p><p className="text-xs text-rose-600 mt-0.5">{t(err)}</p></div>
         </div>
       ) : raw.length === 0 ? (
         <div className="bg-card dark:bg-slate-900/40 border border-border/60 rounded-3xl flex flex-col items-center justify-center gap-4 py-20">
           <div className="w-16 h-16 rounded-3xl bg-muted/50 flex items-center justify-center"><Warehouse size={28} className="text-muted-foreground/40" /></div>
-          <p className="font-bold text-sm">Sin bodegas</p>
-          <p className="text-xs text-muted-foreground">No hay bodegas registradas en el sistema</p>
+          <p className="font-bold text-sm">{t("reports.bodegas.empty_title")}</p>
+          <p className="text-xs text-muted-foreground">{t("reports.bodegas.empty_text")}</p>
         </div>
       ) : (
         <>
           {/* Summary cards */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {[
-              { label: "Bodegas",       value: totals.bodegas,   icon: Warehouse,    color: "text-stone-600 dark:text-stone-400",    iconBg: "bg-stone-500/10" },
-              { label: "Total Activos", value: totals.activos,   icon: Package,      color: "text-slate-600 dark:text-slate-400",    iconBg: "bg-slate-500/10" },
-              { label: "Estado Activo", value: totals.activos_a, icon: CheckCircle2, color: "text-emerald-600 dark:text-emerald-400", iconBg: "bg-emerald-500/10" },
-              { label: "Otros estados", value: totals.otros,     icon: Package,      color: "text-amber-600 dark:text-amber-400",    iconBg: "bg-amber-500/10" },
-            ].map(({ label, value, icon: Icon, color, iconBg }) => (
-              <div key={label} className="bg-card dark:bg-slate-900/40 border border-border/60 rounded-3xl p-4 space-y-2">
+              { labelKey: "card_warehouses", value: totals.bodegas,   icon: Warehouse,    color: "text-stone-600 dark:text-stone-400",    iconBg: "bg-stone-500/10" },
+              { labelKey: "card_total_assets", value: totals.activos,   icon: Package,      color: "text-slate-600 dark:text-slate-400",    iconBg: "bg-slate-500/10" },
+              { labelKey: "card_active", value: totals.activos_a, icon: CheckCircle2, color: "text-emerald-600 dark:text-emerald-400", iconBg: "bg-emerald-500/10" },
+              { labelKey: "card_other", value: totals.otros,     icon: Package,      color: "text-amber-600 dark:text-amber-400",    iconBg: "bg-amber-500/10" },
+            ].map(({ labelKey, value, icon: Icon, color, iconBg }) => (
+              <div key={labelKey} className="bg-card dark:bg-slate-900/40 border border-border/60 rounded-3xl p-4 space-y-2">
                 <div className={`w-8 h-8 rounded-xl ${iconBg} flex items-center justify-center`}>
                   <Icon size={15} className={color} />
                 </div>
                 <p className="text-2xl font-black tabular-nums">{value}</p>
-                <p className="text-xs text-muted-foreground font-medium">{label}</p>
+                <p className="text-xs text-muted-foreground font-medium">{t(`reports.bodegas.${labelKey}`)}</p>
               </div>
             ))}
           </div>
 
           {/* Leyenda */}
           <div className="flex items-center gap-4 px-1">
-            <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-emerald-500" /><span className="text-xs text-muted-foreground">Estado Activo</span></div>
-            <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-amber-400" /><span className="text-xs text-muted-foreground">Otros estados</span></div>
+            <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-emerald-500" /><span className="text-xs text-muted-foreground">{t("reports.bodegas.legend_active")}</span></div>
+            <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-amber-400" /><span className="text-xs text-muted-foreground">{t("reports.bodegas.legend_other")}</span></div>
           </div>
 
           {/* Desktop Table */}
@@ -150,7 +152,14 @@ export default function BodegasOcupacion() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-border/60 bg-muted/20">
-                    {["Bodega", "Ciudad", "Total", "Activos", "Otros", "Ocupación"].map((h) => (
+                    {[
+                      t("reports.bodegas.col_warehouse"),
+                      t("reports.bodegas.col_city"),
+                      t("reports.bodegas.col_total"),
+                      t("reports.bodegas.col_active"),
+                      t("reports.bodegas.col_other"),
+                      t("reports.bodegas.col_occupancy"),
+                    ].map((h) => (
                       <th key={h} className="px-5 py-3.5 text-left">
                         <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70">{h}</span>
                       </th>
@@ -172,25 +181,17 @@ export default function BodegasOcupacion() {
                             </div>
                             <div>
                               <p className="text-sm font-bold">{r.bodega || "—"}</p>
-                              {isTop && <span className="text-[10px] bg-stone-100 text-stone-700 dark:bg-stone-900/30 dark:text-stone-400 px-1.5 py-0.5 rounded-full font-bold">Más llena</span>}
+                              {isTop && <span className="text-[10px] bg-stone-100 text-stone-700 dark:bg-stone-900/30 dark:text-stone-400 px-1.5 py-0.5 rounded-full font-bold">{t("reports.bodegas.badge_fullest")}</span>}
                             </div>
                           </div>
                         </td>
                         <td className="px-5 py-4">
                           <div className="flex items-center gap-1.5 text-sm text-muted-foreground"><MapPin size={12} />{r.ciudad || "—"}</div>
                         </td>
-                        <td className="px-5 py-4">
-                          <span className="text-sm font-black tabular-nums">{total}</span>
-                        </td>
-                        <td className="px-5 py-4">
-                          <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">{activos}</span>
-                        </td>
-                        <td className="px-5 py-4">
-                          <span className="text-sm font-bold text-amber-600 dark:text-amber-400 tabular-nums">{otros}</span>
-                        </td>
-                        <td className="px-5 py-4 min-w-[120px]">
-                          <OccupancyBar activos={activos} otros={otros} total={total} />
-                        </td>
+                        <td className="px-5 py-4"><span className="text-sm font-black tabular-nums">{total}</span></td>
+                        <td className="px-5 py-4"><span className="text-sm font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">{activos}</span></td>
+                        <td className="px-5 py-4"><span className="text-sm font-bold text-amber-600 dark:text-amber-400 tabular-nums">{otros}</span></td>
+                        <td className="px-5 py-4 min-w-[120px]"><OccupancyBar activos={activos} otros={otros} total={total} /></td>
                       </tr>
                     );
                   })}
@@ -219,12 +220,12 @@ export default function BodegasOcupacion() {
                     </div>
                     <div className="text-right">
                       <p className="text-lg font-black tabular-nums">{total}</p>
-                      <p className="text-[10px] text-muted-foreground">activos</p>
+                      <p className="text-[10px] text-muted-foreground">{t("reports.bodegas.mobile_assets")}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3 text-xs">
-                    <span className="text-emerald-600 dark:text-emerald-400 font-bold">{activos} activos</span>
-                    <span className="text-amber-600 dark:text-amber-400 font-bold">{otros} otros</span>
+                    <span className="text-emerald-600 dark:text-emerald-400 font-bold">{activos} {t("reports.bodegas.legend_active").toLowerCase()}</span>
+                    <span className="text-amber-600 dark:text-amber-400 font-bold">{otros} {t("reports.bodegas.legend_other").toLowerCase()}</span>
                   </div>
                   <OccupancyBar activos={activos} otros={otros} total={total} />
                 </div>
@@ -233,12 +234,12 @@ export default function BodegasOcupacion() {
           </div>
 
           {filtered.length < raw.length && (
-            <p className="text-center text-xs text-muted-foreground">Mostrando {filtered.length} de {raw.length} bodegas</p>
+            <p className="text-center text-xs text-muted-foreground">{t("reports.bodegas.showing", { shown: filtered.length, total: raw.length })}</p>
           )}
         </>
       )}
 
-      <ExportDialog open={openExport} onClose={() => setOpenExport(false)} rows={filtered} columns={columnsExport} defaultTitle="Ocupación de Bodegas" defaultFilenameBase="bodegas_ocupacion" />
+      <ExportDialog open={openExport} onClose={() => setOpenExport(false)} rows={filtered} columns={columnsExport} defaultTitle={t("reports.bodegas.export_title")} defaultFilenameBase="bodegas_ocupacion" />
     </div>
   );
 }
