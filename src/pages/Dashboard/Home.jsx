@@ -46,10 +46,10 @@ import { getViaticos } from "@/services/viaticos.service";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const fmtDate = (iso) => {
+const fmtDate = (iso, locale = "es-HN") => {
   try {
     const d = new Date(iso + "T12:00:00");
-    return d.toLocaleDateString("es-HN", { weekday: "short", day: "numeric" });
+    return d.toLocaleDateString(locale, { weekday: "short", day: "numeric" });
   } catch {
     return iso?.slice(5) ?? "";
   }
@@ -57,7 +57,7 @@ const fmtDate = (iso) => {
 
 // ─── LiveClock (unchanged) ─────────────────────────────────────────────────────
 
-function LiveClock({ timeFormat, locale, timezone }) {
+function LiveClock({ timeFormat, locale, timezone, dateFormat }) {
   const [now, setNow] = useState(new Date());
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000);
@@ -84,17 +84,25 @@ function LiveClock({ timeFormat, locale, timezone }) {
 
   const date = useMemo(() => {
     try {
-      return new Intl.DateTimeFormat(locale, {
-        timeZone: timezone,
-        weekday: "long",
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      }).format(now);
+      const tz = timezone || undefined;
+      const fmt = (opts) =>
+        new Intl.DateTimeFormat(locale, { timeZone: tz, ...opts }).format(now);
+
+      const weekday = fmt({ weekday: "long" });
+      const year    = fmt({ year: "numeric" });
+      const month   = fmt({ month: "long" });
+      const day     = fmt({ day: "numeric" });
+
+      if (dateFormat?.startsWith("YYYY"))
+        return `${weekday}, ${year} ${month} ${day}`;
+      if (dateFormat?.startsWith("MM"))
+        return `${weekday}, ${month} ${day}, ${year}`;
+      // DD/MM/YYYY — orden natural del locale
+      return fmt({ weekday: "long", year: "numeric", month: "long", day: "numeric" });
     } catch {
       return "";
     }
-  }, [now, locale, timezone]);
+  }, [now, locale, timezone, dateFormat]);
 
   return (
     <div className="space-y-1">
@@ -219,6 +227,7 @@ function QuickBtn({ icon: Icon, label, sub, iconColor, onClick }) {
 // ─── SystemStatus ──────────────────────────────────────────────────────────────
 
 function SystemStatus({ status }) {
+  const { t } = useTranslation();
   if (!status) return null;
   const s = (status.status || status.overall || "operational").toLowerCase();
   const isOp = s === "operational";
@@ -230,10 +239,10 @@ function SystemStatus({ status }) {
       />
       <span className="text-[11px] font-medium text-muted-foreground">
         {isOp
-          ? "Todos los servicios operativos"
+          ? t("home.system.operational")
           : isDeg
-            ? "Algunos servicios degradados"
-            : "Mantenimiento en curso"}
+            ? t("home.system.degraded")
+            : t("home.system.maintenance")}
       </span>
       <Server size={11} className="text-muted-foreground/50" />
     </div>
@@ -254,6 +263,7 @@ export default function Home() {
   const configTimeFormat = settings?.timeFormat || "12h";
   const configLanguage = settings?.language || i18n.language || "es-HN";
   const configTimezone = settings?.timezone;
+  const configDateFormat = settings?.dateFormat || "DD/MM/YYYY";
 
   // ── State ──
   const [weather, setWeather] = useState(null);
@@ -364,21 +374,21 @@ export default function Home() {
         items.push({
           icon: Wallet,
           accent: "amber",
-          text: `${kpis.viaticos_pendientes} viático${kpis.viaticos_pendientes !== 1 ? "s" : ""} pendiente${kpis.viaticos_pendientes !== 1 ? "s" : ""} de aprobación`,
+          text: t("home.attention.viaticos_pending", { count: kpis.viaticos_pendientes }),
           to: "/admin/viaticos",
         });
       if ((kpis?.vehiculos_mantenimiento ?? 0) > 0)
         items.push({
           icon: Wrench,
           accent: "rose",
-          text: `${kpis.vehiculos_mantenimiento} vehículo${kpis.vehiculos_mantenimiento !== 1 ? "s" : ""} en mantenimiento`,
+          text: t("home.attention.vehicles_maintenance", { count: kpis.vehiculos_mantenimiento }),
           to: "/admin/vehiculos",
         });
       if ((kpis?.reservas_activas ?? 0) > 0)
         items.push({
           icon: CalendarCheck,
           accent: "blue",
-          text: `${kpis.reservas_activas} reserva${kpis.reservas_activas !== 1 ? "s" : ""} activa${kpis.reservas_activas !== 1 ? "s" : ""} ahora mismo`,
+          text: t("home.attention.active_reservations", { count: kpis.reservas_activas }),
           to: "/admin/reservas-vehiculos",
         });
     } else {
@@ -392,81 +402,81 @@ export default function Home() {
         items.push({
           icon: CalendarCheck,
           accent: "violet",
-          text: `Tienes ${upcoming} reserva${upcoming !== 1 ? "s" : ""} próxima${upcoming !== 1 ? "s" : ""}`,
+          text: t("home.attention.upcoming_reservations", { count: upcoming }),
           to: "/admin/reservas-vehiculos",
         });
       if (active > 0)
         items.push({
           icon: Wallet,
           accent: "amber",
-          text: `${active} viático${active !== 1 ? "s" : ""} activo${active !== 1 ? "s" : ""} pendiente${active !== 1 ? "s" : ""}`,
+          text: t("home.attention.active_viaticos", { count: active }),
           to: "/admin/viaticos",
         });
     }
     return items;
-  }, [isAdmin, kpis, myReservas, myViaticos, dataLoading]);
+  }, [isAdmin, kpis, myReservas, myViaticos, dataLoading, t]);
 
   const quickItems = useMemo(() => {
     const all = [
       {
         icon: LayoutDashboard,
-        label: "Dashboard",
-        sub: "Métricas y KPIs",
+        label: t("home.quick.dashboard_label"),
+        sub: t("home.quick.dashboard_sub"),
         iconColor: "text-primary",
         to: "/admin/dashboard",
         perm: "gestionar_home",
       },
       {
         icon: FileText,
-        label: "Reportes",
-        sub: "Ver todos los reportes",
+        label: t("home.quick.reports_label"),
+        sub: t("home.quick.reports_sub"),
         iconColor: "text-blue-500",
         to: "/admin/reports",
         perm: "ver_reportes",
       },
       {
         icon: CalendarCheck,
-        label: "Reservas",
+        label: t("home.quick.reservations_label"),
         sub: kpis?.reservas_activas
-          ? `${kpis.reservas_activas} activas`
-          : "Gestionar reservas",
+          ? t("home.quick.reservations_active", { count: kpis.reservas_activas })
+          : t("home.quick.reservations_manage"),
         iconColor: "text-violet-500",
         to: "/admin/reservas-vehiculos",
         perm: null,
       },
       {
         icon: Wallet,
-        label: "Viáticos",
+        label: t("home.quick.viaticos_label"),
         sub: kpis?.viaticos_pendientes
-          ? `${kpis.viaticos_pendientes} pendientes`
-          : "Gestionar viáticos",
+          ? t("home.quick.viaticos_pending", { count: kpis.viaticos_pendientes })
+          : t("home.quick.viaticos_manage"),
         iconColor: "text-orange-500",
         to: "/admin/viaticos",
         perm: null,
       },
       {
         icon: Package,
-        label: "Inventario",
+        label: t("home.quick.inventory_label"),
         sub: kpis?.activos_total
-          ? `${kpis.activos_total} activos`
-          : "Activos y bodegas",
+          ? t("home.quick.inventory_assets", { count: kpis.activos_total })
+          : t("home.quick.inventory_manage"),
         iconColor: "text-slate-500",
         to: "/admin/inventario/activos",
         perm: "ver_activos",
       },
       {
         icon: Car,
-        label: "Flota",
+        label: t("home.quick.fleet_label"),
         sub: kpis?.vehiculos_total
-          ? `${kpis.vehiculos_total} vehículos`
-          : "Gestionar vehículos",
+          ? t("home.quick.fleet_vehicles", { count: kpis.vehiculos_total })
+          : t("home.quick.fleet_manage"),
         iconColor: "text-emerald-500",
         to: "/admin/vehiculos",
         perm: "ver_vehiculos",
       },
     ];
     return all.filter((item) => !item.perm || can(item.perm));
-  }, [can, kpis]);
+  }, [can, kpis, t]);
 
   // ── Render ──
   return (
@@ -477,7 +487,7 @@ export default function Home() {
         className="md:hidden w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-card dark:bg-slate-900 border border-border/60 text-muted-foreground text-sm hover:border-primary/40 transition-colors"
         aria-label="Abrir buscador">
         <Search className="w-4 h-4 shrink-0" />
-        <span className="flex-1 text-left">Buscar módulos y datos…</span>
+        <span className="flex-1 text-left">{t("home.search_placeholder")}</span>
         <kbd className="hidden sm:inline text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded font-mono">
           Ctrl+K
         </kbd>
@@ -491,7 +501,7 @@ export default function Home() {
         className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
         <MiniKpi
           icon={Car}
-          label="En uso ahora"
+          label={t("home.kpi.in_use")}
           value={
             dataLoading
               ? "…"
@@ -502,20 +512,20 @@ export default function Home() {
         />
         <MiniKpi
           icon={CheckCircle2}
-          label="Registros hoy"
+          label={t("home.kpi.today")}
           value={dataLoading ? "…" : (kpis?.registros_hoy ?? 0)}
           accent="emerald"
         />
         <MiniKpi
           icon={CalendarCheck}
-          label="Reservas activas"
+          label={t("home.kpi.active_reservations")}
           value={dataLoading ? "…" : (kpis?.reservas_activas ?? 0)}
           accent="violet"
           onClick={kpis ? () => navigate("/admin/reservas-vehiculos") : null}
         />
         <MiniKpi
           icon={Wallet}
-          label="Viáticos pendientes"
+          label={t("home.kpi.pending_viaticos")}
           value={dataLoading ? "…" : (kpis?.viaticos_pendientes ?? 0)}
           accent="amber"
           onClick={kpis ? () => navigate("/admin/viaticos") : null}
@@ -547,10 +557,11 @@ export default function Home() {
             </div>
           ) : (
             <LiveClock
-              key={configTimeFormat}
+              key={`${configTimeFormat}-${configDateFormat}`}
               timeFormat={configTimeFormat}
               locale={configLanguage}
               timezone={configTimezone}
+              dateFormat={configDateFormat}
             />
           )}
 
@@ -558,10 +569,10 @@ export default function Home() {
           <div>
             <div className="flex items-center justify-between mb-2">
               <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/50 flex items-center gap-1.5">
-                <Activity size={10} /> Actividad esta semana
+                <Activity size={10} /> {t("home.activity_week")}
               </span>
               <span className="text-[10px] text-muted-foreground font-medium">
-                {act7.reduce((s, d) => s + Number(d.total ?? 0), 0)} registros
+                {act7.reduce((s, d) => s + Number(d.total ?? 0), 0)} {t("home.records_suffix")}
               </span>
             </div>
             {dataLoading ? (
@@ -585,7 +596,7 @@ export default function Home() {
                     <div
                       key={d.fecha}
                       className="flex flex-col items-center gap-0.5 flex-1 min-w-0"
-                      title={`${fmtDate(d.fecha)}: ${d.total}`}>
+                      title={`${fmtDate(d.fecha, configLanguage)}: ${d.total}`}>
                       <div
                         className="w-full rounded-t overflow-hidden bg-muted/40"
                         style={{ height: "32px" }}>
@@ -599,7 +610,7 @@ export default function Home() {
                       </div>
                       <span
                         className={`text-[8px] font-bold truncate w-full text-center leading-none ${isToday ? "text-primary" : "text-muted-foreground/50"}`}>
-                        {fmtDate(d.fecha).split(" ")[0]}
+                        {fmtDate(d.fecha, configLanguage).split(" ")[0]}
                       </span>
                     </div>
                   );
@@ -649,28 +660,28 @@ export default function Home() {
             {[
               {
                 icon: Users2,
-                label: "Empleados",
+                label: t("home.stats.employees"),
                 value: kpis?.empleados_total ?? "—",
                 color: "text-slate-600 dark:text-slate-400",
                 bg: "bg-slate-100 dark:bg-slate-800",
               },
               {
                 icon: TrendingUp,
-                label: "Registros semana",
+                label: t("home.stats.week_records"),
                 value: kpis?.registros_semana ?? "—",
                 color: "text-sky-600 dark:text-sky-400",
                 bg: "bg-sky-100 dark:bg-sky-900/30",
               },
               {
                 icon: Package,
-                label: "Activos totales",
+                label: t("home.stats.total_assets"),
                 value: kpis?.activos_total ?? "—",
                 color: "text-violet-600 dark:text-violet-400",
                 bg: "bg-violet-100 dark:bg-violet-900/30",
               },
               {
                 icon: Building2,
-                label: "Vehículos flota",
+                label: t("home.stats.fleet_vehicles"),
                 value: kpis?.vehiculos_total ?? "—",
                 color: "text-emerald-600 dark:text-emerald-400",
                 bg: "bg-emerald-100 dark:bg-emerald-900/30",
@@ -710,12 +721,12 @@ export default function Home() {
             <Zap size={12} className="text-muted-foreground" />
           </div>
           <h3 className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">
-            Requiere atención
+            {t("home.attention.title")}
           </h3>
           {!dataLoading && attentionItems.length === 0 && (
             <span className="ml-auto flex items-center gap-1.5 text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
               <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              Todo en orden
+              {t("home.attention.all_good")}
             </span>
           )}
         </div>
@@ -732,8 +743,8 @@ export default function Home() {
               <CheckCircle size={16} className="text-emerald-500 shrink-0" />
               <p className="text-sm text-muted-foreground">
                 {isAdmin
-                  ? "No hay pendientes en el sistema en este momento."
-                  : "No tienes pendientes por ahora."}
+                  ? t("home.attention.no_pending_admin")
+                  : t("home.attention.no_pending_user")}
               </p>
             </div>
           ) : (
@@ -839,7 +850,7 @@ export default function Home() {
             ))}
             {quickItems.length === 0 && (
               <p className="text-xs text-muted-foreground text-center py-4">
-                Sin accesos disponibles
+                {t("home.quick.no_access")}
               </p>
             )}
           </div>
