@@ -1,6 +1,9 @@
 import { Activity } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export default function OperacionHeader({ operacionActiva }) {
+  const { t } = useTranslation();
+
   return (
     <div className="bg-card dark:bg-slate-900/40 rounded-3xl border border-border/60 shadow-sm overflow-hidden">
       {/* Accent bar */}
@@ -19,13 +22,13 @@ export default function OperacionHeader({ operacionActiva }) {
               <Activity size={15} className="text-primary" />
             </div>
             <h1 className="text-base font-black tracking-tight text-foreground">
-              Operaciones de Flota
+              {t("operaciones.header.title")}
             </h1>
           </div>
           <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground pl-9">
             {operacionActiva
-              ? "Módulo de Recepción · Registro de Regreso"
-              : "Módulo de Despacho · Registro de Salida"}
+              ? t("operaciones.header.subtitle_return")
+              : t("operaciones.header.subtitle_departure")}
           </p>
         </div>
 
@@ -41,7 +44,7 @@ export default function OperacionHeader({ operacionActiva }) {
               operacionActiva ? "bg-blue-500" : "bg-emerald-500"
             }`}
           />
-          Sistema {operacionActiva ? "En Uso" : "Disponible"}
+          {operacionActiva ? t("operaciones.header.status_in_use") : t("operaciones.header.status_available")}
         </div>
       </div>
     </div>
