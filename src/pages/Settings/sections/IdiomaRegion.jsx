@@ -1,38 +1,21 @@
-import React, {
-  useEffect,
-  useState,
-  useMemo,
-  useRef,
-  useCallback,
-} from "react";
+import React, { useEffect, useState, useMemo, useRef, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  Clock,
-  Calendar,
-  Check,
-  MapPin,
-  Languages,
-  ChevronRight,
-  Globe,
-  Loader2,
-} from "lucide-react";
+import { Clock, Calendar, Check, MapPin, Languages, ChevronRight, Globe } from "lucide-react";
 
 import useIsMobile from "@/hooks/useIsMobile";
-import { Button } from "@/components/ui/button";
 
 /* ─── Constantes ─── */
 const LANGUAGES = [
-  { code: "es-HN", label: "Español (Honduras)",      flag: "🇭🇳" },
-  { code: "es-MX", label: "Español (Latinoamérica)", flag: "🇲🇽" },
-  { code: "en-US", label: "English (United States)",  flag: "🇺🇸" },
+  { code: "es-HN", label: "Español", flag: "🇪🇸" },
+  { code: "en-US", label: "English", flag: "🇺🇸" },
 ];
 
 const TIMEZONES = [
-  { value: "America/Tegucigalpa", label: "(GMT-06:00) Tegucigalpa"        },
-  { value: "America/Mexico_City", label: "(GMT-06:00) Ciudad de México"   },
+  { value: "America/Tegucigalpa", label: "(GMT-06:00) Tegucigalpa"         },
+  { value: "America/Mexico_City", label: "(GMT-06:00) Ciudad de México"    },
   { value: "America/Bogota",      label: "(GMT-05:00) Bogotá, Lima, Quito" },
-  { value: "America/New_York",    label: "(GMT-05:00) Nueva York"          },
-  { value: "UTC",                 label: "(GMT+00:00) UTC"                 },
+  { value: "America/New_York",    label: "(GMT-05:00) Nueva York"           },
+  { value: "UTC",                 label: "(GMT+00:00) UTC"                  },
 ];
 
 const DATE_FORMATS = [
@@ -44,18 +27,8 @@ const DATE_FORMATS = [
 /* ─── Helper: preview de fecha/hora ─── */
 const formatPreview = (dateFormat, timeFormat, locale, timezone) => {
   const now = new Date();
-  const timeOptions = {
-    timeZone: timezone,
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: timeFormat === "12h",
-  };
-  const datePartsOptions = {
-    timeZone: timezone,
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  };
+  const timeOptions = { timeZone: timezone, hour: "numeric", minute: "2-digit", hour12: timeFormat === "12h" };
+  const datePartsOptions = { timeZone: timezone, day: "2-digit", month: "2-digit", year: "numeric" };
   try {
     const timeStr = new Intl.DateTimeFormat(locale, timeOptions).format(now);
     const parts = new Intl.DateTimeFormat(locale, datePartsOptions).formatToParts(now);
@@ -72,90 +45,74 @@ const formatPreview = (dateFormat, timeFormat, locale, timezone) => {
 
 /* ─── Componente principal ─── */
 export default function IdiomaRegion({ initialData = {}, onSave }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const isMobile = useIsMobile();
   const saveTimersRef = useRef({});
 
   const [form, setForm] = useState({
-    language:   "es-HN",
+    language:   i18n.language || "es-HN",
     timezone:   "America/Tegucigalpa",
     dateFormat: "DD/MM/YYYY",
     timeFormat: "12h",
   });
 
-  const [selectedLanguage, setSelectedLanguage] = useState("es-HN");
-  const [savingLanguage, setSavingLanguage] = useState(false);
-  const [snack, setSnack] = useState({ open: false, severity: "success", message: "" });
-
+  // Sincronizar form con datos del backend (timezone, dateFormat, timeFormat)
+  // pero language siempre viene de i18n (localStorage)
   useEffect(() => {
     if (initialData && Object.keys(initialData).length > 0) {
-      const newData = {
-        language:   initialData.language   || "es-HN",
-        timezone:   initialData.timezone   || "America/Tegucigalpa",
-        dateFormat: initialData.dateFormat || "DD/MM/YYYY",
-        timeFormat: initialData.timeFormat || "12h",
-      };
-      setForm(newData);
-      setSelectedLanguage(newData.language);
+      setForm((prev) => ({
+        ...prev,
+        language:   i18n.language || prev.language,
+        timezone:   initialData.timezone   || prev.timezone,
+        dateFormat: initialData.dateFormat || prev.dateFormat,
+        timeFormat: initialData.timeFormat || prev.timeFormat,
+      }));
     }
   }, [initialData]);
 
-  const handleChange = useCallback(
+  const scheduleSave = useCallback(
     (key, value) => {
-      setForm((prev) => ({ ...prev, [key]: value }));
       if (saveTimersRef.current[key]) clearTimeout(saveTimersRef.current[key]);
       saveTimersRef.current[key] = setTimeout(async () => {
         try {
           if (onSave) await onSave({ [key]: value });
         } catch {
-          setSnack({ open: true, severity: "error", message: t("settings.region.error_save") });
+          // error silencioso — el cambio ya se aplicó localmente
         }
-      }, 450);
+      }, 500);
     },
-    [onSave, t],
+    [onSave],
   );
 
-  const handleApplyLanguage = async () => {
-    setSavingLanguage(true);
-    try {
-      if (onSave) await onSave({ language: selectedLanguage });
-      window.location.reload();
-    } catch {
-      setSnack({ open: true, severity: "error", message: t("settings.region.language.error") });
-      setSavingLanguage(false);
-    }
-  };
+  const handleChange = useCallback(
+    (key, value) => {
+      setForm((prev) => ({ ...prev, [key]: value }));
+      scheduleSave(key, value);
+    },
+    [scheduleSave],
+  );
+
+  const handleLanguageChange = useCallback(
+    (code) => {
+      setForm((prev) => ({ ...prev, language: code }));
+      i18n.changeLanguage(code);   // aplica en tiempo real + guarda en localStorage
+      scheduleSave("language", code);
+    },
+    [i18n, scheduleSave],
+  );
 
   const preview = useMemo(
-    () => formatPreview(form.dateFormat, form.timeFormat, selectedLanguage, form.timezone),
-    [form.dateFormat, form.timeFormat, form.timezone, selectedLanguage],
+    () => formatPreview(form.dateFormat, form.timeFormat, form.language, form.timezone),
+    [form.dateFormat, form.timeFormat, form.timezone, form.language],
   );
 
-  const propsCalculados = {
-    t,
-    form,
-    handleChange,
-    selectedLanguage,
-    setSelectedLanguage,
-    handleApplyLanguage,
-    savingLanguage,
-    preview,
-    snack,
-    setSnack,
-    hasPendingLangChange: selectedLanguage !== form.language,
-  };
+  const props = { t, form, handleChange, handleLanguageChange, preview };
 
-  return isMobile
-    ? <MobileRegion {...propsCalculados} />
-    : <DesktopRegion {...propsCalculados} />;
+  return isMobile ? <MobileRegion {...props} /> : <DesktopRegion {...props} />;
 }
 
 /* ─── DESKTOP ─── */
-function DesktopRegion({
-  t, form, selectedLanguage, setSelectedLanguage,
-  handleChange, handleApplyLanguage, savingLanguage,
-  hasPendingLangChange, preview,
-}) {
+function DesktopRegion({ t, form, handleChange, handleLanguageChange, preview }) {
   const selectCls =
     "w-full rounded-xl border border-border dark:border-slate-700 px-4 py-2.5 text-sm bg-background dark:bg-slate-900/60 dark:text-slate-100 text-foreground outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/20 transition-all";
 
@@ -187,41 +144,38 @@ function DesktopRegion({
                 <Languages size={14} className="text-muted-foreground dark:text-slate-400" />
               </div>
               <h2 className="text-xs font-black uppercase tracking-widest text-muted-foreground dark:text-slate-400">
-                Idioma y Región
+                {t("settings.region.title")}
               </h2>
             </div>
 
             {/* Idioma */}
             <div className="space-y-2">
               <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground dark:text-slate-400">
-                Idioma
+                {t("settings.region.language.label")}
               </label>
-              <select
-                value={selectedLanguage}
-                onChange={(e) => setSelectedLanguage(e.target.value)}
-                className={selectCls}>
-                {LANGUAGES.map((l) => (
-                  <option key={l.code} value={l.code}>
-                    {l.flag} {l.label}
-                  </option>
-                ))}
-              </select>
-
-              {hasPendingLangChange && (
-                <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-2xl border border-amber-500/30 bg-amber-500/5 dark:bg-amber-500/10">
-                  <p className="text-sm font-medium text-amber-600 dark:text-amber-400">
-                    Cambios pendientes de aplicar
-                  </p>
-                  <Button
-                    onClick={handleApplyLanguage}
-                    disabled={savingLanguage}
-                    size="sm"
-                    className="rounded-xl h-8 px-4 font-bold gap-1.5 shrink-0 disabled:opacity-60">
-                    {savingLanguage && <Loader2 size={12} className="animate-spin" />}
-                    {savingLanguage ? "Aplicando..." : "Aplicar"}
-                  </Button>
-                </div>
-              )}
+              <div className="flex gap-2">
+                {LANGUAGES.map((l) => {
+                  const active = form.language === l.code;
+                  return (
+                    <button
+                      key={l.code}
+                      onClick={() => handleLanguageChange(l.code)}
+                      className={[
+                        "flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all duration-200 border-2",
+                        active
+                          ? "bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/30 scale-[1.02]"
+                          : "bg-background dark:bg-slate-900/80 border-border dark:border-slate-600 text-foreground dark:text-slate-200 hover:border-primary/50 hover:bg-muted/40 dark:hover:bg-slate-800/60",
+                      ].join(" ")}>
+                      <span className="text-base">{l.flag}</span>
+                      <span>{l.label}</span>
+                      {active
+                        ? <Check size={15} className="ml-0.5 shrink-0" />
+                        : <span className="w-[15px] shrink-0" />
+                      }
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             <div className="h-px bg-border/40 dark:bg-slate-700/50" />
@@ -229,16 +183,14 @@ function DesktopRegion({
             {/* Zona horaria */}
             <div className="space-y-2">
               <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground dark:text-slate-400">
-                Zona Horaria
+                {t("settings.region.timezone.label")}
               </label>
               <select
                 value={form.timezone}
                 onChange={(e) => handleChange("timezone", e.target.value)}
                 className={selectCls}>
                 {TIMEZONES.map((tz) => (
-                  <option key={tz.value} value={tz.value}>
-                    {tz.label}
-                  </option>
+                  <option key={tz.value} value={tz.value}>{tz.label}</option>
                 ))}
               </select>
             </div>
@@ -251,23 +203,21 @@ function DesktopRegion({
                 <Calendar size={14} className="text-muted-foreground dark:text-slate-400" />
               </div>
               <h2 className="text-xs font-black uppercase tracking-widest text-muted-foreground dark:text-slate-400">
-                Formatos
+                {t("settings.region.formats.title")}
               </h2>
             </div>
 
             {/* Formato de fecha */}
             <div className="space-y-2">
               <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground dark:text-slate-400">
-                Formato de Fecha
+                {t("settings.region.formats.date_label")}
               </label>
               <select
                 value={form.dateFormat}
                 onChange={(e) => handleChange("dateFormat", e.target.value)}
                 className={selectCls}>
                 {DATE_FORMATS.map((f) => (
-                  <option key={f.value} value={f.value}>
-                    {f.value} — {f.label}
-                  </option>
+                  <option key={f.value} value={f.value}>{f.value} — {f.label}</option>
                 ))}
               </select>
             </div>
@@ -277,7 +227,7 @@ function DesktopRegion({
             {/* Formato de hora */}
             <div className="space-y-2">
               <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground dark:text-slate-400">
-                Formato de Hora
+                {t("settings.region.formats.time_label")}
               </label>
               <div className="flex gap-2">
                 {["12h", "24h"].map((fmt) => {
@@ -287,12 +237,13 @@ function DesktopRegion({
                       key={fmt}
                       onClick={() => handleChange("timeFormat", fmt)}
                       className={[
-                        "flex-1 py-2.5 rounded-xl text-sm font-bold transition-all duration-150 border",
+                        "flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all duration-200 border-2",
                         active
-                          ? "bg-primary text-white border-primary shadow-md shadow-primary/20"
-                          : "border-border/60 dark:border-slate-700/60 text-muted-foreground dark:text-slate-400 hover:bg-muted/60 dark:hover:bg-slate-700/40",
+                          ? "bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/30 scale-[1.02]"
+                          : "bg-background dark:bg-slate-900/80 border-border dark:border-slate-600 text-foreground dark:text-slate-200 hover:border-primary/50 hover:bg-muted/40 dark:hover:bg-slate-800/60",
                       ].join(" ")}>
-                      {fmt === "12h" ? "12 horas" : "24 horas"}
+                      {t(`settings.region.formats.${fmt}`)}
+                      {active ? <Check size={15} className="shrink-0" /> : <span className="w-[15px] shrink-0" />}
                     </button>
                   );
                 })}
@@ -309,7 +260,7 @@ function DesktopRegion({
                 <Clock size={13} className="text-muted-foreground dark:text-slate-400" />
               </div>
               <span className="text-xs font-black uppercase tracking-widest text-muted-foreground dark:text-slate-400">
-                Vista Previa
+                {t("settings.region.preview.title")}
               </span>
             </div>
             <p className="text-4xl font-black tabular-nums tracking-tight dark:text-slate-100">
@@ -323,7 +274,7 @@ function DesktopRegion({
             </div>
           </div>
           <p className="text-xs text-muted-foreground/60 dark:text-slate-500 px-1 leading-relaxed">
-            Los cambios de zona horaria y formato se aplican automáticamente.
+            {t("settings.region.preview.desc")}
           </p>
         </div>
       </div>
@@ -332,17 +283,13 @@ function DesktopRegion({
 }
 
 /* ─── MOBILE ─── */
-function MobileRegion({
-  t, form, preview, handleChange,
-  selectedLanguage, setSelectedLanguage,
-  handleApplyLanguage, savingLanguage, hasPendingLangChange,
-}) {
+function MobileRegion({ t, form, handleChange, handleLanguageChange, preview }) {
   const [openLang,     setOpenLang]     = useState(false);
   const [openTimezone, setOpenTimezone] = useState(false);
   const [openDate,     setOpenDate]     = useState(false);
   const [openTime,     setOpenTime]     = useState(false);
 
-  const currentLang = LANGUAGES.find((l) => l.code === selectedLanguage);
+  const currentLang = LANGUAGES.find((l) => l.code === form.language);
   const currentTz   = TIMEZONES.find((tz) => tz.value === form.timezone);
 
   return (
@@ -369,19 +316,19 @@ function MobileRegion({
             <Languages size={14} className="text-muted-foreground dark:text-slate-400" />
           </div>
           <h2 className="text-xs font-black uppercase tracking-widest text-muted-foreground dark:text-slate-400">
-            Idioma y Región
+            {t("settings.region.title")}
           </h2>
         </div>
         <div className="divide-y divide-border/40 dark:divide-slate-700/50">
           <MobileRow
             icon={Languages}
-            label="Idioma"
-            value={currentLang ? `${currentLang.flag} ${currentLang.label}` : selectedLanguage}
+            label={t("settings.region.language.label")}
+            value={currentLang ? `${currentLang.flag} ${currentLang.label}` : form.language}
             onClick={() => setOpenLang(true)}
           />
           <MobileRow
             icon={MapPin}
-            label="Zona horaria"
+            label={t("settings.region.timezone.label")}
             value={currentTz?.label.replace(/^\(GMT[^)]+\)\s*/, "") || form.timezone}
             onClick={() => setOpenTimezone(true)}
           />
@@ -395,20 +342,20 @@ function MobileRegion({
             <Calendar size={14} className="text-muted-foreground dark:text-slate-400" />
           </div>
           <h2 className="text-xs font-black uppercase tracking-widest text-muted-foreground dark:text-slate-400">
-            Formatos
+            {t("settings.region.formats.title")}
           </h2>
         </div>
         <div className="divide-y divide-border/40 dark:divide-slate-700/50">
           <MobileRow
             icon={Calendar}
-            label="Formato de fecha"
+            label={t("settings.region.formats.date_label")}
             value={form.dateFormat}
             onClick={() => setOpenDate(true)}
           />
           <MobileRow
             icon={Clock}
-            label="Formato de hora"
-            value={form.timeFormat === "12h" ? "12 horas" : "24 horas"}
+            label={t("settings.region.formats.time_label")}
+            value={t(`settings.region.formats.${form.timeFormat}`)}
             onClick={() => setOpenTime(true)}
           />
         </div>
@@ -421,85 +368,64 @@ function MobileRegion({
             <Clock size={13} className="text-muted-foreground dark:text-slate-400" />
           </div>
           <span className="text-xs font-black uppercase tracking-widest text-muted-foreground dark:text-slate-400">
-            Vista Previa
+            {t("settings.region.preview.title")}
           </span>
         </div>
-        <p className="text-4xl font-black tabular-nums tracking-tight dark:text-slate-100">
-          {preview.timeStr}
-        </p>
-        <p className="text-sm text-muted-foreground dark:text-slate-400 mt-1.5 font-mono">
-          {preview.dateStr}
-        </p>
+        <p className="text-4xl font-black tabular-nums tracking-tight dark:text-slate-100">{preview.timeStr}</p>
+        <p className="text-sm text-muted-foreground dark:text-slate-400 mt-1.5 font-mono">{preview.dateStr}</p>
       </div>
 
       {/* ── MODALES ── */}
 
       {/* IDIOMA */}
-      <IOSModal open={openLang} onClose={() => setOpenLang(false)} title="Idioma">
+      <IOSModal open={openLang} onClose={() => setOpenLang(false)} title={t("settings.region.language.label")}>
         {LANGUAGES.map((l) => (
           <IOSOption
             key={l.code}
             label={`${l.flag} ${l.label}`}
-            active={selectedLanguage === l.code}
-            onClick={() => setSelectedLanguage(l.code)}
-          />
-        ))}
-        {hasPendingLangChange && (
-          <div className="p-4 border-t border-border/40 dark:border-slate-700/50">
-            <Button
-              onClick={handleApplyLanguage}
-              disabled={savingLanguage}
-              className="w-full rounded-2xl h-10 font-bold gap-2 disabled:opacity-60">
-              {savingLanguage && <Loader2 size={14} className="animate-spin" />}
-              {savingLanguage ? "Aplicando..." : "Aplicar cambios"}
-            </Button>
-          </div>
-        )}
-      </IOSModal>
-
-      {/* ZONA HORARIA */}
-      <IOSModal open={openTimezone} onClose={() => setOpenTimezone(false)} title="Zona horaria">
-        {TIMEZONES.map((tz) => (
-          <IOSOption
-            key={tz.value}
-            label={tz.label}
-            active={form.timezone === tz.value}
+            active={form.language === l.code}
             onClick={() => {
-              handleChange("timezone", tz.value);
-              setOpenTimezone(false);
+              handleLanguageChange(l.code);
+              setOpenLang(false);
             }}
           />
         ))}
       </IOSModal>
 
+      {/* ZONA HORARIA */}
+      <IOSModal open={openTimezone} onClose={() => setOpenTimezone(false)} title={t("settings.region.timezone.label")}>
+        {TIMEZONES.map((tz) => (
+          <IOSOption
+            key={tz.value}
+            label={tz.label}
+            active={form.timezone === tz.value}
+            onClick={() => { handleChange("timezone", tz.value); setOpenTimezone(false); }}
+          />
+        ))}
+      </IOSModal>
+
       {/* FORMATO DE FECHA */}
-      <IOSModal open={openDate} onClose={() => setOpenDate(false)} title="Formato de fecha">
+      <IOSModal open={openDate} onClose={() => setOpenDate(false)} title={t("settings.region.formats.date_label")}>
         {DATE_FORMATS.map((f) => (
           <IOSOption
             key={f.value}
             label={f.value}
             desc={f.label}
             active={form.dateFormat === f.value}
-            onClick={() => {
-              handleChange("dateFormat", f.value);
-              setOpenDate(false);
-            }}
+            onClick={() => { handleChange("dateFormat", f.value); setOpenDate(false); }}
           />
         ))}
       </IOSModal>
 
       {/* FORMATO DE HORA */}
-      <IOSModal open={openTime} onClose={() => setOpenTime(false)} title="Formato de hora">
+      <IOSModal open={openTime} onClose={() => setOpenTime(false)} title={t("settings.region.formats.time_label")}>
         {["12h", "24h"].map((f) => (
           <IOSOption
             key={f}
-            label={f === "12h" ? "12 horas" : "24 horas"}
+            label={t(`settings.region.formats.${f}`)}
             desc={f === "12h" ? "Ej: 2:30 PM" : "Ej: 14:30"}
             active={form.timeFormat === f}
-            onClick={() => {
-              handleChange("timeFormat", f);
-              setOpenTime(false);
-            }}
+            onClick={() => { handleChange("timeFormat", f); setOpenTime(false); }}
           />
         ))}
       </IOSModal>
@@ -516,16 +442,9 @@ function MobileRow({ icon: Icon, label, value, onClick }) {
       <div className="p-1.5 bg-muted/60 dark:bg-slate-700/60 rounded-xl shrink-0">
         <Icon size={13} className="text-muted-foreground dark:text-slate-400" />
       </div>
-      <span className="flex-1 text-sm font-semibold text-foreground dark:text-slate-100">
-        {label}
-      </span>
-      <span className="text-xs text-muted-foreground dark:text-slate-400 font-medium truncate max-w-[140px] text-right shrink-0">
-        {value}
-      </span>
-      <ChevronRight
-        size={14}
-        className="text-muted-foreground/40 dark:text-slate-600 group-hover:text-muted-foreground dark:group-hover:text-slate-400 transition-colors shrink-0"
-      />
+      <span className="flex-1 text-sm font-semibold text-foreground dark:text-slate-100">{label}</span>
+      <span className="text-xs text-muted-foreground dark:text-slate-400 font-medium truncate max-w-[140px] text-right shrink-0">{value}</span>
+      <ChevronRight size={14} className="text-muted-foreground/40 dark:text-slate-600 group-hover:text-muted-foreground dark:group-hover:text-slate-400 transition-colors shrink-0" />
     </button>
   );
 }
@@ -537,59 +456,35 @@ function IOSModal({ open, onClose, title, children }) {
   const startY = useRef(0);
 
   useEffect(() => {
-    if (!open) {
-      setDragY(0);
-      setIsClosing(false);
-    }
+    if (!open) { setDragY(0); setIsClosing(false); }
   }, [open]);
 
   if (!open) return null;
 
-  const handleStart = (e) => {
-    startY.current = e.touches ? e.touches[0].clientY : e.clientY;
-  };
-
-  const handleMove = (e) => {
+  const handleStart = (e) => { startY.current = e.touches ? e.touches[0].clientY : e.clientY; };
+  const handleMove  = (e) => {
     const y = e.touches ? e.touches[0].clientY : e.clientY;
     const diff = y - startY.current;
     if (diff > 0) setDragY(diff);
   };
-
   const handleEnd = () => {
-    if (dragY > 120) {
-      setIsClosing(true);
-      setTimeout(onClose, 200);
-    } else {
-      setDragY(0);
-    }
+    if (dragY > 120) { setIsClosing(true); setTimeout(onClose, 200); }
+    else setDragY(0);
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-end">
-      <div
-        onClick={onClose}
-        className="absolute inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-sm"
-      />
+      <div onClick={onClose} className="absolute inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-sm" />
       <div
         style={{
           transform: `translateY(${dragY}px)`,
-          transition: isClosing
-            ? "transform 0.2s ease"
-            : dragY === 0
-              ? "transform 0.35s cubic-bezier(0.22,1,0.36,1)"
-              : "none",
+          transition: isClosing ? "transform 0.2s ease" : dragY === 0 ? "transform 0.35s cubic-bezier(0.22,1,0.36,1)" : "none",
         }}
-        onMouseDown={handleStart}
-        onMouseMove={handleMove}
-        onMouseUp={handleEnd}
-        onTouchStart={handleStart}
-        onTouchMove={handleMove}
-        onTouchEnd={handleEnd}
+        onMouseDown={handleStart} onMouseMove={handleMove} onMouseUp={handleEnd}
+        onTouchStart={handleStart} onTouchMove={handleMove} onTouchEnd={handleEnd}
         className="relative z-10 w-full bg-card dark:bg-slate-900 rounded-t-3xl border-t border-border/40 dark:border-slate-700/50 shadow-2xl dark:shadow-black/50 p-5 pb-8">
         <div className="w-10 h-1 bg-muted dark:bg-slate-700 rounded-full mx-auto mb-4" />
-        <p className="text-center font-black text-sm tracking-tight mb-4 dark:text-slate-100">
-          {title}
-        </p>
+        <p className="text-center font-black text-sm tracking-tight mb-4 dark:text-slate-100">{title}</p>
         <div className="rounded-2xl overflow-hidden border border-border/60 dark:border-slate-700/50 divide-y divide-border/40 dark:divide-slate-700/40 bg-background dark:bg-slate-800/60">
           {children}
         </div>
@@ -605,14 +500,8 @@ function IOSOption({ label, desc, active, onClick }) {
       onClick={onClick}
       className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-muted/30 dark:hover:bg-slate-700/30 transition-colors text-left">
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-foreground dark:text-slate-100">
-          {label}
-        </p>
-        {desc && (
-          <p className="text-xs text-muted-foreground dark:text-slate-400 mt-0.5 font-mono">
-            {desc}
-          </p>
-        )}
+        <p className="text-sm font-semibold text-foreground dark:text-slate-100">{label}</p>
+        {desc && <p className="text-xs text-muted-foreground dark:text-slate-400 mt-0.5 font-mono">{desc}</p>}
       </div>
       {active && <Check size={16} className="text-primary shrink-0" />}
     </button>
