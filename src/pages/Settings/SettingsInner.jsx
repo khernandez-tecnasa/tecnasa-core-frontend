@@ -44,7 +44,7 @@ const SectionFallback = () => (
 
 export default function SettingsInner() {
   const { settings, loading, saveSection } = useSettings();
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
 
   const getInitialSection = () => {
     const section = new URLSearchParams(window.location.search).get("section");
@@ -79,11 +79,6 @@ export default function SettingsInner() {
     }
   }, [active]);
 
-  useEffect(() => {
-    if (settings?.language && settings.language !== i18n.language) {
-      i18n.changeLanguage(settings.language);
-    }
-  }, [settings]);
 
   const NAV = [
     { key: "inicio", label: "General", icon: Home },

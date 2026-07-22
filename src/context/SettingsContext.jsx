@@ -8,6 +8,7 @@ import React, {
 } from "react";
 import SettingsService from "../services/SettingsServices.js";
 import { useToast } from "../context/ToastContext.jsx"; // ajusta la ruta si es distinta
+import i18n from "../config/i18n.js";
 
 const SettingsContext = createContext(null);
 
@@ -120,7 +121,19 @@ export function SettingsProvider({ children }) {
       }
 
       // set optimistic + mark saving (caso normal)
-      setSettings((s) => ({ ...(s || {}), [sectionKey]: optimistic }));
+      setSettings((s) => {
+        const updated = { ...(s || {}), [sectionKey]: optimistic };
+        if (sectionKey === "idioma") {
+          if (partialPayload.dateFormat !== undefined) updated.dateFormat = partialPayload.dateFormat;
+          if (partialPayload.timeFormat !== undefined) updated.timeFormat = partialPayload.timeFormat;
+          if (partialPayload.language !== undefined) updated.language = partialPayload.language;
+          if (partialPayload.timezone !== undefined) updated.timezone = partialPayload.timezone;
+        }
+        return updated;
+      });
+      if (sectionKey === "idioma" && partialPayload.language) {
+        i18n.changeLanguage(partialPayload.language);
+      }
       setSavingMap((m) => ({ ...(m || {}), [sectionKey]: true }));
 
       try {
@@ -138,7 +151,17 @@ export function SettingsProvider({ children }) {
         }
 
         const serverPayload = res && res.data ? res.data : optimistic;
-        setSettings((s) => ({ ...(s || {}), [sectionKey]: serverPayload }));
+        setSettings((s) => {
+          const updated = { ...(s || {}), [sectionKey]: serverPayload };
+          if (sectionKey === "idioma") {
+            const p = serverPayload || {};
+            if (p.dateFormat !== undefined) updated.dateFormat = p.dateFormat;
+            if (p.timeFormat !== undefined) updated.timeFormat = p.timeFormat;
+            if (p.language !== undefined) updated.language = p.language;
+            if (p.timezone !== undefined) updated.timezone = p.timezone;
+          }
+          return updated;
+        });
 
         toast.showToast("Guardado", "success");
         return serverPayload;
