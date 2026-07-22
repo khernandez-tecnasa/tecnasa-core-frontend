@@ -444,8 +444,8 @@ export default function Vehiculos() {
       return (
         <StatePanel
           icon={Loader2}
-          title="Verificando sesión…"
-          description="Por favor, espera un momento."
+          title={t("vehiculos.checking_session")}
+          description={t("vehiculos.checking_session_desc")}
         />
       );
     if (viewState === "no-permission")
@@ -453,8 +453,8 @@ export default function Vehiculos() {
         <StatePanel
           icon={Lock}
           color="danger"
-          title="Sin permisos"
-          description="Consulta con un administrador para obtener acceso."
+          title={t("vehiculos.no_permission_title")}
+          description={t("vehiculos.contact_admin")}
         />
       );
     if (viewState === "loading")
@@ -476,14 +476,14 @@ export default function Vehiculos() {
         <StatePanel
           icon={isNetwork ? WifiOff : AlertTriangle}
           color={isNetwork ? "warning" : "neutral"}
-          title={isNetwork ? "Problema de conexión" : "Ocurrió un problema"}
+          title={isNetwork ? t("vehiculos.connection_error_title") : t("vehiculos.general_error_title")}
           description={error}
           action={
             isNetwork && (
               <button
                 onClick={loadVehiculos}
                 className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                <RotateCcw size={14} /> Reintentar
+                <RotateCcw size={14} /> {t("common.retry")}
               </button>
             )
           }
@@ -553,8 +553,8 @@ export default function Vehiculos() {
             {filteredVehiculos.length}
           </span>
           {searchText
-            ? ` de ${vehiculos.length}`
-            : ` vehículo${vehiculos.length !== 1 ? "s" : ""}`}
+            ? ` ${t("vehiculos.counter_of")} ${vehiculos.length}`
+            : ` ${vehiculos.length !== 1 ? t("vehiculos.counter_vehicle_other") : t("vehiculos.counter_vehicle_one")}`}
         </p>
       )}
 

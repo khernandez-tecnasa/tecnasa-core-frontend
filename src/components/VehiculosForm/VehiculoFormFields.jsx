@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { AlertTriangle, Search, ChevronDown, Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 /* ── Shared field styling ───────────────────────────────────────────── */
 
@@ -43,6 +44,7 @@ export function SearchableSelect({
   disabled,
   emptyLabel = "Sin resultados",
 }) {
+  const { t } = useTranslation();
   const [open, setOpen]   = useState(false);
   const [query, setQuery] = useState("");
   const ref               = useRef(null);
@@ -97,7 +99,7 @@ export function SearchableSelect({
                 autoFocus
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Buscar..."
+                placeholder={t("vehiculos.search_internal", "Buscar…")}
                 className="w-full bg-muted/40 dark:bg-slate-800/80 rounded-lg pl-8 pr-3 py-1.5 text-xs outline-none placeholder:text-muted-foreground/60 focus:ring-1 ring-primary/20 transition-all"
               />
             </div>
