@@ -58,7 +58,10 @@
   "home": {
     "weather_not_available": "Clima no disponible",
     "read_more": "Leer más",
-    "quick_access": "Accesos Directos",
+    "quick_access": "Accesos rápidos",
+    "search_placeholder": "Buscar módulos y datos…",
+    "activity_week": "Actividad esta semana",
+    "records_suffix": "registros",
     "greeting": {
       "morning": "Buenos días",
       "afternoon": "Buenas tardes",
@@ -66,7 +69,59 @@
     },
     "news_title": "Novedades & Anuncios",
     "no_news": "No hay novedades recientes.",
-    "view_all": "Ver todas"
+    "view_all": "Ver todas",
+    "kpi": {
+      "in_use": "En uso ahora",
+      "today": "Registros hoy",
+      "active_reservations": "Reservas activas",
+      "pending_viaticos": "Viáticos pendientes"
+    },
+    "attention": {
+      "title": "Requiere atención",
+      "all_good": "Todo en orden",
+      "no_pending_admin": "No hay pendientes en el sistema en este momento.",
+      "no_pending_user": "No tienes pendientes por ahora.",
+      "viaticos_pending_one": "{{count}} viático pendiente de aprobación",
+      "viaticos_pending_other": "{{count}} viáticos pendientes de aprobación",
+      "vehicles_maintenance_one": "{{count}} vehículo en mantenimiento",
+      "vehicles_maintenance_other": "{{count}} vehículos en mantenimiento",
+      "active_reservations_one": "{{count}} reserva activa ahora mismo",
+      "active_reservations_other": "{{count}} reservas activas ahora mismo",
+      "upcoming_reservations_one": "Tienes {{count}} reserva próxima",
+      "upcoming_reservations_other": "Tienes {{count}} reservas próximas",
+      "active_viaticos_one": "{{count}} viático activo pendiente",
+      "active_viaticos_other": "{{count}} viáticos activos pendientes"
+    },
+    "quick": {
+      "no_access": "Sin accesos disponibles",
+      "dashboard_label": "Dashboard",
+      "dashboard_sub": "Métricas y KPIs",
+      "reports_label": "Reportes",
+      "reports_sub": "Ver todos los reportes",
+      "reservations_label": "Reservas",
+      "reservations_active": "{{count}} activas",
+      "reservations_manage": "Gestionar reservas",
+      "viaticos_label": "Viáticos",
+      "viaticos_pending": "{{count}} pendientes",
+      "viaticos_manage": "Gestionar viáticos",
+      "inventory_label": "Inventario",
+      "inventory_assets": "{{count}} activos",
+      "inventory_manage": "Activos y bodegas",
+      "fleet_label": "Flota",
+      "fleet_vehicles": "{{count}} vehículos",
+      "fleet_manage": "Gestionar vehículos"
+    },
+    "system": {
+      "operational": "Todos los servicios operativos",
+      "degraded": "Algunos servicios degradados",
+      "maintenance": "Mantenimiento en curso"
+    },
+    "stats": {
+      "employees": "Empleados",
+      "week_records": "Registros semana",
+      "total_assets": "Activos totales",
+      "fleet_vehicles": "Vehículos flota"
+    }
   },
   "menu": {
     "dashboard": "Dashboard",
@@ -76,6 +131,13 @@
   "dashboard": {
     "title": "Panel de Control",
     "subtitle": "Visión general de la operación en tiempo real",
+    "view_report": "Ver reporte",
+    "view_all_reports": "Ver todos los reportes",
+    "load_error": "No se pudieron cargar los datos.",
+    "section": {
+      "fleet": "Flota",
+      "operations": "Operaciones"
+    },
     "kpi": {
       "active_vehicles": "Vehículos en Uso",
       "currently_in_use": "En ruta actualmente",
@@ -84,13 +146,41 @@
       "total_employees": "Personal Total",
       "registered": "Registrados en sistema",
       "pending_maintenance": "Mantenimiento",
-      "requires_attention": "Requiere atención"
+      "requires_attention": "Requiere atención",
+      "fleet": {
+        "vehicles_in_use": "Vehículos en uso",
+        "total_sub": "{{count}} en flota total",
+        "maintenance": "En mantenimiento",
+        "maintenance_sub": "requieren atención",
+        "today": "Registros hoy",
+        "today_sub": "movimientos del día",
+        "week": "Registros semana",
+        "week_sub": "esta semana"
+      },
+      "ops": {
+        "employees": "Empleados activos",
+        "employees_sub": "registrados en el sistema",
+        "reservations": "Reservas activas",
+        "reservations_sub": "{{count}} iniciadas hoy",
+        "viaticos": "Viáticos pendientes",
+        "viaticos_sub": "esperando aprobación",
+        "assets": "Activos en inventario",
+        "assets_sub": "en estado activo"
+      }
     },
     "charts": {
       "top_employees": "Top Empleados (Salidas)",
       "top_vehicles": "Top Vehículos (Uso)",
       "exits": "Salidas",
-      "uses": "Usos"
+      "uses": "Usos",
+      "activity_title": "Actividad últimos 7 días",
+      "no_activity": "Sin movimientos recientes",
+      "today": "Hoy",
+      "prev_days": "Días anteriores",
+      "total_7d": "Total 7d:",
+      "reservations_title": "Reservas por estado",
+      "no_reservations": "Sin reservas registradas",
+      "reservations_total": "Total: {{count}} reservas"
     },
     "tables": {
       "km_title": "Kilometraje Recorrido (Top 5)",
@@ -341,7 +431,7 @@
     "olvidaste_contraseña": "Olvidaste tu contraseña?",
     "no_cuentas": "No tienes una cuenta?",
     "registrarte": "Contacta al Administrador.",
-    "title_bienvenida": "¡Bienvenido a Tecnasa Core!",
+    "title_bienvenida": "¡Bienvenido a AutoLog!",
     "description_bienvenida": "Entra para ver tu operación en una sola vista.",
     "title_ayuda": "¿Necesitas ayuda? Contacta a soporte:",
     "link_ayuda": "micros.teh@tecnasa.com",
@@ -489,7 +579,37 @@
     "qr_notify_error_title": "Error",
     "qr_notify_error_text": "No se pudo enviar la notificación. Intenta más tarde.",
     "unknown_user": "un usuario",
-    "qr_link_error_qr": "No se pudo generar el enlace del QR."
+    "qr_link_error_qr": "No se pudo generar el enlace del QR.",
+    "loading": "Cargando vehículos…",
+    "error_load": "Error al cargar datos del vehículo.",
+    "no_permission": "Sin permiso para esta acción.",
+    "updated": "Vehículo actualizado correctamente.",
+    "error_update": "Error al actualizar el vehículo.",
+    "created": "Vehículo creado correctamente.",
+    "error_create": "Error al crear el vehículo.",
+    "error_unexpected": "Error inesperado. Intenta de nuevo.",
+    "historial": "Historial",
+    "add_disabled_reason": "No tienes permiso para crear. Solicítalo al administrador.",
+    "checking_session": "Verificando sesión…",
+    "checking_session_desc": "Por favor, espera un momento.",
+    "no_permission_title": "Sin permisos",
+    "contact_admin": "Consulta con un administrador para obtener acceso.",
+    "connection_error_title": "Problema de conexión",
+    "general_error_title": "Ocurrió un problema",
+    "counter_of": "de",
+    "counter_vehicle_one": "vehículo",
+    "counter_vehicle_other": "vehículos",
+    "form": {
+      "title_create": "Nuevo vehículo",
+      "title_edit": "Editar vehículo",
+      "subtitle_create": "Completa la información para registrar un vehículo",
+      "subtitle_edit": "Modifica los datos del vehículo",
+      "section_info": "Información del vehículo",
+      "saving": "Guardando…",
+      "create": "Crear vehículo",
+      "update": "Guardar cambios"
+    },
+    "search_internal": "Buscar…"
   },
   "register": {
     "salidas": {
@@ -615,59 +735,102 @@
         "Operación": "Operación",
         "Inventario": "Inventario",
         "Comercial": "Comercial",
-        "Recursos Humanos": "Recursos Humanos"
+        "Recursos Humanos": "Recursos Humanos",
+        "Reservas": "Reservas",
+        "Viáticos": "Viáticos"
       },
 
       "tags_all": "Todas las etiquetas",
       "recent": "Vistos recientemente",
       "clear": "Limpiar",
       "no_matches": "No hay reportes para esos filtros.",
-      "open": "Abrir"
+      "open": "Abrir",
+      "subtitle": "Genera y exporta reportes de las operaciones del sistema",
+      "count_one": "{{count}} reporte encontrado",
+      "count_other": "{{count}} reportes encontrados",
+      "see_all": "Ver todos los reportes",
+      "tags": "Etiquetas"
     },
 
     "report_items": {
       "registros_uso": {
-        "title": "Registros de uso",
-        "description": "Entradas/Salidas, pendientes y finalizados."
+        "title": "Registros de Uso",
+        "description": "Analiza los registros de uso de vehículos en un rango de fechas determinado."
       },
       "vehiculos_uso": {
-        "title": "Vehículos más utilizados",
-        "description": "Top de uso por periodo."
+        "title": "Vehículos por Uso",
+        "description": "Ranking de vehículos según la frecuencia y duración de su uso por el personal."
       },
       "empleados_actividad": {
-        "title": "Empleados más activos",
-        "description": "Top de salidas por empleado."
+        "title": "Actividad de Empleados",
+        "description": "Resumen de la actividad operacional por empleado en el período seleccionado."
       },
       "kilometraje_empleado": {
-        "title": "Kilómetros por empleado",
-        "description": "Top de kilómetros por empleado."
+        "title": "Kilometraje por Empleado",
+        "description": "Detalle del kilometraje acumulado por cada empleado en sus desplazamientos."
       },
       "ubicacion_vehiculo": {
-        "title": "Registro por ubicación",
-        "description": "Top de ubicaciones por vehículo."
+        "title": "Ubicaciones de Vehículos",
+        "description": "Historial de ubicaciones registradas por vehículo en un período específico."
       },
       "consumo_combustible_vehiculo": {
-        "title": "Consumo combustible por vehículo",
-        "description": "Top de combustible por vehículo."
+        "title": "Consumo de Combustible",
+        "description": "Análisis del consumo de combustible por vehículo, comparando eficiencia y costos."
+      },
+      "viajes_duracion": {
+        "title": "Duración de Viajes",
+        "description": "Tiempo promedio y máximo de viaje por vehículo. Identifica trayectos largos o inusuales."
+      },
+      "actividad_semanal": {
+        "title": "Actividad por Día",
+        "description": "Distribución de salidas de vehículos según el día de la semana para optimizar la flota."
+      },
+      "reservas_estado": {
+        "title": "Reservas por Estado",
+        "description": "Distribución de reservas de vehículos por estado: pendiente, en uso, finalizada o cancelada."
+      },
+      "reservas_empleado": {
+        "title": "Reservas por Empleado",
+        "description": "Ranking de empleados según la cantidad de reservas realizadas, finalizadas y canceladas."
+      },
+      "viaticos_estado": {
+        "title": "Viáticos por Estado",
+        "description": "Distribución de viáticos por estado: borrador, pendiente, aprobado, rechazado, liquidado."
+      },
+      "viaticos_empleados": {
+        "title": "Top Empleados Viáticos",
+        "description": "Empleados con mayor gasto en viáticos. Incluye monto total y kilómetros recorridos."
+      },
+      "viaticos_tipo": {
+        "title": "Gasto por Tipo de Viático",
+        "description": "Desglose del gasto total en viáticos por categoría: alimentación, hospedaje, peajes, etc."
+      },
+      "activos_estado": {
+        "title": "Estado de Activos",
+        "description": "Distribución de activos por estatus actual (activo, inactivo, mantenimiento) y por tipo."
+      },
+      "bodegas_ocupacion": {
+        "title": "Ocupación de Bodegas",
+        "description": "Cantidad de activos almacenados en cada bodega, desglosados por ciudad y estado."
       }
     },
     "search_placeholder": "Buscar empleado, placa...",
     "total_records": "{{count}} registros encontrados",
     "ranges": {
-      "all": "Todos",
+      "all": "Todo",
       "today": "Hoy",
-      "7d": "7 Días",
-      "month": "Este Mes",
+      "7d": "7 días",
+      "month": "Este mes",
       "custom": "Personalizado"
     },
     "status": {
       "todos": "Todos",
-      "activos": "Activos",
+      "activos": "En Curso",
       "finalizados": "Finalizados"
     },
     "actions": {
       "export": "Exportar",
-      "clear_filters": "Limpiar Filtros"
+      "clear_filters": "Limpiar filtros"
     },
     "no_data_title": "Sin resultados",
     "no_data_desc": "No se encontraron registros con los filtros actuales.",
@@ -692,13 +855,354 @@
       "location_out": "Ubicación Salida",
       "location_in": "Ubicación Regreso",
       "avg_consumption": "Consumo Promedio (%)"
+    },
+
+    "common": {
+      "loading": "Cargando...",
+      "error_title": "Error al cargar",
+      "error_detail": "Error al cargar el reporte. Intenta nuevamente.",
+      "no_results": "Sin resultados",
+      "no_data": "Sin datos",
+      "no_data_period": "No hay datos disponibles para el período seleccionado",
+      "see_all_vehicles": "Ver todos los vehículos",
+      "see_all_employees": "Ver todos los empleados",
+      "see_all_records": "Ver todos los registros",
+      "period": "Período",
+      "from": "Desde",
+      "to": "Hasta",
+      "clear": "Limpiar",
+      "clear_filters": "Limpiar filtros",
+      "export": "Exportar",
+      "page_of": "Página {{page}} de {{total}}"
+    },
+
+    "registerReport": {
+      "title": "Registros de Uso",
+      "loading": "Cargando registros...",
+      "count_one": "{{count}} registro encontrado",
+      "count_other": "{{count}} registros encontrados",
+      "search_placeholder": "Buscar por empleado, vehículo o placa...",
+      "status_label": "Estado",
+      "error_detail": "Error al cargar los registros. Intenta nuevamente.",
+      "empty_title": "Sin registros",
+      "empty_text": "No hay registros que coincidan con los filtros aplicados",
+      "export_title": "Registros de Uso"
+    },
+
+    "vehiculos": {
+      "title": "Vehículos más Utilizados",
+      "loading": "Cargando ranking...",
+      "count_one": "{{count}} vehículo en el ranking",
+      "count_other": "{{count}} vehículos en el ranking",
+      "search_placeholder": "Buscar por marca, modelo o placa...",
+      "empty_title": "Sin resultados",
+      "empty_query": "No hay vehículos que coincidan con \"{{query}}\"",
+      "empty_period": "No hay datos disponibles para el ranking",
+      "see_all": "Ver todos los vehículos",
+      "col_vehicle": "Vehículo",
+      "col_plate": "Placa",
+      "col_total": "Total de Usos",
+      "mobile_uses": "usos",
+      "footer": "Página {{page}} de {{total}} · {{count}} vehículo(s)",
+      "export_title": "Vehículos más Utilizados",
+      "export_sheet": "Vehículos"
+    },
+
+    "empleados": {
+      "title": "Empleados más Activos",
+      "loading": "Cargando ranking...",
+      "count_one": "{{count}} empleado en el ranking",
+      "count_other": "{{count}} empleados en el ranking",
+      "search_placeholder": "Buscar por nombre o puesto...",
+      "empty_title": "Sin resultados",
+      "empty_query": "No hay empleados que coincidan con \"{{query}}\"",
+      "empty_period": "No hay datos disponibles para el período seleccionado",
+      "see_all": "Ver todos los empleados",
+      "col_employee": "Empleado",
+      "col_position": "Puesto",
+      "col_total": "Total Salidas",
+      "mobile_exits": "salidas",
+      "footer": "Página {{page}} de {{total}} · {{count}} empleado(s)",
+      "export_title": "Empleados más Activos",
+      "export_sheet": "Empleados"
+    },
+
+    "kilometraje": {
+      "title": "Kilometraje por Empleado",
+      "loading": "Cargando reporte...",
+      "count_one": "{{count}} empleado con registros",
+      "count_other": "{{count}} empleados con registros",
+      "search_placeholder": "Buscar por nombre o puesto...",
+      "empty_title": "Sin resultados",
+      "empty_query": "No hay empleados que coincidan con \"{{query}}\"",
+      "empty_period": "No hay datos disponibles para el período seleccionado",
+      "see_all": "Ver todos los empleados",
+      "col_employee": "Empleado",
+      "col_position": "Puesto",
+      "col_km": "Km Recorridos",
+      "mobile_km": "recorridos",
+      "export_title": "Kilometraje por Empleado",
+      "export_sheet": "Kilometraje"
+    },
+
+    "ubicaciones": {
+      "title": "Registros por Ubicación",
+      "loading": "Cargando registros...",
+      "count_one": "{{count}} registro encontrado",
+      "count_other": "{{count}} registros encontrados",
+      "search_placeholder": "Buscar por empleado, vehículo o ubicación...",
+      "empty_title": "Sin resultados",
+      "empty_query": "No hay registros que coincidan con \"{{query}}\"",
+      "empty_period": "No hay datos para el período seleccionado",
+      "see_all": "Ver todos los registros",
+      "in_progress": "En curso",
+      "col_employee": "Empleado",
+      "col_vehicle": "Vehículo",
+      "col_location_out": "Ubicación Salida",
+      "col_location_in": "Ubicación Regreso",
+      "col_date_out": "Fecha Salida",
+      "col_date_in": "Fecha Regreso",
+      "col_km_out": "Km Salida",
+      "col_km_in": "Km Regreso",
+      "mobile_out": "Salida",
+      "mobile_in": "Regreso",
+      "export_title": "Registros por Ubicación",
+      "export_sheet": "Ubicaciones"
+    },
+
+    "combustible": {
+      "title": "Consumo de Combustible",
+      "loading": "Cargando reporte...",
+      "count_one": "{{count}} vehículo con registros",
+      "count_other": "{{count}} vehículos con registros",
+      "search_placeholder": "Buscar por marca, modelo o placa...",
+      "empty_title": "Sin resultados",
+      "empty_query": "No hay vehículos que coincidan con \"{{query}}\"",
+      "empty_period": "No hay datos disponibles para el período seleccionado",
+      "see_all": "Ver todos los vehículos",
+      "legend_low": "Bajo consumo (≤ 40%)",
+      "legend_mid": "Consumo medio (41–70%)",
+      "legend_high": "Alto consumo (> 70%)",
+      "col_vehicle": "Vehículo",
+      "col_plate": "Placa",
+      "col_avg": "Consumo Promedio",
+      "export_title": "Consumo de Combustible por Vehículo",
+      "export_sheet": "Consumo"
+    },
+
+    "viajes": {
+      "title": "Duración de Viajes",
+      "loading": "Cargando reporte...",
+      "count_one": "{{count}} vehículo",
+      "count_other": "{{count}} vehículos",
+      "search_placeholder": "Buscar por marca, modelo o placa...",
+      "empty_title": "Sin datos",
+      "empty_period": "No hay viajes completados en el período seleccionado",
+      "col_vehicle": "Vehículo",
+      "col_plate": "Placa",
+      "col_trips": "Viajes",
+      "col_avg_duration": "Duración Promedio",
+      "col_max_duration": "Duración Máx.",
+      "mobile_trips": "viajes",
+      "mobile_avg": "prom.",
+      "export_title": "Duración de Viajes"
+    },
+
+    "actividad": {
+      "title": "Actividad por Día",
+      "subtitle_one": "{{count}} salida en el período",
+      "subtitle_other": "{{count}} salidas en el período",
+      "loading": "Cargando actividad semanal...",
+      "chart_title": "Salidas por día de la semana",
+      "col_day": "Día",
+      "col_exits": "Salidas",
+      "col_employees": "Empleados Activos",
+      "col_vehicles": "Vehículos Activos",
+      "badge_most_active": "Más activo",
+      "export_title": "Actividad Semanal"
+    },
+
+    "reservasEstado": {
+      "title": "Reservas por Estado",
+      "loading": "Cargando reservas...",
+      "count_one": "{{count}} reserva en total",
+      "count_other": "{{count}} reservas en total",
+      "empty_title": "Sin reservas",
+      "empty_period": "No hay reservas en el período seleccionado",
+      "card_vehicles": "{{count}} vehículos",
+      "card_employees": "{{count}} empleados",
+      "chart_title": "Distribución total",
+      "col_state": "Estado",
+      "col_total": "Total",
+      "col_vehicles": "Vehículos distintos",
+      "col_employees": "Empleados distintos",
+      "col_pct": "% del total",
+      "export_title": "Reservas por Estado"
+    },
+
+    "reservasEmpleado": {
+      "title": "Reservas por Empleado",
+      "loading": "Cargando ranking...",
+      "count_one": "{{count}} empleado",
+      "count_other": "{{count}} empleados",
+      "search_placeholder": "Buscar por nombre o puesto...",
+      "empty_title": "Sin datos",
+      "mobile_reservations": "reservas",
+      "col_employee": "Empleado",
+      "col_position": "Puesto",
+      "col_total": "Total",
+      "col_finished": "Finaliz.",
+      "col_cancelled": "Cancelad.",
+      "col_in_use": "En Uso",
+      "col_pending": "Pendientes",
+      "footer": "Página {{page}} de {{total}} · {{count}} empleado(s)",
+      "export_title": "Reservas por Empleado"
+    },
+
+    "viaticosEstado": {
+      "title": "Viáticos por Estado",
+      "loading": "Cargando viáticos...",
+      "count": "{{count}} viático(s) · {{amount}} en total",
+      "empty_title": "Sin viáticos",
+      "empty_period": "No hay viáticos en el período seleccionado",
+      "card_label": "viáticos",
+      "card_pct": "% del conteo",
+      "chart_title": "Distribución por monto",
+      "col_state": "Estado",
+      "col_viaticos": "Viáticos",
+      "col_amount": "Monto Total",
+      "col_pct": "% del Total",
+      "export_title": "Viáticos por Estado"
+    },
+
+    "viaticosEmpleados": {
+      "title": "Viáticos por Empleado",
+      "loading": "Cargando viáticos por empleado...",
+      "count_one": "{{count}} empleado con viáticos",
+      "count_other": "{{count}} empleados con viáticos",
+      "search_placeholder": "Buscar empleado o puesto...",
+      "empty_title": "Sin resultados",
+      "empty_text_search": "Prueba con otra búsqueda",
+      "empty_period": "No hay viáticos en el período seleccionado",
+      "showing": "Mostrando {{shown}} de {{total}} empleados",
+      "mobile_viaticos": "viát.",
+      "col_employee": "Empleado",
+      "col_position": "Puesto",
+      "col_viaticos": "Viáticos",
+      "col_amount": "Monto Total",
+      "col_km": "Km Total",
+      "export_title": "Viáticos por Empleado"
+    },
+
+    "viaticosType": {
+      "title": "Viáticos por Tipo",
+      "loading": "Cargando desglose por tipo...",
+      "count": "{{count}} registros · {{amount}} total",
+      "empty_title": "Sin registros",
+      "empty_period": "No hay viáticos en el período seleccionado",
+      "chart_title": "Distribución por monto",
+      "col_type": "Tipo",
+      "col_quantity": "Cantidad",
+      "col_amount": "Monto Total",
+      "col_dist": "Distribución",
+      "card_records": "{{count}} registro(s)",
+      "export_title": "Viáticos por Tipo"
+    },
+
+    "activosEstado": {
+      "title": "Activos por Estado",
+      "loading": "Cargando inventario de activos...",
+      "count_one": "{{count}} activo en total",
+      "count_other": "{{count}} activos en total",
+      "note": "Este reporte muestra el estado actual del inventario de activos, no un período específico.",
+      "section_status": "Por Estatus",
+      "section_type": "Por Tipo",
+      "empty_status": "Sin activos registrados",
+      "empty_type": "Sin tipos de activos",
+      "chart_title": "Distribución por estatus",
+      "col_status": "Estatus",
+      "col_total": "Total",
+      "col_pct": "% del Total",
+      "col_type": "Tipo",
+      "col_dist": "Distribución",
+      "export_by_status": "Por Estatus",
+      "export_by_type": "Por Tipo",
+      "export_title_status": "Activos por Estatus",
+      "export_title_type": "Activos por Tipo"
+    },
+
+    "bodegas": {
+      "title": "Ocupación de Bodegas",
+      "loading": "Cargando ocupación de bodegas...",
+      "count": "{{warehouses}} bodega(s) · {{assets}} activo(s) en total",
+      "search_placeholder": "Buscar por bodega o ciudad...",
+      "empty_title": "Sin bodegas",
+      "empty_text": "No hay bodegas registradas en el sistema",
+      "card_warehouses": "Bodegas",
+      "card_total_assets": "Total Activos",
+      "card_active": "Estado Activo",
+      "card_other": "Otros estados",
+      "legend_active": "Estado Activo",
+      "legend_other": "Otros estados",
+      "badge_fullest": "Más llena",
+      "col_warehouse": "Bodega",
+      "col_city": "Ciudad",
+      "col_total": "Total",
+      "col_active": "Activos",
+      "col_other": "Otros",
+      "col_occupancy": "Ocupación",
+      "mobile_assets": "activos",
+      "showing": "Mostrando {{shown}} de {{total}} bodegas",
+      "export_title": "Ocupación de Bodegas"
+    },
+
+    "card": {
+      "no_plate": "Sin placa",
+      "no_detail": "Vehículo sin detalle",
+      "departure": "Salida:",
+      "return": "Regreso:",
+      "in_progress": "En curso"
+    },
+
+    "modal": {
+      "title": "Detalles del Registro",
+      "no_plate": "Sin placa",
+      "section_vehicle": "Vehículo",
+      "section_employee": "Empleado",
+      "section_dates": "Fechas",
+      "section_km": "Kilometraje",
+      "section_fuel": "Combustible",
+      "section_comments": "Comentarios",
+      "label_plate": "Placa",
+      "label_brand": "Marca",
+      "label_model": "Modelo",
+      "label_name": "Nombre",
+      "label_position": "Puesto",
+      "label_departure_date": "Fecha de Salida",
+      "label_return_date": "Fecha de Regreso",
+      "label_departure": "Salida",
+      "label_return": "Regreso",
+      "in_progress": "En curso",
+      "no_comment": "Sin comentario",
+      "evidence": "Evidencias ({{count}})",
+      "close": "Cerrar"
     }
   },
   "clients": {
     "module_name": "CLIENTES",
+    "list_title": "Clientes",
     "title": "Catálogo de Compañías",
+    "subtitle": "Gestiona las compañías y sus sitios asociados",
+    "access_denied": "Acceso denegado",
+    "loading": "Cargando clientes...",
+    "loading_info": "Cargando información...",
     "search_placeholder": "Buscar por código o nombre...",
     "create_title": "Nueva Compañía",
+    "filter": {
+      "all": "Todos",
+      "active": "Activos",
+      "inactive": "Inactivos"
+    },
     "actions": {
       "new": "Nuevo Cliente"
     },
@@ -707,18 +1211,31 @@
       "name": "Nombre",
       "description": "Descripción",
       "status": "Estado",
-      "logo": "Logo"
+      "logo": "Logo",
+      "client": "Cliente"
     },
     "form": {
       "code": "Código",
       "name": "Nombre",
       "description": "Descripción",
       "status": "Estado",
-      "logo": "Logo de la compañía"
+      "logo": "Logo de la compañía",
+      "subtitle": "Completa la información de la compañía",
+      "section_basic": "Información básica",
+      "saving": "Guardando...",
+      "create_btn": "Crear Cliente",
+      "image_change": "Cambiar imagen",
+      "image_upload": "Subir logo",
+      "image_hint": "PNG, JPG. Máx 2 MB",
+      "logo_section": "Logo",
+      "registered_at": "Registrado"
     },
     "empty": {
       "title": "Sin clientes",
-      "desc": "Aún no hay compañías registradas en el sistema."
+      "desc": "Aún no hay compañías registradas en el sistema.",
+      "no_results": "Sin resultados",
+      "no_match": "No hay coincidencias para \"{{search}}\"",
+      "create_hint": "Crea el primer cliente usando el botón de arriba"
     },
     "errors": {
       "load_failed": "No se pudo cargar la lista de clientes.",
@@ -749,6 +1266,8 @@
     },
     "sites": {
       "title": "Sitios del Cliente",
+      "loading": "Cargando sitios...",
+      "error_loading": "Error al cargar",
       "stats": "Total: {{total}} · Activos: {{active}} · Inactivos: {{inactive}}",
       "search_placeholder": "Buscar por nombre, ciudad...",
       "create_title": "Nuevo Sitio",
@@ -756,6 +1275,10 @@
       "filters_title": "Filtros de Sitios",
       "actions": {
         "new": "Nuevo Sitio",
+        "new_short": "Nuevo",
+        "create": "Crear Sitio",
+        "activate": "Activar",
+        "deactivate": "Desactivar",
         "activate_selected": "Habilitar seleccionados",
         "deactivate_selected": "Deshabilitar seleccionados"
       },
@@ -769,28 +1292,46 @@
         "name": "Nombre",
         "description": "Descripción",
         "city": "Ciudad",
-        "status": "Estado"
+        "status": "Estado",
+        "name_placeholder": "Nombre del sitio...",
+        "description_placeholder": "Descripción opcional...",
+        "city_placeholder": "Selecciona una ciudad...",
+        "section_basic": "Información básica",
+        "section_location": "Ubicación y Estado",
+        "saving": "Guardando...",
+        "create_subtitle": "Completa la información requerida",
+        "edit_subtitle": "Modificando: {{name}}",
+        "select_client": "Seleccione un cliente",
+        "no_cities": "Sin ciudades disponibles"
       },
       "empty": {
         "title": "Sin sitios",
         "no_data": "Aún no hay sitios registrados.",
-        "no_matches": "No se encontraron sitios con los filtros actuales."
+        "no_matches": "No se encontraron sitios con los filtros actuales.",
+        "no_results": "Sin resultados",
+        "no_match": "No hay coincidencias para \"{{search}}\"",
+        "create_hint": "Agrega el primer sitio usando el botón de arriba"
       },
       "success": {
         "created": "Sitio creado correctamente.",
         "updated": "Sitio actualizado correctamente.",
-        "bulk_updated": "Estado actualizado correctamente."
+        "bulk_updated": "Estado actualizado correctamente.",
+        "saved": "Sitio guardado correctamente."
       },
       "errors": {
         "load_failed": "Error al cargar los sitios.",
         "name_required": "El nombre es obligatorio.",
         "save_failed": "Error al guardar el sitio.",
-        "bulk_failed": "Error al actualizar los sitios."
+        "bulk_failed": "Error al actualizar los sitios.",
+        "no_connection": "No hay conexión con el servidor.",
+        "load_error": "No se pudieron cargar los datos."
       }
     },
     "assets": {
       "title": "Activos del Cliente",
       "subtitle": "Inventario de activos asignados al cliente",
+      "loading": "Cargando activos...",
+      "error_loading": "Error al cargar",
       "stats": "Total: {{total}}",
       "stats_filtered": "Total: {{total}} · Filtrados: {{filtered}}",
       "search_placeholder": "Buscar por código, nombre, serie...",
@@ -811,7 +1352,10 @@
       "empty": {
         "title": "No se encontraron activos",
         "no_data": "Aún no hay activos registrados.",
-        "no_matches": "Ajusta los filtros para encontrar resultados."
+        "no_matches": "Ajusta los filtros para encontrar resultados.",
+        "no_results": "Sin resultados",
+        "no_match": "No hay coincidencias para \"{{search}}\"",
+        "no_assets": "No hay activos registrados para este cliente"
       },
       "qr_title": "QR del Activo",
       "view_public_page": "Ver página pública del activo",
@@ -835,6 +1379,108 @@
         "no_selection": "No hay activos seleccionados.",
         "bulk_failed": "Error al mover los activos.",
         "bulk_partial": "Algunos activos no se pudieron mover ({{count}} fallos)."
+      }
+    },
+    "contracts": {
+      "title": "Contratos de facturación",
+      "no_permission": "No tienes permisos para ver los contratos.",
+      "loading": "Cargando contratos...",
+      "new": "Nuevo contrato",
+      "adenda": "Adenda",
+      "indefinite": "indefinido",
+      "empty": {
+        "title": "Sin contratos registrados",
+        "hint": "Crea el primer contrato usando el botón de arriba"
+      },
+      "modal": {
+        "new_title": "Nuevo Contrato",
+        "edit_title": "Editar Contrato",
+        "new_adenda": "Nueva Adenda",
+        "sub_of": "Subcontrato de"
+      },
+      "form": {
+        "name": "Nombre",
+        "name_placeholder": "Ej: Contrato 2026, Adenda 1",
+        "start_date": "Fecha inicio",
+        "end_date": "Fecha fin",
+        "currency": "Moneda de facturación",
+        "exchange_rate": "Tasa de cambio fija (opcional)",
+        "exchange_rate_placeholder": "Vacío = usar la tasa del periodo",
+        "exchange_rate_hint": "Si el contrato fijó la tasa al firmarse, escríbela aquí — se usará siempre, sin importar cómo cambie el dólar después. Si se deja vacía, se usa la tasa vigente de cada periodo.",
+        "save_changes": "Guardar cambios",
+        "create": "Crear",
+        "saving": "Guardando...",
+        "required": "Nombre y fecha de inicio son obligatorios"
+      },
+      "success": {
+        "created": "Contrato creado",
+        "adenda_created": "Adenda creada",
+        "updated": "Contrato actualizado",
+        "deactivated": "Contrato desactivado",
+        "printer_removed": "Impresora retirada del contrato",
+        "printer_reassigned": "Impresora reasignada",
+        "prices_updated": "Precios actualizados",
+        "group_created": "Grupo creado",
+        "group_updated": "Grupo actualizado",
+        "printer_linked": "Impresora vinculada al contrato"
+      },
+      "deactivate_confirm": "¿Desactivar el contrato \"{{name}}\"? Dejará de aparecer en el listado.",
+      "remove_printer_confirm": "¿Retirar \"{{code}}\" de este contrato?",
+      "tabs": {
+        "printers": "Impresoras",
+        "groups": "Grupos / Bolsones"
+      },
+      "printers": {
+        "link": "Vincular impresora",
+        "empty": "Sin impresoras vinculadas todavía",
+        "title": "Vincular impresora existente",
+        "subtitle": "Busca un activo ya registrado en inventario para vincularlo a este contrato.",
+        "label": "Impresora",
+        "search": "Buscar por código, nombre o serial...",
+        "content_search": "Buscar por modelo, serial o código...",
+        "no_results": "Sin resultados",
+        "group_label": "Grupo de facturación (opcional)",
+        "no_group": "Sin grupo (cobro individual)",
+        "loading_assets": "Cargando activos...",
+        "rent": "Renta",
+        "mono": "Clic mono",
+        "color": "Clic color",
+        "link_btn": "Vincular",
+        "linking": "Vinculando...",
+        "select_printer": "Selecciona una impresora",
+        "load_error": "Error al cargar activos"
+      },
+      "groups": {
+        "new": "Nuevo grupo",
+        "name_required": "El nombre es obligatorio",
+        "empty_title": "Sin grupos de facturación todavía",
+        "empty_hint": "Un grupo agrupa varias impresoras bajo una sola bolsa de impresiones (ej. \"Finca Santa Rita\")",
+        "bolson_badge": "Bolsón",
+        "mono_bag": "Bolsa mono",
+        "color_bag": "Bolsa color",
+        "base_rent": "Renta base",
+        "printers_label": "Impresoras",
+        "surplus_freq": "Excedente",
+        "annual_month": "Anual — {{month}}",
+        "monthly": "Mensual",
+        "modal_new": "Nuevo Grupo de Facturación",
+        "modal_edit": "Editar Grupo de Facturación",
+        "modal_hint": "Ej: \"Finca Santa Rita\" — varias impresoras compartiendo una bolsa de impresiones.",
+        "is_bolson": "Es bolsón",
+        "is_bolson_desc": "Suma los contadores de todas las impresoras del grupo bajo una sola bolsa de impresiones",
+        "mono_surplus": "Excedente mono",
+        "color_surplus": "Excedente color",
+        "frequency": "Frecuencia de cobro del excedente",
+        "monthly_label": "Mensual",
+        "annual_label": "Anual",
+        "annual_month_label": "Mes de cobro anual",
+        "annual_month_hint": "El excedente acumulado del año se cobra en el período de este mes.",
+        "currency": "Moneda de facturación",
+        "exchange_rate": "Tasa de cambio fija (opcional)",
+        "exchange_rate_placeholder": "Vacío = usar la tasa del periodo",
+        "saving": "Guardando...",
+        "create_btn": "Crear grupo",
+        "save_changes": "Guardar cambios"
       }
     }
   },
@@ -1424,5 +2070,64 @@
     "lowercase": "Al menos una minúscula (a-z)",
     "number": "Al menos un número (0-9)",
     "special": "Al menos un carácter especial (@$!%*?&._-)"
+  },
+  "operaciones": {
+    "access_denied": "Acceso denegado",
+    "syncing": "Sincronizando estado…",
+    "maintenance_pending_title": "Mantenimiento pendiente de regreso",
+    "maintenance_in_workshop": "{{placa}} sigue en el taller",
+    "btn_back": "Volver",
+    "btn_register_return": "Registrar regreso",
+    "header": {
+      "title": "Operaciones de Flota",
+      "subtitle_return": "Módulo de Recepción · Registro de Regreso",
+      "subtitle_departure": "Módulo de Despacho · Registro de Salida",
+      "status_in_use": "Sistema En Uso",
+      "status_available": "Sistema Disponible"
+    },
+    "info": {
+      "unit_label": "Unidad en Gestión",
+      "status_in_use": "En Uso",
+      "status_ready": "Listo",
+      "km_departure": "KM salida",
+      "fuel": "Combustible",
+      "location": "Ubicación",
+      "reservation_detected": "Reserva Confirmada Detectada",
+      "start": "Inicio:",
+      "end": "Fin:"
+    },
+    "form": {
+      "section_unit": "Selección de Unidad",
+      "section_technical": "Estado Técnico",
+      "section_photos": "Evidencia Fotográfica",
+      "autofilled": "Datos cargados del último registro",
+      "field_km": "Odómetro (KM)",
+      "ph_km": "Kilometraje actual",
+      "km_diff": "Recorrido estimado:",
+      "field_location": "Punto de Control",
+      "ph_location": "Seleccione punto...",
+      "field_fuel": "Nivel de Combustible",
+      "ph_fuel": "Seleccione nivel...",
+      "fuel_full": "Full",
+      "fuel_half": "Medio",
+      "fuel_empty": "Vacío",
+      "field_observations": "Observaciones",
+      "ph_observations": "Novedades técnicas o estéticas...",
+      "btn_return": "Confirmar Retorno",
+      "btn_departure": "Confirmar Salida"
+    },
+    "toast": {
+      "no_permission": "No tienes permiso para registrar",
+      "select_unit": "Seleccione una unidad",
+      "required_fields": "Complete los campos obligatorios",
+      "required_images": "Debes subir al menos una imagen",
+      "km_too_low": "El KM no puede ser menor al último registrado ({{km}})",
+      "km_return_low": "El KM de regreso no puede ser menor al de salida",
+      "km_excessive": "Kilometraje excesivo, verifique los datos",
+      "reserved_other": "Este vehículo está reservado para otro empleado",
+      "return_success": "Retorno registrado exitosamente",
+      "departure_success": "Salida de unidad confirmada",
+      "error_process": "Error al procesar la operación"
+    }
   }
 }

@@ -58,7 +58,10 @@
   "home": {
     "weather_not_available": "Weather not available",
     "read_more": "Read more",
-    "quick_access": "Quick Access",
+    "quick_access": "Quick access",
+    "search_placeholder": "Search modules and data…",
+    "activity_week": "Activity this week",
+    "records_suffix": "entries",
     "greeting": {
       "morning": "Good morning",
       "afternoon": "Good afternoon",
@@ -66,7 +69,59 @@
     },
     "news_title": "News & Announcements",
     "no_news": "No recent news.",
-    "view_all": "View all"
+    "view_all": "View all",
+    "kpi": {
+      "in_use": "In use now",
+      "today": "Today's records",
+      "active_reservations": "Active reservations",
+      "pending_viaticos": "Pending per diems"
+    },
+    "attention": {
+      "title": "Needs attention",
+      "all_good": "All good",
+      "no_pending_admin": "No pending items in the system right now.",
+      "no_pending_user": "You have no pending items right now.",
+      "viaticos_pending_one": "{{count}} per diem pending approval",
+      "viaticos_pending_other": "{{count}} per diems pending approval",
+      "vehicles_maintenance_one": "{{count}} vehicle in maintenance",
+      "vehicles_maintenance_other": "{{count}} vehicles in maintenance",
+      "active_reservations_one": "{{count}} active reservation right now",
+      "active_reservations_other": "{{count}} active reservations right now",
+      "upcoming_reservations_one": "You have {{count}} upcoming reservation",
+      "upcoming_reservations_other": "You have {{count}} upcoming reservations",
+      "active_viaticos_one": "{{count}} active per diem pending",
+      "active_viaticos_other": "{{count}} active per diems pending"
+    },
+    "quick": {
+      "no_access": "No shortcuts available",
+      "dashboard_label": "Dashboard",
+      "dashboard_sub": "Metrics & KPIs",
+      "reports_label": "Reports",
+      "reports_sub": "View all reports",
+      "reservations_label": "Reservations",
+      "reservations_active": "{{count}} active",
+      "reservations_manage": "Manage reservations",
+      "viaticos_label": "Per Diems",
+      "viaticos_pending": "{{count}} pending",
+      "viaticos_manage": "Manage per diems",
+      "inventory_label": "Inventory",
+      "inventory_assets": "{{count}} assets",
+      "inventory_manage": "Assets & warehouses",
+      "fleet_label": "Fleet",
+      "fleet_vehicles": "{{count}} vehicles",
+      "fleet_manage": "Manage vehicles"
+    },
+    "system": {
+      "operational": "All services operational",
+      "degraded": "Some services degraded",
+      "maintenance": "Maintenance in progress"
+    },
+    "stats": {
+      "employees": "Employees",
+      "week_records": "Week entries",
+      "total_assets": "Total assets",
+      "fleet_vehicles": "Fleet vehicles"
+    }
   },
   "menu": {
     "dashboard": "Dashboard",
@@ -76,6 +131,13 @@
   "dashboard": {
     "title": "Control Panel",
     "subtitle": "General overview of the operation in real time",
+    "view_report": "View report",
+    "view_all_reports": "View all reports",
+    "load_error": "Could not load data.",
+    "section": {
+      "fleet": "Fleet",
+      "operations": "Operations"
+    },
     "kpi": {
       "active_vehicles": "Active Vehicles",
       "currently_in_use": "Currently in use",
@@ -84,13 +146,41 @@
       "total_employees": "Total employees",
       "registered": "Registered in system",
       "pending_maintenance": "Pending maintenance",
-      "requires_attention": "Requires attention"
+      "requires_attention": "Requires attention",
+      "fleet": {
+        "vehicles_in_use": "Vehicles in use",
+        "total_sub": "{{count}} in total fleet",
+        "maintenance": "In maintenance",
+        "maintenance_sub": "require attention",
+        "today": "Today's records",
+        "today_sub": "day movements",
+        "week": "Week records",
+        "week_sub": "this week"
+      },
+      "ops": {
+        "employees": "Active employees",
+        "employees_sub": "registered in the system",
+        "reservations": "Active reservations",
+        "reservations_sub": "{{count}} started today",
+        "viaticos": "Pending per diems",
+        "viaticos_sub": "awaiting approval",
+        "assets": "Assets in inventory",
+        "assets_sub": "in active status"
+      }
     },
     "charts": {
       "top_employees": "Top Employees (Movements)",
       "top_vehicles": "Top Vehicles (Use)",
       "exits": "Exits",
-      "uses": "Uses"
+      "uses": "Uses",
+      "activity_title": "Activity last 7 days",
+      "no_activity": "No recent activity",
+      "today": "Today",
+      "prev_days": "Previous days",
+      "total_7d": "7d total:",
+      "reservations_title": "Reservations by status",
+      "no_reservations": "No reservations recorded",
+      "reservations_total": "Total: {{count}} reservations"
     },
     "tables": {
       "km_title": "Total Distance (Top 5)",
@@ -467,6 +557,36 @@
         "ubicacion": "Location is required"
       }
     },
+    "loading": "Loading vehicles…",
+    "error_load": "Error loading vehicle data.",
+    "no_permission": "No permission for this action.",
+    "updated": "Vehicle updated successfully.",
+    "error_update": "Error updating the vehicle.",
+    "created": "Vehicle created successfully.",
+    "error_create": "Error creating the vehicle.",
+    "error_unexpected": "Unexpected error. Please try again.",
+    "historial": "History",
+    "add_disabled_reason": "You don't have permission to create. Request it from the admin.",
+    "checking_session": "Verifying session…",
+    "checking_session_desc": "Please wait a moment.",
+    "no_permission_title": "No permission",
+    "contact_admin": "Contact an administrator to get access.",
+    "connection_error_title": "Connection problem",
+    "general_error_title": "An error occurred",
+    "counter_of": "of",
+    "counter_vehicle_one": "vehicle",
+    "counter_vehicle_other": "vehicles",
+    "form": {
+      "title_create": "New vehicle",
+      "title_edit": "Edit vehicle",
+      "subtitle_create": "Fill in the information to register a vehicle",
+      "subtitle_edit": "Modify the vehicle data",
+      "section_info": "Vehicle information",
+      "saving": "Saving…",
+      "create": "Create vehicle",
+      "update": "Save changes"
+    },
+    "search_internal": "Search…",
     "qr_in_use_title": "Vehicle in use",
     "qr_in_use_detected": "This vehicle is in use by",
     "since": "Departure",
@@ -605,40 +725,83 @@
         "Operación": "Operation",
         "Inventario": "Inventory",
         "Comercial": "Commercial",
-        "Recursos Humanos": "Human Resources"
+        "Recursos Humanos": "Human Resources",
+        "Reservas": "Reservations",
+        "Viáticos": "Allowances"
       },
 
       "tags_all": "All tags",
-      "recent": "Recently seen",
+      "recent": "Recently viewed",
       "clear": "Clear",
       "no_matches": "No reports found for these filters.",
-      "open": "Open"
+      "open": "Open",
+      "subtitle": "Generate and export reports from system operations",
+      "count_one": "{{count}} report found",
+      "count_other": "{{count}} reports found",
+      "see_all": "See all reports",
+      "tags": "Tags"
     },
 
     "report_items": {
       "registros_uso": {
-        "title": "Usage records",
-        "description": "Entries/Exits, pending and completed."
+        "title": "Usage Records",
+        "description": "Analyze vehicle usage records over a specific date range."
       },
       "vehiculos_uso": {
-        "title": "Most used vehicles",
-        "description": "Usage ranking by period."
+        "title": "Vehicles by Usage",
+        "description": "Ranking of vehicles by frequency and duration of use by staff."
       },
       "empleados_actividad": {
-        "title": "Most active employees",
-        "description": "Top employee departures."
+        "title": "Employee Activity",
+        "description": "Summary of operational activity per employee in the selected period."
       },
       "kilometraje_empleado": {
-        "title": "Kilometers by employee",
-        "description": "Top kilometers per employee."
+        "title": "Mileage by Employee",
+        "description": "Detail of accumulated mileage per employee across their trips."
       },
       "ubicacion_vehiculo": {
-        "title": "Records by location",
-        "description": "Top vehicle locations."
+        "title": "Vehicle Locations",
+        "description": "History of locations recorded per vehicle in a specific period."
       },
       "consumo_combustible_vehiculo": {
-        "title": "Fuel consumption per vehicle",
-        "description": "Fuel usage ranking per vehicle."
+        "title": "Fuel Consumption",
+        "description": "Analysis of fuel consumption per vehicle, comparing efficiency and costs."
+      },
+      "viajes_duracion": {
+        "title": "Trip Duration",
+        "description": "Average and maximum trip time per vehicle. Identify long or unusual trips."
+      },
+      "actividad_semanal": {
+        "title": "Activity by Day",
+        "description": "Distribution of vehicle departures by day of the week to optimize the fleet."
+      },
+      "reservas_estado": {
+        "title": "Reservations by Status",
+        "description": "Distribution of vehicle reservations by status: pending, in use, completed or cancelled."
+      },
+      "reservas_empleado": {
+        "title": "Reservations by Employee",
+        "description": "Ranking of employees by number of reservations made, completed and cancelled."
+      },
+      "viaticos_estado": {
+        "title": "Allowances by Status",
+        "description": "Distribution of allowances by status: draft, pending, approved, rejected, settled."
+      },
+      "viaticos_empleados": {
+        "title": "Top Employees by Allowances",
+        "description": "Employees with highest allowance spending. Includes total amount and kilometers."
+      },
+      "viaticos_tipo": {
+        "title": "Spending by Allowance Type",
+        "description": "Breakdown of total allowance spending by category: meals, lodging, tolls, etc."
+      },
+      "activos_estado": {
+        "title": "Asset Status",
+        "description": "Distribution of assets by current status (active, inactive, maintenance) and by type."
+      },
+      "bodegas_ocupacion": {
+        "title": "Warehouse Occupancy",
+        "description": "Number of assets stored in each warehouse, broken down by city and status."
       }
     },
     "search_placeholder": "Search employee, plate...",
@@ -646,18 +809,18 @@
     "ranges": {
       "all": "All",
       "today": "Today",
-      "7d": "7 Days",
-      "month": "This Month",
+      "7d": "7 days",
+      "month": "This month",
       "custom": "Custom"
     },
     "status": {
       "todos": "All",
-      "activos": "Active",
+      "activos": "In Progress",
       "finalizados": "Completed"
     },
     "actions": {
       "export": "Export",
-      "clear_filters": "Clear Filters"
+      "clear_filters": "Clear filters"
     },
     "no_data_title": "No results",
     "no_data_desc": "No records found with the current filters.",
@@ -682,13 +845,354 @@
       "location_out": "Location Out",
       "location_in": "Location In",
       "avg_consumption": "Avg. Consumption (%)"
+    },
+
+    "common": {
+      "loading": "Loading...",
+      "error_title": "Error loading",
+      "error_detail": "Error loading the report. Please try again.",
+      "no_results": "No results",
+      "no_data": "No data",
+      "no_data_period": "No data available for the selected period",
+      "see_all_vehicles": "See all vehicles",
+      "see_all_employees": "See all employees",
+      "see_all_records": "See all records",
+      "period": "Period",
+      "from": "From",
+      "to": "To",
+      "clear": "Clear",
+      "clear_filters": "Clear filters",
+      "export": "Export",
+      "page_of": "Page {{page}} of {{total}}"
+    },
+
+    "registerReport": {
+      "title": "Usage Records",
+      "loading": "Loading records...",
+      "count_one": "{{count}} record found",
+      "count_other": "{{count}} records found",
+      "search_placeholder": "Search by employee, vehicle or plate...",
+      "status_label": "Status",
+      "error_detail": "Error loading records. Please try again.",
+      "empty_title": "No records",
+      "empty_text": "No records match the applied filters",
+      "export_title": "Usage Records"
+    },
+
+    "vehiculos": {
+      "title": "Most Used Vehicles",
+      "loading": "Loading ranking...",
+      "count_one": "{{count}} vehicle in the ranking",
+      "count_other": "{{count}} vehicles in the ranking",
+      "search_placeholder": "Search by brand, model or plate...",
+      "empty_title": "No results",
+      "empty_query": "No vehicles match \"{{query}}\"",
+      "empty_period": "No data available for the ranking",
+      "see_all": "See all vehicles",
+      "col_vehicle": "Vehicle",
+      "col_plate": "Plate",
+      "col_total": "Total Uses",
+      "mobile_uses": "uses",
+      "footer": "Page {{page}} of {{total}} · {{count}} vehicle(s)",
+      "export_title": "Most Used Vehicles",
+      "export_sheet": "Vehicles"
+    },
+
+    "empleados": {
+      "title": "Most Active Employees",
+      "loading": "Loading ranking...",
+      "count_one": "{{count}} employee in the ranking",
+      "count_other": "{{count}} employees in the ranking",
+      "search_placeholder": "Search by name or position...",
+      "empty_title": "No results",
+      "empty_query": "No employees match \"{{query}}\"",
+      "empty_period": "No data available for the selected period",
+      "see_all": "See all employees",
+      "col_employee": "Employee",
+      "col_position": "Position",
+      "col_total": "Total Departures",
+      "mobile_exits": "trips",
+      "footer": "Page {{page}} of {{total}} · {{count}} employee(s)",
+      "export_title": "Most Active Employees",
+      "export_sheet": "Employees"
+    },
+
+    "kilometraje": {
+      "title": "Mileage by Employee",
+      "loading": "Loading report...",
+      "count_one": "{{count}} employee with records",
+      "count_other": "{{count}} employees with records",
+      "search_placeholder": "Search by name or position...",
+      "empty_title": "No results",
+      "empty_query": "No employees match \"{{query}}\"",
+      "empty_period": "No data available for the selected period",
+      "see_all": "See all employees",
+      "col_employee": "Employee",
+      "col_position": "Position",
+      "col_km": "Km Traveled",
+      "mobile_km": "traveled",
+      "export_title": "Mileage by Employee",
+      "export_sheet": "Mileage"
+    },
+
+    "ubicaciones": {
+      "title": "Records by Location",
+      "loading": "Loading records...",
+      "count_one": "{{count}} record found",
+      "count_other": "{{count}} records found",
+      "search_placeholder": "Search by employee, vehicle or location...",
+      "empty_title": "No results",
+      "empty_query": "No records match \"{{query}}\"",
+      "empty_period": "No data for the selected period",
+      "see_all": "See all records",
+      "in_progress": "In progress",
+      "col_employee": "Employee",
+      "col_vehicle": "Vehicle",
+      "col_location_out": "Departure Location",
+      "col_location_in": "Return Location",
+      "col_date_out": "Departure Date",
+      "col_date_in": "Return Date",
+      "col_km_out": "Km Out",
+      "col_km_in": "Km In",
+      "mobile_out": "Out",
+      "mobile_in": "In",
+      "export_title": "Records by Location",
+      "export_sheet": "Locations"
+    },
+
+    "combustible": {
+      "title": "Fuel Consumption",
+      "loading": "Loading report...",
+      "count_one": "{{count}} vehicle with records",
+      "count_other": "{{count}} vehicles with records",
+      "search_placeholder": "Search by brand, model or plate...",
+      "empty_title": "No results",
+      "empty_query": "No vehicles match \"{{query}}\"",
+      "empty_period": "No data available for the selected period",
+      "see_all": "See all vehicles",
+      "legend_low": "Low consumption (≤ 40%)",
+      "legend_mid": "Medium consumption (41–70%)",
+      "legend_high": "High consumption (> 70%)",
+      "col_vehicle": "Vehicle",
+      "col_plate": "Plate",
+      "col_avg": "Avg. Consumption",
+      "export_title": "Fuel Consumption by Vehicle",
+      "export_sheet": "Consumption"
+    },
+
+    "viajes": {
+      "title": "Trip Duration",
+      "loading": "Loading report...",
+      "count_one": "{{count}} vehicle",
+      "count_other": "{{count}} vehicles",
+      "search_placeholder": "Search by brand, model or plate...",
+      "empty_title": "No data",
+      "empty_period": "No completed trips in the selected period",
+      "col_vehicle": "Vehicle",
+      "col_plate": "Plate",
+      "col_trips": "Trips",
+      "col_avg_duration": "Avg. Duration",
+      "col_max_duration": "Max Duration",
+      "mobile_trips": "trips",
+      "mobile_avg": "avg.",
+      "export_title": "Trip Duration"
+    },
+
+    "actividad": {
+      "title": "Activity by Day",
+      "subtitle_one": "{{count}} departure in the period",
+      "subtitle_other": "{{count}} departures in the period",
+      "loading": "Loading weekly activity...",
+      "chart_title": "Departures by day of the week",
+      "col_day": "Day",
+      "col_exits": "Departures",
+      "col_employees": "Active Employees",
+      "col_vehicles": "Active Vehicles",
+      "badge_most_active": "Most active",
+      "export_title": "Weekly Activity"
+    },
+
+    "reservasEstado": {
+      "title": "Reservations by Status",
+      "loading": "Loading reservations...",
+      "count_one": "{{count}} reservation in total",
+      "count_other": "{{count}} reservations in total",
+      "empty_title": "No reservations",
+      "empty_period": "No reservations in the selected period",
+      "card_vehicles": "{{count}} vehicles",
+      "card_employees": "{{count}} employees",
+      "chart_title": "Total distribution",
+      "col_state": "Status",
+      "col_total": "Total",
+      "col_vehicles": "Distinct vehicles",
+      "col_employees": "Distinct employees",
+      "col_pct": "% of total",
+      "export_title": "Reservations by Status"
+    },
+
+    "reservasEmpleado": {
+      "title": "Reservations by Employee",
+      "loading": "Loading ranking...",
+      "count_one": "{{count}} employee",
+      "count_other": "{{count}} employees",
+      "search_placeholder": "Search by name or position...",
+      "empty_title": "No data",
+      "mobile_reservations": "reservations",
+      "col_employee": "Employee",
+      "col_position": "Position",
+      "col_total": "Total",
+      "col_finished": "Finished",
+      "col_cancelled": "Cancelled",
+      "col_in_use": "In Use",
+      "col_pending": "Pending",
+      "footer": "Page {{page}} of {{total}} · {{count}} employee(s)",
+      "export_title": "Reservations by Employee"
+    },
+
+    "viaticosEstado": {
+      "title": "Allowances by Status",
+      "loading": "Loading allowances...",
+      "count": "{{count}} allowance(s) · {{amount}} total",
+      "empty_title": "No allowances",
+      "empty_period": "No allowances in the selected period",
+      "card_label": "allowances",
+      "card_pct": "% of count",
+      "chart_title": "Distribution by amount",
+      "col_state": "Status",
+      "col_viaticos": "Allowances",
+      "col_amount": "Total Amount",
+      "col_pct": "% of Total",
+      "export_title": "Allowances by Status"
+    },
+
+    "viaticosEmpleados": {
+      "title": "Allowances by Employee",
+      "loading": "Loading employee allowances...",
+      "count_one": "{{count}} employee with allowances",
+      "count_other": "{{count}} employees with allowances",
+      "search_placeholder": "Search employee or position...",
+      "empty_title": "No results",
+      "empty_text_search": "Try a different search",
+      "empty_period": "No allowances in the selected period",
+      "showing": "Showing {{shown}} of {{total}} employees",
+      "mobile_viaticos": "allow.",
+      "col_employee": "Employee",
+      "col_position": "Position",
+      "col_viaticos": "Allowances",
+      "col_amount": "Total Amount",
+      "col_km": "Total Km",
+      "export_title": "Allowances by Employee"
+    },
+
+    "viaticosType": {
+      "title": "Allowances by Type",
+      "loading": "Loading breakdown by type...",
+      "count": "{{count}} records · {{amount}} total",
+      "empty_title": "No records",
+      "empty_period": "No allowances in the selected period",
+      "chart_title": "Distribution by amount",
+      "col_type": "Type",
+      "col_quantity": "Quantity",
+      "col_amount": "Total Amount",
+      "col_dist": "Distribution",
+      "card_records": "{{count}} record(s)",
+      "export_title": "Allowances by Type"
+    },
+
+    "activosEstado": {
+      "title": "Assets by Status",
+      "loading": "Loading asset inventory...",
+      "count_one": "{{count}} asset in total",
+      "count_other": "{{count}} assets in total",
+      "note": "This report shows the current state of the asset inventory, not a specific period.",
+      "section_status": "By Status",
+      "section_type": "By Type",
+      "empty_status": "No registered assets",
+      "empty_type": "No asset types",
+      "chart_title": "Distribution by status",
+      "col_status": "Status",
+      "col_total": "Total",
+      "col_pct": "% of Total",
+      "col_type": "Type",
+      "col_dist": "Distribution",
+      "export_by_status": "By Status",
+      "export_by_type": "By Type",
+      "export_title_status": "Assets by Status",
+      "export_title_type": "Assets by Type"
+    },
+
+    "bodegas": {
+      "title": "Warehouse Occupancy",
+      "loading": "Loading warehouse occupancy...",
+      "count": "{{warehouses}} warehouse(s) · {{assets}} asset(s) in total",
+      "search_placeholder": "Search by warehouse or city...",
+      "empty_title": "No warehouses",
+      "empty_text": "No warehouses registered in the system",
+      "card_warehouses": "Warehouses",
+      "card_total_assets": "Total Assets",
+      "card_active": "Active Status",
+      "card_other": "Other statuses",
+      "legend_active": "Active Status",
+      "legend_other": "Other statuses",
+      "badge_fullest": "Fullest",
+      "col_warehouse": "Warehouse",
+      "col_city": "City",
+      "col_total": "Total",
+      "col_active": "Active",
+      "col_other": "Other",
+      "col_occupancy": "Occupancy",
+      "mobile_assets": "assets",
+      "showing": "Showing {{shown}} of {{total}} warehouses",
+      "export_title": "Warehouse Occupancy"
+    },
+
+    "card": {
+      "no_plate": "No plate",
+      "no_detail": "Vehicle without detail",
+      "departure": "Departure:",
+      "return": "Return:",
+      "in_progress": "In progress"
+    },
+
+    "modal": {
+      "title": "Record Details",
+      "no_plate": "No plate",
+      "section_vehicle": "Vehicle",
+      "section_employee": "Employee",
+      "section_dates": "Dates",
+      "section_km": "Mileage",
+      "section_fuel": "Fuel",
+      "section_comments": "Comments",
+      "label_plate": "Plate",
+      "label_brand": "Brand",
+      "label_model": "Model",
+      "label_name": "Name",
+      "label_position": "Position",
+      "label_departure_date": "Departure Date",
+      "label_return_date": "Return Date",
+      "label_departure": "Departure",
+      "label_return": "Return",
+      "in_progress": "In progress",
+      "no_comment": "No comment",
+      "evidence": "Evidence ({{count}})",
+      "close": "Close"
     }
   },
   "clients": {
     "module_name": "Clients",
+    "list_title": "Clients",
     "title": "Catalog of Companies",
+    "subtitle": "Manage companies and their associated sites",
+    "access_denied": "Access denied",
+    "loading": "Loading clients...",
+    "loading_info": "Loading information...",
     "search_placeholder": "Search by code or name...",
     "create_title": "New Company",
+    "filter": {
+      "all": "All",
+      "active": "Active",
+      "inactive": "Inactive"
+    },
     "actions": {
       "new": "New Client"
     },
@@ -697,18 +1201,31 @@
       "name": "Name",
       "description": "Description",
       "status": "Status",
-      "logo": "Logo"
+      "logo": "Logo",
+      "client": "Client"
     },
     "form": {
       "code": "Code",
       "name": "Name",
       "description": "Description",
       "status": "Status",
-      "logo": "Company logo"
+      "logo": "Company logo",
+      "subtitle": "Complete the company information",
+      "section_basic": "Basic information",
+      "saving": "Saving...",
+      "create_btn": "Create Client",
+      "image_change": "Change image",
+      "image_upload": "Upload logo",
+      "image_hint": "PNG, JPG. Max 2 MB",
+      "logo_section": "Logo",
+      "registered_at": "Registered"
     },
     "empty": {
       "title": "No clients",
-      "desc": "No companies have been registered in the system yet."
+      "desc": "No companies have been registered in the system yet.",
+      "no_results": "No results",
+      "no_match": "No matches for \"{{search}}\"",
+      "create_hint": "Create the first client using the button above"
     },
     "errors": {
       "load_failed": "Error loading data.",
@@ -739,6 +1256,8 @@
     },
     "sites": {
       "title": "Client Sites",
+      "loading": "Loading sites...",
+      "error_loading": "Error loading",
       "stats": "Total: {{total}} · Active: {{active}} · Inactive: {{inactive}}",
       "search_placeholder": "Search by name, city...",
       "create_title": "New Site",
@@ -746,6 +1265,10 @@
       "filters_title": "Sites Filters",
       "actions": {
         "new": "New Site",
+        "new_short": "New",
+        "create": "Create Site",
+        "activate": "Activate",
+        "deactivate": "Deactivate",
         "activate_selected": "Enable selected",
         "deactivate_selected": "Disable selected"
       },
@@ -759,28 +1282,46 @@
         "name": "Name",
         "description": "Description",
         "city": "City",
-        "status": "Status"
+        "status": "Status",
+        "name_placeholder": "Site name...",
+        "description_placeholder": "Optional description...",
+        "city_placeholder": "Select a city...",
+        "section_basic": "Basic information",
+        "section_location": "Location and Status",
+        "saving": "Saving...",
+        "create_subtitle": "Complete the required information",
+        "edit_subtitle": "Editing: {{name}}",
+        "select_client": "Select a client",
+        "no_cities": "No cities available"
       },
       "empty": {
         "title": "No sites",
         "no_data": "No sites registered.",
-        "no_matches": "No sites found with the current filters."
+        "no_matches": "No sites found with the current filters.",
+        "no_results": "No results",
+        "no_match": "No matches for \"{{search}}\"",
+        "create_hint": "Add the first site using the button above"
       },
       "success": {
         "created": "Site created successfully.",
         "updated": "Site updated successfully.",
-        "bulk_updated": "Status updated successfully."
+        "bulk_updated": "Status updated successfully.",
+        "saved": "Site saved successfully."
       },
       "errors": {
         "load_failed": "Error loading sites.",
         "name_required": "The name is required.",
         "save_failed": "Error saving site.",
-        "bulk_failed": "Error updating sites."
+        "bulk_failed": "Error updating sites.",
+        "no_connection": "No connection to the server.",
+        "load_error": "Could not load data."
       }
     },
     "assets": {
       "title": "Client Assets",
       "subtitle": "Inventory of assets assigned to the client",
+      "loading": "Loading assets...",
+      "error_loading": "Error loading",
       "stats": "Total: {{total}}",
       "stats_filtered": "Total: {{total}} · Filtered: {{filtered}}",
       "search_placeholder": "Search by code, name, serial...",
@@ -801,7 +1342,10 @@
       "empty": {
         "title": "No assets found",
         "no_data": "No assets registered.",
-        "no_matches": "Adjust the filters to find results."
+        "no_matches": "Adjust the filters to find results.",
+        "no_results": "No results",
+        "no_match": "No matches for \"{{search}}\"",
+        "no_assets": "No assets registered for this client"
       },
       "qr_title": "Asset QR",
       "view_public_page": "View public asset page",
@@ -825,6 +1369,108 @@
         "no_selection": "No assets selected.",
         "bulk_failed": "Error moving assets.",
         "bulk_partial": "Some assets could not be moved ({{count}} failures)."
+      }
+    },
+    "contracts": {
+      "title": "Billing contracts",
+      "no_permission": "You don't have permission to view contracts.",
+      "loading": "Loading contracts...",
+      "new": "New contract",
+      "adenda": "Addendum",
+      "indefinite": "indefinite",
+      "empty": {
+        "title": "No contracts registered",
+        "hint": "Create the first contract using the button above"
+      },
+      "modal": {
+        "new_title": "New Contract",
+        "edit_title": "Edit Contract",
+        "new_adenda": "New Addendum",
+        "sub_of": "Subcontract of"
+      },
+      "form": {
+        "name": "Name",
+        "name_placeholder": "Eg: Contract 2026, Addendum 1",
+        "start_date": "Start date",
+        "end_date": "End date",
+        "currency": "Billing currency",
+        "exchange_rate": "Fixed exchange rate (optional)",
+        "exchange_rate_placeholder": "Empty = use period rate",
+        "exchange_rate_hint": "If the contract fixed the rate at signing, enter it here — it will always be used, regardless of dollar changes. If left empty, the current period rate is used.",
+        "save_changes": "Save changes",
+        "create": "Create",
+        "saving": "Saving...",
+        "required": "Name and start date are required"
+      },
+      "success": {
+        "created": "Contract created",
+        "adenda_created": "Addendum created",
+        "updated": "Contract updated",
+        "deactivated": "Contract deactivated",
+        "printer_removed": "Printer removed from contract",
+        "printer_reassigned": "Printer reassigned",
+        "prices_updated": "Prices updated",
+        "group_created": "Group created",
+        "group_updated": "Group updated",
+        "printer_linked": "Printer linked to contract"
+      },
+      "deactivate_confirm": "Deactivate contract \"{{name}}\"? It will no longer appear in the list.",
+      "remove_printer_confirm": "Remove \"{{code}}\" from this contract?",
+      "tabs": {
+        "printers": "Printers",
+        "groups": "Groups / Bundles"
+      },
+      "printers": {
+        "link": "Link printer",
+        "empty": "No printers linked yet",
+        "title": "Link existing printer",
+        "subtitle": "Search for an asset already registered in inventory to link it to this contract.",
+        "label": "Printer",
+        "search": "Search by code, name or serial...",
+        "content_search": "Search by model, serial or code...",
+        "no_results": "No results",
+        "group_label": "Billing group (optional)",
+        "no_group": "No group (individual billing)",
+        "loading_assets": "Loading assets...",
+        "rent": "Rent",
+        "mono": "Mono click",
+        "color": "Color click",
+        "link_btn": "Link",
+        "linking": "Linking...",
+        "select_printer": "Select a printer",
+        "load_error": "Error loading assets"
+      },
+      "groups": {
+        "new": "New group",
+        "name_required": "Name is required",
+        "empty_title": "No billing groups yet",
+        "empty_hint": "A group pools several printers under a single print bundle (eg. \"Finca Santa Rita\")",
+        "bolson_badge": "Bundle",
+        "mono_bag": "Mono bag",
+        "color_bag": "Color bag",
+        "base_rent": "Base rent",
+        "printers_label": "Printers",
+        "surplus_freq": "Surplus",
+        "annual_month": "Annual — {{month}}",
+        "monthly": "Monthly",
+        "modal_new": "New Billing Group",
+        "modal_edit": "Edit Billing Group",
+        "modal_hint": "Eg: \"Finca Santa Rita\" — several printers sharing a print bundle.",
+        "is_bolson": "Is bundle",
+        "is_bolson_desc": "Sums the counters of all printers in the group under a single print bundle",
+        "mono_surplus": "Mono surplus",
+        "color_surplus": "Color surplus",
+        "frequency": "Surplus billing frequency",
+        "monthly_label": "Monthly",
+        "annual_label": "Annual",
+        "annual_month_label": "Annual billing month",
+        "annual_month_hint": "The accumulated annual surplus is billed in the period of this month.",
+        "currency": "Billing currency",
+        "exchange_rate": "Fixed exchange rate (optional)",
+        "exchange_rate_placeholder": "Empty = use period rate",
+        "saving": "Saving...",
+        "create_btn": "Create group",
+        "save_changes": "Save changes"
       }
     }
   },
@@ -1408,6 +2054,65 @@
       "lowercase": "At least one lowercase letter",
       "number": "At least one number",
       "special": "At least one special character"
+    }
+  },
+  "operaciones": {
+    "access_denied": "Access denied",
+    "syncing": "Syncing status…",
+    "maintenance_pending_title": "Maintenance pending return",
+    "maintenance_in_workshop": "{{placa}} is still in the workshop",
+    "btn_back": "Back",
+    "btn_register_return": "Register return",
+    "header": {
+      "title": "Fleet Operations",
+      "subtitle_return": "Reception Module · Return Registration",
+      "subtitle_departure": "Dispatch Module · Departure Registration",
+      "status_in_use": "System In Use",
+      "status_available": "System Available"
+    },
+    "info": {
+      "unit_label": "Unit in Management",
+      "status_in_use": "In Use",
+      "status_ready": "Ready",
+      "km_departure": "Departure KM",
+      "fuel": "Fuel",
+      "location": "Location",
+      "reservation_detected": "Active Reservation Detected",
+      "start": "Start:",
+      "end": "End:"
+    },
+    "form": {
+      "section_unit": "Unit Selection",
+      "section_technical": "Technical Status",
+      "section_photos": "Photo Evidence",
+      "autofilled": "Data loaded from last record",
+      "field_km": "Odometer (KM)",
+      "ph_km": "Current mileage",
+      "km_diff": "Estimated distance:",
+      "field_location": "Checkpoint",
+      "ph_location": "Select checkpoint...",
+      "field_fuel": "Fuel Level",
+      "ph_fuel": "Select level...",
+      "fuel_full": "Full",
+      "fuel_half": "Half",
+      "fuel_empty": "Empty",
+      "field_observations": "Observations",
+      "ph_observations": "Technical or cosmetic notes...",
+      "btn_return": "Confirm Return",
+      "btn_departure": "Confirm Departure"
+    },
+    "toast": {
+      "no_permission": "You don't have permission to register",
+      "select_unit": "Please select a unit",
+      "required_fields": "Please complete all required fields",
+      "required_images": "You must upload at least one image",
+      "km_too_low": "KM cannot be lower than the last recorded value ({{km}})",
+      "km_return_low": "Return KM cannot be lower than departure KM",
+      "km_excessive": "Excessive mileage, please verify the data",
+      "reserved_other": "This vehicle is reserved for another employee",
+      "return_success": "Return registered successfully",
+      "departure_success": "Unit departure confirmed",
+      "error_process": "Error processing the operation"
     }
   }
 }

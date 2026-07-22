@@ -7,6 +7,7 @@ import {
 import ExportDialog from "@/components/Exports/ExportDialog";
 import { getActivosEstadoReport } from "@/services/ReportServices";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "react-i18next";
 
 const ESTATUS_STYLE = {
   Activo:      { bg: "bg-emerald-50 dark:bg-emerald-900/20", border: "border-emerald-200 dark:border-emerald-800/40", text: "text-emerald-700 dark:text-emerald-400", dot: "bg-emerald-500" },
@@ -17,7 +18,6 @@ const ESTATUS_STYLE = {
 };
 const DEFAULT_STYLE = { bg: "bg-muted/30", border: "border-border/50", text: "text-muted-foreground", dot: "bg-muted-foreground" };
 
-// Generate a unique color for each tipo
 const TIPO_COLORS = [
   "bg-blue-500", "bg-violet-500", "bg-cyan-500", "bg-orange-500",
   "bg-pink-500", "bg-teal-500", "bg-indigo-500", "bg-green-500",
@@ -25,6 +25,7 @@ const TIPO_COLORS = [
 ];
 
 export default function ActivosEstado() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   const [byEstatus, setByEstatus] = useState([]);
@@ -41,7 +42,7 @@ export default function ActivosEstado() {
         const d = await getActivosEstadoReport();
         setByEstatus(Array.isArray(d?.byEstatus) ? d.byEstatus : []);
         setByTipo(Array.isArray(d?.byTipo) ? d.byTipo : []);
-      } catch (e) { console.error(e); setErr("Error al cargar el reporte."); }
+      } catch (e) { console.error(e); setErr("reports.common.error_detail"); }
       finally { setLoading(false); }
     })();
   }, []);
@@ -70,49 +71,48 @@ export default function ActivosEstado() {
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-2xl bg-slate-500/10 dark:bg-slate-500/15 ring-1 ring-slate-500/20 shadow-sm shrink-0"><Package size={20} className="text-slate-600 dark:text-slate-400" /></div>
             <div>
-              <h1 className="text-xl md:text-2xl font-black tracking-tight leading-none">Activos por Estado</h1>
+              <h1 className="text-xl md:text-2xl font-black tracking-tight leading-none">{t("reports.activosEstado.title")}</h1>
               <p className="text-muted-foreground text-xs font-medium mt-0.5">
-                {loading ? "Cargando..." : `${totalEstatus} activo${totalEstatus !== 1 ? "s" : ""} en total`}
+                {loading ? t("reports.activosEstado.loading") : t("reports.activosEstado.count", { count: totalEstatus })}
               </p>
             </div>
           </div>
         </div>
         <div className="flex gap-2 shrink-0">
-          <Button variant="outline" onClick={() => setOpenExportEstatus(true)} disabled={byEstatus.length === 0 || loading} className="rounded-2xl px-4 h-10 font-bold gap-2 text-sm"><Download size={14} /><span className="hidden sm:inline">Por Estatus</span></Button>
-          <Button onClick={() => setOpenExportTipo(true)} disabled={byTipo.length === 0 || loading} className="rounded-2xl px-4 h-10 font-bold gap-2 text-sm"><Download size={14} /><span className="hidden sm:inline">Por Tipo</span></Button>
+          <Button variant="outline" onClick={() => setOpenExportEstatus(true)} disabled={byEstatus.length === 0 || loading} className="rounded-2xl px-4 h-10 font-bold gap-2 text-sm"><Download size={14} /><span className="hidden sm:inline">{t("reports.activosEstado.export_by_status")}</span></Button>
+          <Button onClick={() => setOpenExportTipo(true)} disabled={byTipo.length === 0 || loading} className="rounded-2xl px-4 h-10 font-bold gap-2 text-sm"><Download size={14} /><span className="hidden sm:inline">{t("reports.activosEstado.export_by_type")}</span></Button>
         </div>
       </div>
 
-      {/* Nota: sin filtros de fecha — es un snapshot del estado actual */}
+      {/* Nota: sin filtros de fecha */}
       <div className="bg-muted/30 border border-border/40 rounded-2xl px-4 py-2.5 flex items-center gap-2">
         <Tag size={13} className="text-muted-foreground" />
-        <p className="text-xs text-muted-foreground">Este reporte muestra el estado actual del inventario de activos, no un período específico.</p>
+        <p className="text-xs text-muted-foreground">{t("reports.activosEstado.note")}</p>
       </div>
 
       {/* Contenido */}
       {loading ? (
         <div className="flex flex-col items-center justify-center gap-4 py-24">
           <div className="w-12 h-12 rounded-2xl bg-slate-500/10 flex items-center justify-center"><Loader2 size={22} className="animate-spin text-slate-500" /></div>
-          <p className="text-sm text-muted-foreground font-medium">Cargando inventario de activos...</p>
+          <p className="text-sm text-muted-foreground font-medium">{t("reports.activosEstado.loading")}</p>
         </div>
       ) : err ? (
         <div className="bg-rose-50 dark:bg-rose-900/10 border border-rose-200 rounded-3xl p-6 flex items-start gap-3">
           <AlertCircle size={18} className="text-rose-500 shrink-0 mt-0.5" />
-          <div><p className="text-sm font-bold text-rose-700 dark:text-rose-400">Error al cargar</p><p className="text-xs text-rose-600 mt-0.5">{err}</p></div>
+          <div><p className="text-sm font-bold text-rose-700 dark:text-rose-400">{t("reports.common.error_title")}</p><p className="text-xs text-rose-600 mt-0.5">{t(err)}</p></div>
         </div>
       ) : (
         <>
-          {/* ── Sección: Por Estatus ── */}
+          {/* Sección: Por Estatus */}
           <div className="space-y-4">
-            <h2 className="text-sm font-black uppercase tracking-widest text-muted-foreground/60">Por Estatus</h2>
+            <h2 className="text-sm font-black uppercase tracking-widest text-muted-foreground/60">{t("reports.activosEstado.section_status")}</h2>
 
             {byEstatus.length === 0 ? (
               <div className="bg-card dark:bg-slate-900/40 border border-border/60 rounded-3xl flex items-center justify-center py-10">
-                <p className="text-sm text-muted-foreground">Sin activos registrados</p>
+                <p className="text-sm text-muted-foreground">{t("reports.activosEstado.empty_status")}</p>
               </div>
             ) : (
               <>
-                {/* Tarjetas */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {byEstatus.map((r) => {
                     const s = ESTATUS_STYLE[r.estatus] || DEFAULT_STYLE;
@@ -135,10 +135,9 @@ export default function ActivosEstado() {
                   })}
                 </div>
 
-                {/* Barra apilada */}
                 {totalEstatus > 0 && (
                   <div className="bg-card dark:bg-slate-900/40 border border-border/60 rounded-3xl p-5 shadow-sm space-y-3">
-                    <p className="text-xs font-black uppercase tracking-widest text-muted-foreground/60">Distribución por estatus</p>
+                    <p className="text-xs font-black uppercase tracking-widest text-muted-foreground/60">{t("reports.activosEstado.chart_title")}</p>
                     <div className="flex h-4 rounded-full overflow-hidden gap-px">
                       {byEstatus.map((r) => {
                         const s = ESTATUS_STYLE[r.estatus] || DEFAULT_STYLE;
@@ -165,66 +164,68 @@ export default function ActivosEstado() {
             )}
           </div>
 
-          {/* ── Sección: Por Tipo ── */}
+          {/* Sección: Por Tipo */}
           <div className="space-y-4">
-            <h2 className="text-sm font-black uppercase tracking-widest text-muted-foreground/60">Por Tipo</h2>
+            <h2 className="text-sm font-black uppercase tracking-widest text-muted-foreground/60">{t("reports.activosEstado.section_type")}</h2>
 
             {byTipo.length === 0 ? (
               <div className="bg-card dark:bg-slate-900/40 border border-border/60 rounded-3xl flex items-center justify-center py-10">
-                <p className="text-sm text-muted-foreground">Sin tipos de activos</p>
+                <p className="text-sm text-muted-foreground">{t("reports.activosEstado.empty_type")}</p>
               </div>
             ) : (
-              <>
-                <div className="bg-card dark:bg-slate-900/40 border border-border/60 rounded-3xl shadow-sm overflow-hidden">
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="border-b border-border/60 bg-muted/20">
-                          {["Tipo", "Total", "Distribución"].map((h) => (
-                            <th key={h} className="px-5 py-3.5 text-left">
-                              <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70">{h}</span>
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {byTipo.map((r, i) => {
-                          const dotColor = TIPO_COLORS[i % TIPO_COLORS.length];
-                          const pct = totalTipo > 0 ? Math.round((Number(r.total) / totalTipo) * 100) : 0;
-                          return (
-                            <tr key={r.tipo} className="border-b border-border/30 last:border-0 hover:bg-muted/20 transition-colors">
-                              <td className="px-5 py-4">
-                                <div className="flex items-center gap-2">
-                                  <div className={`w-2 h-6 rounded-full ${dotColor}`} />
-                                  <span className="text-sm font-bold">{r.tipo || "—"}</span>
+              <div className="bg-card dark:bg-slate-900/40 border border-border/60 rounded-3xl shadow-sm overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-border/60 bg-muted/20">
+                        {[
+                          t("reports.activosEstado.col_type"),
+                          t("reports.activosEstado.col_total"),
+                          t("reports.activosEstado.col_dist"),
+                        ].map((h) => (
+                          <th key={h} className="px-5 py-3.5 text-left">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70">{h}</span>
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {byTipo.map((r, i) => {
+                        const dotColor = TIPO_COLORS[i % TIPO_COLORS.length];
+                        const pct = totalTipo > 0 ? Math.round((Number(r.total) / totalTipo) * 100) : 0;
+                        return (
+                          <tr key={r.tipo} className="border-b border-border/30 last:border-0 hover:bg-muted/20 transition-colors">
+                            <td className="px-5 py-4">
+                              <div className="flex items-center gap-2">
+                                <div className={`w-2 h-6 rounded-full ${dotColor}`} />
+                                <span className="text-sm font-bold">{r.tipo || "—"}</span>
+                              </div>
+                            </td>
+                            <td className="px-5 py-4">
+                              <span className="text-sm font-black tabular-nums">{r.total}</span>
+                            </td>
+                            <td className="px-5 py-4">
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-bold tabular-nums w-8 text-right">{pct}%</span>
+                                <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden min-w-[60px]">
+                                  <div className={`h-full rounded-full ${dotColor} opacity-70 transition-all duration-500`} style={{ width: `${maxTipo > 0 ? (Number(r.total) / maxTipo) * 100 : 0}%` }} />
                                 </div>
-                              </td>
-                              <td className="px-5 py-4">
-                                <span className="text-sm font-black tabular-nums">{r.total}</span>
-                              </td>
-                              <td className="px-5 py-4">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-sm font-bold tabular-nums w-8 text-right">{pct}%</span>
-                                  <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden min-w-[60px]">
-                                    <div className={`h-full rounded-full ${dotColor} opacity-70 transition-all duration-500`} style={{ width: `${maxTipo > 0 ? (Number(r.total) / maxTipo) * 100 : 0}%` }} />
-                                  </div>
-                                </div>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
                 </div>
-              </>
+              </div>
             )}
           </div>
         </>
       )}
 
-      <ExportDialog open={openExportEstatus} onClose={() => setOpenExportEstatus(false)} rows={byEstatus} columns={columnsEstatus} defaultTitle="Activos por Estatus" defaultFilenameBase="activos_estatus" />
-      <ExportDialog open={openExportTipo} onClose={() => setOpenExportTipo(false)} rows={byTipo} columns={columnsTipo} defaultTitle="Activos por Tipo" defaultFilenameBase="activos_tipo" />
+      <ExportDialog open={openExportEstatus} onClose={() => setOpenExportEstatus(false)} rows={byEstatus} columns={columnsEstatus} defaultTitle={t("reports.activosEstado.export_title_status")} defaultFilenameBase="activos_estatus" />
+      <ExportDialog open={openExportTipo} onClose={() => setOpenExportTipo(false)} rows={byTipo} columns={columnsTipo} defaultTitle={t("reports.activosEstado.export_title_type")} defaultFilenameBase="activos_tipo" />
     </div>
   );
 }

@@ -21,6 +21,7 @@ import ExportDialog from "@/components/Exports/ExportDialog";
 import { getRegistrosPorUbicacionReport } from "@/services/ReportServices";
 import { Button } from "@/components/ui/button";
 import useIsMobile from "@/hooks/useIsMobile";
+import { useTranslation } from "react-i18next";
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 const debounced = (fn, ms = 250) => {
@@ -55,16 +56,11 @@ const addDays = (date, days) => {
   return d;
 };
 
-const RANGE_LABELS = {
-  all: "Todo",
-  today: "Hoy",
-  "7d": "7 días",
-  month: "Este mes",
-  custom: "Personalizado",
-};
+const RANGE_KEYS = ["all", "today", "7d", "month", "custom"];
 
 // ── Componente principal ───────────────────────────────────────────────────────
 export default function RegistrosPorUbicacion() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { search } = useLocation();
   const isMobile = useIsMobile();
@@ -126,7 +122,7 @@ export default function RegistrosPorUbicacion() {
         setRaw(Array.isArray(data) ? data : []);
       } catch (e) {
         console.error(e);
-        setErr("Error al cargar el reporte. Intenta nuevamente.");
+        setErr("reports.common.error_detail");
       } finally {
         setLoading(false);
       }
@@ -209,12 +205,12 @@ export default function RegistrosPorUbicacion() {
             </div>
             <div>
               <h1 className="text-xl md:text-2xl font-black tracking-tight leading-none">
-                Registros por Ubicación
+                {t("reports.ubicaciones.title")}
               </h1>
               <p className="text-muted-foreground text-xs font-medium mt-0.5">
                 {loading
-                  ? "Cargando..."
-                  : `${filtered.length} registro${filtered.length !== 1 ? "s" : ""} encontrado${filtered.length !== 1 ? "s" : ""}`}
+                  ? t("reports.ubicaciones.loading")
+                  : t("reports.ubicaciones.count", { count: filtered.length })}
               </p>
             </div>
           </div>
@@ -225,7 +221,7 @@ export default function RegistrosPorUbicacion() {
           disabled={filtered.length === 0 || loading}
           className="rounded-2xl px-5 h-10 font-bold shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all duration-200 gap-2 shrink-0 disabled:opacity-50">
           <Download size={15} />
-          <span className="hidden sm:inline">Exportar</span>
+          <span className="hidden sm:inline">{t("reports.common.export")}</span>
         </Button>
       </div>
 
@@ -239,7 +235,7 @@ export default function RegistrosPorUbicacion() {
           />
           <input
             type="text"
-            placeholder="Buscar por empleado, vehículo o ubicación..."
+            placeholder={t("reports.ubicaciones.search_placeholder")}
             defaultValue={query}
             onChange={(e) => onChangeQuery(e.target.value)}
             className="w-full bg-muted/40 dark:bg-slate-800/50 border border-border/50 rounded-2xl pl-9 pr-10 py-2.5 text-sm outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/15 focus:bg-card transition-all placeholder:text-muted-foreground/50"
@@ -257,10 +253,10 @@ export default function RegistrosPorUbicacion() {
         <div className="flex items-center gap-2 flex-wrap">
           <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground shrink-0">
             <Calendar size={13} />
-            Período
+            {t("reports.common.period")}
           </div>
           <div className="flex gap-1.5 flex-wrap">
-            {Object.entries(RANGE_LABELS).map(([r, label]) => (
+            {RANGE_KEYS.map((r) => (
               <button
                 key={r}
                 onClick={() => setRange(r)}
@@ -269,7 +265,7 @@ export default function RegistrosPorUbicacion() {
                     ? "bg-primary text-primary-foreground border-primary shadow-sm"
                     : "bg-muted/50 dark:bg-slate-800 border-border/50 text-muted-foreground hover:bg-muted dark:hover:bg-slate-700 hover:text-foreground"
                 }`}>
-                {label}
+                {t(`reports.ranges.${r}`)}
               </button>
             ))}
           </div>
@@ -279,7 +275,7 @@ export default function RegistrosPorUbicacion() {
               onClick={clearFilters}
               className="ml-auto text-[11px] font-semibold text-muted-foreground hover:text-rose-500 transition-colors flex items-center gap-1">
               <X size={11} />
-              Limpiar
+              {t("reports.common.clear")}
             </button>
           )}
         </div>
@@ -287,14 +283,14 @@ export default function RegistrosPorUbicacion() {
         {/* Inputs fecha personalizada */}
         {range === "custom" && (
           <div className="flex items-center gap-2 flex-wrap pt-1">
-            <span className="text-xs text-muted-foreground font-medium">Desde</span>
+            <span className="text-xs text-muted-foreground font-medium">{t("reports.common.from")}</span>
             <input
               type="date"
               value={from}
               onChange={(e) => { setFrom(e.target.value); setPage(1); }}
               className="bg-muted/40 dark:bg-slate-800/50 border border-border/50 rounded-xl px-3 py-1.5 text-sm outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/15 transition-all"
             />
-            <span className="text-xs text-muted-foreground font-medium">Hasta</span>
+            <span className="text-xs text-muted-foreground font-medium">{t("reports.common.to")}</span>
             <input
               type="date"
               value={to}
@@ -311,14 +307,14 @@ export default function RegistrosPorUbicacion() {
           <div className="w-12 h-12 rounded-2xl bg-rose-500/10 dark:bg-rose-500/15 flex items-center justify-center">
             <Loader2 size={22} className="animate-spin text-rose-500" />
           </div>
-          <p className="text-sm text-muted-foreground font-medium">Cargando registros...</p>
+          <p className="text-sm text-muted-foreground font-medium">{t("reports.ubicaciones.loading")}</p>
         </div>
       ) : err ? (
         <div className="bg-rose-50 dark:bg-rose-900/10 border border-rose-200 dark:border-rose-900/30 rounded-3xl p-6 flex items-start gap-3">
           <AlertCircle size={18} className="text-rose-500 shrink-0 mt-0.5" />
           <div>
-            <p className="text-sm font-bold text-rose-700 dark:text-rose-400">Error al cargar</p>
-            <p className="text-xs text-rose-600 dark:text-rose-500 mt-0.5">{err}</p>
+            <p className="text-sm font-bold text-rose-700 dark:text-rose-400">{t("reports.common.error_title")}</p>
+            <p className="text-xs text-rose-600 dark:text-rose-500 mt-0.5">{t(err)}</p>
           </div>
         </div>
       ) : (
@@ -331,18 +327,18 @@ export default function RegistrosPorUbicacion() {
                 <MapPin size={28} className="text-muted-foreground/40" />
               </div>
               <div className="text-center">
-                <p className="font-bold text-sm">Sin resultados</p>
+                <p className="font-bold text-sm">{t("reports.ubicaciones.empty_title")}</p>
                 <p className="text-xs text-muted-foreground mt-1">
                   {query
-                    ? `No hay registros que coincidan con "${query}"`
-                    : "No hay datos para el período seleccionado"}
+                    ? t("reports.ubicaciones.empty_query", { query })
+                    : t("reports.ubicaciones.empty_period")}
                 </p>
               </div>
               {hasFilters && (
                 <button
                   onClick={clearFilters}
                   className="text-xs font-semibold text-primary hover:underline">
-                  Ver todos los registros
+                  {t("reports.ubicaciones.see_all")}
                 </button>
               )}
             </div>
@@ -384,7 +380,7 @@ export default function RegistrosPorUbicacion() {
                           <ArrowRight size={11} className="text-muted-foreground/40 shrink-0" />
                           <div className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 min-w-0">
                             <MapPin size={11} className="shrink-0" />
-                            <span className="truncate font-medium">{r.ubicacion_regreso || "En curso"}</span>
+                            <span className="truncate font-medium">{r.ubicacion_regreso || t("reports.ubicaciones.in_progress")}</span>
                           </div>
                         </div>
                       </div>
@@ -393,7 +389,7 @@ export default function RegistrosPorUbicacion() {
                     {/* Fechas y km */}
                     <div className="grid grid-cols-2 gap-2 ml-8">
                       <div className="bg-muted/40 dark:bg-slate-800/50 rounded-xl px-3 py-2 space-y-0.5">
-                        <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/50">Salida</p>
+                        <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/50">{t("reports.ubicaciones.mobile_out")}</p>
                         <p className="text-[11px] font-semibold text-foreground">{fmtDateTime(r.fecha_salida)}</p>
                         {r.km_salida != null && (
                           <p className="text-[10px] font-mono text-muted-foreground flex items-center gap-1">
@@ -402,7 +398,7 @@ export default function RegistrosPorUbicacion() {
                         )}
                       </div>
                       <div className="bg-muted/40 dark:bg-slate-800/50 rounded-xl px-3 py-2 space-y-0.5">
-                        <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/50">Regreso</p>
+                        <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/50">{t("reports.ubicaciones.mobile_in")}</p>
                         <p className="text-[11px] font-semibold text-foreground">{fmtDateTime(r.fecha_regreso)}</p>
                         {r.km_regreso != null && (
                           <p className="text-[10px] font-mono text-muted-foreground flex items-center gap-1">
@@ -422,15 +418,15 @@ export default function RegistrosPorUbicacion() {
                 <thead>
                   <tr className="border-b border-border/60 bg-muted/20 dark:bg-slate-800/30">
                     {[
-                      ["#",                "w-12 text-center"],
-                      ["Empleado",         "text-left"],
-                      ["Vehículo",         "text-left"],
-                      ["Ubicación Salida", "text-left"],
-                      ["Ubicación Regreso","text-left"],
-                      ["Fecha Salida",     "text-left whitespace-nowrap"],
-                      ["Fecha Regreso",    "text-left whitespace-nowrap"],
-                      ["Km Salida",        "text-right"],
-                      ["Km Regreso",       "text-right"],
+                      ["#",                                              "w-12 text-center"],
+                      [t("reports.ubicaciones.col_employee"),            "text-left"],
+                      [t("reports.ubicaciones.col_vehicle"),             "text-left"],
+                      [t("reports.ubicaciones.col_location_out"),        "text-left"],
+                      [t("reports.ubicaciones.col_location_in"),         "text-left"],
+                      [t("reports.ubicaciones.col_date_out"),            "text-left whitespace-nowrap"],
+                      [t("reports.ubicaciones.col_date_in"),             "text-left whitespace-nowrap"],
+                      [t("reports.ubicaciones.col_km_out"),              "text-right"],
+                      [t("reports.ubicaciones.col_km_in"),               "text-right"],
                     ].map(([label, cls]) => (
                       <th key={label} className={`px-4 py-3.5 ${cls}`}>
                         <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70">
@@ -497,7 +493,7 @@ export default function RegistrosPorUbicacion() {
                               <span className="text-xs font-medium truncate">{r.ubicacion_regreso}</span>
                             </div>
                           ) : (
-                            <span className="text-[10px] font-semibold text-amber-500">En curso</span>
+                            <span className="text-[10px] font-semibold text-amber-500">{t("reports.ubicaciones.in_progress")}</span>
                           )}
                         </td>
 
@@ -540,7 +536,7 @@ export default function RegistrosPorUbicacion() {
           {pageItems.length > 0 && (
             <div className="px-5 py-3.5 border-t border-border/40 flex items-center justify-between gap-4 bg-muted/10 dark:bg-slate-800/20">
               <p className="text-xs text-muted-foreground font-medium">
-                Página {pageSafe} de {totalPages} · {filtered.length} registro{filtered.length !== 1 ? "s" : ""}
+                {t("reports.common.page_of", { page: pageSafe, total: totalPages })} · {t("reports.ubicaciones.count", { count: filtered.length })}
               </p>
               <PaginationLite page={pageSafe} count={totalPages} onChange={setPage} size="sm" />
             </div>
@@ -555,8 +551,8 @@ export default function RegistrosPorUbicacion() {
         rows={filtered}
         pageRows={pageItems}
         columns={columnsExport}
-        defaultTitle="Registros por Ubicación"
-        defaultSheetName="Ubicaciones"
+        defaultTitle={t("reports.ubicaciones.export_title")}
+        defaultSheetName={t("reports.ubicaciones.export_sheet")}
         defaultFilenameBase={filenameBase}
         defaultOrientation="landscape"
         includeGeneratedStamp

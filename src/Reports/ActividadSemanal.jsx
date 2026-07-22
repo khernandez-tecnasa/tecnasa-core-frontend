@@ -7,6 +7,7 @@ import {
 import ExportDialog from "@/components/Exports/ExportDialog";
 import { getActividadSemanalReport } from "@/services/ReportServices";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "react-i18next";
 
 const fmtDateInput = (d) => { if (!d) return ""; const p = (n) => String(n).padStart(2,"0"); const dt = d instanceof Date ? d : new Date(d); return `${dt.getFullYear()}-${p(dt.getMonth()+1)}-${p(dt.getDate())}`; };
 const todayStr = () => fmtDateInput(new Date());
@@ -20,9 +21,10 @@ const DIA_COLOR = {
   5: "bg-indigo-400", 6: "bg-indigo-600", 7: "bg-violet-500", 1: "bg-slate-400",
 };
 
-const RANGE_LABELS = { all: "Todo", today: "Hoy", "7d": "7 días", month: "Este mes", custom: "Personalizado" };
+const RANGE_KEYS = ["all", "today", "7d", "month", "custom"];
 
 export default function ActividadSemanal() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { search } = useLocation();
   const qs = useMemo(() => new URLSearchParams(search), [search]);
@@ -47,7 +49,7 @@ export default function ActividadSemanal() {
     (async () => {
       setLoading(true); setErr(null);
       try { const d = await getActividadSemanalReport({ from: from || undefined, to: to || undefined }); setRaw(Array.isArray(d) ? d : []); }
-      catch (e) { console.error(e); setErr("Error al cargar el reporte."); }
+      catch (e) { console.error(e); setErr("reports.common.error_detail"); }
       finally { setLoading(false); }
     })();
   }, [from, to]);
@@ -83,30 +85,30 @@ export default function ActividadSemanal() {
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-2xl bg-indigo-500/10 dark:bg-indigo-500/15 ring-1 ring-indigo-500/20 shadow-sm shrink-0"><CalendarDays size={20} className="text-indigo-600 dark:text-indigo-400" /></div>
             <div>
-              <h1 className="text-xl md:text-2xl font-black tracking-tight leading-none">Actividad por Día</h1>
-              <p className="text-muted-foreground text-xs font-medium mt-0.5">{loading ? "Cargando..." : `${totalSalidas} salidas en el período`}</p>
+              <h1 className="text-xl md:text-2xl font-black tracking-tight leading-none">{t("reports.actividad.title")}</h1>
+              <p className="text-muted-foreground text-xs font-medium mt-0.5">{loading ? t("reports.actividad.loading") : t("reports.actividad.subtitle", { count: totalSalidas })}</p>
             </div>
           </div>
         </div>
-        <Button onClick={() => setOpenExport(true)} disabled={raw.length === 0 || loading} className="rounded-2xl px-5 h-10 font-bold gap-2 shrink-0"><Download size={15} /><span className="hidden sm:inline">Exportar</span></Button>
+        <Button onClick={() => setOpenExport(true)} disabled={raw.length === 0 || loading} className="rounded-2xl px-5 h-10 font-bold gap-2 shrink-0"><Download size={15} /><span className="hidden sm:inline">{t("reports.common.export")}</span></Button>
       </div>
 
       {/* Filtros */}
       <div className="bg-card dark:bg-slate-900/40 border border-border/60 rounded-3xl p-4 shadow-sm">
         <div className="flex items-center gap-2 flex-wrap">
-          <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground shrink-0"><Calendar size={13} />Período</div>
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground shrink-0"><Calendar size={13} />{t("reports.common.period")}</div>
           <div className="flex gap-1.5 flex-wrap">
-            {Object.entries(RANGE_LABELS).map(([r, label]) => (
-              <button key={r} onClick={() => setRange(r)} className={`px-3 py-1 rounded-full text-xs font-bold border transition-all ${range === r ? "bg-primary text-primary-foreground border-primary shadow-sm" : "bg-muted/50 border-border/50 text-muted-foreground hover:bg-muted hover:text-foreground"}`}>{label}</button>
+            {RANGE_KEYS.map((r) => (
+              <button key={r} onClick={() => setRange(r)} className={`px-3 py-1 rounded-full text-xs font-bold border transition-all ${range === r ? "bg-primary text-primary-foreground border-primary shadow-sm" : "bg-muted/50 border-border/50 text-muted-foreground hover:bg-muted hover:text-foreground"}`}>{t(`reports.ranges.${r}`)}</button>
             ))}
           </div>
-          {range !== "all" && <button onClick={() => { setRange("all"); setFrom(""); setTo(""); }} className="ml-auto text-[11px] font-semibold text-muted-foreground hover:text-rose-500 flex items-center gap-1"><X size={11} />Limpiar</button>}
+          {range !== "all" && <button onClick={() => { setRange("all"); setFrom(""); setTo(""); }} className="ml-auto text-[11px] font-semibold text-muted-foreground hover:text-rose-500 flex items-center gap-1"><X size={11} />{t("reports.common.clear")}</button>}
         </div>
         {range === "custom" && (
           <div className="flex items-center gap-2 flex-wrap pt-3">
-            <span className="text-xs text-muted-foreground font-medium">Desde</span>
+            <span className="text-xs text-muted-foreground font-medium">{t("reports.common.from")}</span>
             <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="bg-muted/40 border border-border/50 rounded-xl px-3 py-1.5 text-sm outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/15 transition-all" />
-            <span className="text-xs text-muted-foreground font-medium">Hasta</span>
+            <span className="text-xs text-muted-foreground font-medium">{t("reports.common.to")}</span>
             <input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="bg-muted/40 border border-border/50 rounded-xl px-3 py-1.5 text-sm outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/15 transition-all" />
           </div>
         )}
@@ -116,18 +118,18 @@ export default function ActividadSemanal() {
       {loading ? (
         <div className="flex flex-col items-center justify-center gap-4 py-24">
           <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 flex items-center justify-center"><Loader2 size={22} className="animate-spin text-indigo-500" /></div>
-          <p className="text-sm text-muted-foreground font-medium">Cargando actividad semanal...</p>
+          <p className="text-sm text-muted-foreground font-medium">{t("reports.actividad.loading")}</p>
         </div>
       ) : err ? (
         <div className="bg-rose-50 dark:bg-rose-900/10 border border-rose-200 rounded-3xl p-6 flex items-start gap-3">
           <AlertCircle size={18} className="text-rose-500 shrink-0 mt-0.5" />
-          <div><p className="text-sm font-bold text-rose-700 dark:text-rose-400">Error al cargar</p><p className="text-xs text-rose-600 mt-0.5">{err}</p></div>
+          <div><p className="text-sm font-bold text-rose-700 dark:text-rose-400">{t("reports.common.error_title")}</p><p className="text-xs text-rose-600 mt-0.5">{t(err)}</p></div>
         </div>
       ) : (
         <>
           {/* Gráfico de barras */}
           <div className="bg-card dark:bg-slate-900/40 border border-border/60 rounded-3xl p-6 shadow-sm">
-            <p className="text-xs font-black uppercase tracking-widest text-muted-foreground/60 mb-6">Salidas por día de la semana</p>
+            <p className="text-xs font-black uppercase tracking-widest text-muted-foreground/60 mb-6">{t("reports.actividad.chart_title")}</p>
             <div className="flex items-end gap-3 h-40">
               {ordered.map((r) => {
                 const pct = maxSalidas > 0 ? (Number(r.total_salidas) / maxSalidas) * 100 : 0;
@@ -154,7 +156,12 @@ export default function ActividadSemanal() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-border/60 bg-muted/20">
-                    {["Día", "Salidas", "Empleados Activos", "Vehículos Activos"].map((h) => (
+                    {[
+                      t("reports.actividad.col_day"),
+                      t("reports.actividad.col_exits"),
+                      t("reports.actividad.col_employees"),
+                      t("reports.actividad.col_vehicles"),
+                    ].map((h) => (
                       <th key={h} className="px-5 py-3.5 text-left">
                         <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70">{h}</span>
                       </th>
@@ -171,7 +178,7 @@ export default function ActividadSemanal() {
                           <div className="flex items-center gap-2">
                             <div className={`w-2 h-6 rounded-full ${isWeekend ? "bg-slate-300 dark:bg-slate-700" : DIA_COLOR[r.dia_num] || "bg-indigo-500"}`} />
                             <span className="text-sm font-bold">{r.dia_nombre || DIA_SHORT[r.dia_num]}</span>
-                            {isTop && <span className="text-[10px] bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400 px-1.5 py-0.5 rounded-full font-bold ml-1">Más activo</span>}
+                            {isTop && <span className="text-[10px] bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400 px-1.5 py-0.5 rounded-full font-bold ml-1">{t("reports.actividad.badge_most_active")}</span>}
                           </div>
                         </td>
                         <td className="px-5 py-4">
@@ -198,7 +205,7 @@ export default function ActividadSemanal() {
         </>
       )}
 
-      <ExportDialog open={openExport} onClose={() => setOpenExport(false)} rows={ordered} columns={columnsExport} defaultTitle="Actividad Semanal" defaultFilenameBase="actividad_semanal" />
+      <ExportDialog open={openExport} onClose={() => setOpenExport(false)} rows={ordered} columns={columnsExport} defaultTitle={t("reports.actividad.export_title")} defaultFilenameBase="actividad_semanal" />
     </div>
   );
 }

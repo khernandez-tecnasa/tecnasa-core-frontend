@@ -7,12 +7,13 @@ import ExportDialog from "@/components/Exports/ExportDialog";
 import { getReservasPorEmpleadoReport } from "@/services/ReportServices";
 import { Button } from "@/components/ui/button";
 import useIsMobile from "@/hooks/useIsMobile";
+import { useTranslation } from "react-i18next";
 
 const debounced = (fn, ms = 250) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; };
 const fmtDateInput = (d) => { if (!d) return ""; const p = (n) => String(n).padStart(2,"0"); const dt = d instanceof Date ? d : new Date(d); return `${dt.getFullYear()}-${p(dt.getMonth()+1)}-${p(dt.getDate())}`; };
 const todayStr = () => fmtDateInput(new Date());
 const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate()+n); return x; };
-const RANGE_LABELS = { all: "Todo", today: "Hoy", "7d": "7 días", month: "Este mes", custom: "Personalizado" };
+const RANGE_KEYS = ["all", "today", "7d", "month", "custom"];
 
 function RankBadge({ pos }) {
   const base = "inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-black ring-1";
@@ -30,6 +31,7 @@ function EmpAvatar({ name, isTop3 }) {
 }
 
 export default function ReservasPorEmpleado() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { search } = useLocation();
   const isMobile = useIsMobile();
@@ -58,7 +60,7 @@ export default function ReservasPorEmpleado() {
     (async () => {
       setLoading(true); setErr(null);
       try { const d = await getReservasPorEmpleadoReport({ from: from || undefined, to: to || undefined }); setRaw(Array.isArray(d) ? d : []); }
-      catch (e) { console.error(e); setErr("Error al cargar el reporte."); }
+      catch (e) { console.error(e); setErr("reports.common.error_detail"); }
       finally { setLoading(false); }
     })();
   }, [from, to]);
@@ -73,7 +75,6 @@ export default function ReservasPorEmpleado() {
   const totalPages = Math.max(1, Math.ceil(filtered.length / rowsPerPage));
   const pageSafe = Math.min(Math.max(page, 1), totalPages);
   const pageItems = useMemo(() => filtered.slice((pageSafe - 1) * rowsPerPage, pageSafe * rowsPerPage), [filtered, pageSafe]);
-  const maxReservas = useMemo(() => Math.max(...filtered.map((r) => Number(r.total_reservas ?? 0)), 1), [filtered]);
 
   const columnsExport = [
     { label: "#", get: (_r, i) => (pageSafe - 1) * rowsPerPage + i + 1 },
@@ -94,35 +95,35 @@ export default function ReservasPorEmpleado() {
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-2xl bg-sky-500/10 dark:bg-sky-500/15 ring-1 ring-sky-500/20 shadow-sm shrink-0"><Users size={20} className="text-sky-600 dark:text-sky-400" /></div>
             <div>
-              <h1 className="text-xl md:text-2xl font-black tracking-tight leading-none">Reservas por Empleado</h1>
-              <p className="text-muted-foreground text-xs font-medium mt-0.5">{loading ? "Cargando..." : `${filtered.length} empleado${filtered.length !== 1 ? "s" : ""}`}</p>
+              <h1 className="text-xl md:text-2xl font-black tracking-tight leading-none">{t("reports.reservasEmpleado.title")}</h1>
+              <p className="text-muted-foreground text-xs font-medium mt-0.5">{loading ? t("reports.reservasEmpleado.loading") : t("reports.reservasEmpleado.count", { count: filtered.length })}</p>
             </div>
           </div>
         </div>
-        <Button onClick={() => setOpenExport(true)} disabled={filtered.length === 0 || loading} className="rounded-2xl px-5 h-10 font-bold gap-2 shrink-0"><Download size={15} /><span className="hidden sm:inline">Exportar</span></Button>
+        <Button onClick={() => setOpenExport(true)} disabled={filtered.length === 0 || loading} className="rounded-2xl px-5 h-10 font-bold gap-2 shrink-0"><Download size={15} /><span className="hidden sm:inline">{t("reports.common.export")}</span></Button>
       </div>
 
       <div className="bg-card dark:bg-slate-900/40 border border-border/60 rounded-3xl p-4 space-y-3 shadow-sm">
         <div className="relative group">
           <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/50 group-focus-within:text-primary pointer-events-none" />
-          <input type="text" placeholder="Buscar por nombre o puesto..." defaultValue={query} onChange={(e) => onChangeQuery(e.target.value)}
+          <input type="text" placeholder={t("reports.reservasEmpleado.search_placeholder")} defaultValue={query} onChange={(e) => onChangeQuery(e.target.value)}
             className="w-full bg-muted/40 border border-border/50 rounded-2xl pl-9 pr-10 py-2.5 text-sm outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/15 transition-all placeholder:text-muted-foreground/50" />
           {query && <button onClick={() => { setQuery(""); setPage(1); }} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/50 hover:text-foreground"><X size={14} /></button>}
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground shrink-0"><Calendar size={13} />Período</div>
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground shrink-0"><Calendar size={13} />{t("reports.common.period")}</div>
           <div className="flex gap-1.5 flex-wrap">
-            {Object.entries(RANGE_LABELS).map(([r, label]) => (
-              <button key={r} onClick={() => setRange(r)} className={`px-3 py-1 rounded-full text-xs font-bold border transition-all ${range === r ? "bg-primary text-primary-foreground border-primary shadow-sm" : "bg-muted/50 border-border/50 text-muted-foreground hover:bg-muted hover:text-foreground"}`}>{label}</button>
+            {RANGE_KEYS.map((r) => (
+              <button key={r} onClick={() => setRange(r)} className={`px-3 py-1 rounded-full text-xs font-bold border transition-all ${range === r ? "bg-primary text-primary-foreground border-primary shadow-sm" : "bg-muted/50 border-border/50 text-muted-foreground hover:bg-muted hover:text-foreground"}`}>{t(`reports.ranges.${r}`)}</button>
             ))}
           </div>
-          {(query || range !== "all") && <button onClick={() => { setQuery(""); setRange("all"); setFrom(""); setTo(""); setPage(1); }} className="ml-auto text-[11px] font-semibold text-muted-foreground hover:text-rose-500 flex items-center gap-1"><X size={11} />Limpiar</button>}
+          {(query || range !== "all") && <button onClick={() => { setQuery(""); setRange("all"); setFrom(""); setTo(""); setPage(1); }} className="ml-auto text-[11px] font-semibold text-muted-foreground hover:text-rose-500 flex items-center gap-1"><X size={11} />{t("reports.common.clear")}</button>}
         </div>
         {range === "custom" && (
           <div className="flex items-center gap-2 flex-wrap pt-1">
-            <span className="text-xs text-muted-foreground font-medium">Desde</span>
+            <span className="text-xs text-muted-foreground font-medium">{t("reports.common.from")}</span>
             <input type="date" value={from} onChange={(e) => { setFrom(e.target.value); setPage(1); }} className="bg-muted/40 border border-border/50 rounded-xl px-3 py-1.5 text-sm outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/15 transition-all" />
-            <span className="text-xs text-muted-foreground font-medium">Hasta</span>
+            <span className="text-xs text-muted-foreground font-medium">{t("reports.common.to")}</span>
             <input type="date" value={to} onChange={(e) => { setTo(e.target.value); setPage(1); }} className="bg-muted/40 border border-border/50 rounded-xl px-3 py-1.5 text-sm outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/15 transition-all" />
           </div>
         )}
@@ -131,19 +132,19 @@ export default function ReservasPorEmpleado() {
       {loading ? (
         <div className="flex flex-col items-center justify-center gap-4 py-24">
           <div className="w-12 h-12 rounded-2xl bg-sky-500/10 flex items-center justify-center"><Loader2 size={22} className="animate-spin text-sky-500" /></div>
-          <p className="text-sm text-muted-foreground font-medium">Cargando ranking...</p>
+          <p className="text-sm text-muted-foreground font-medium">{t("reports.reservasEmpleado.loading")}</p>
         </div>
       ) : err ? (
         <div className="bg-rose-50 dark:bg-rose-900/10 border border-rose-200 rounded-3xl p-6 flex items-start gap-3">
           <AlertCircle size={18} className="text-rose-500 shrink-0 mt-0.5" />
-          <div><p className="text-sm font-bold text-rose-700 dark:text-rose-400">Error al cargar</p><p className="text-xs text-rose-600 mt-0.5">{err}</p></div>
+          <div><p className="text-sm font-bold text-rose-700 dark:text-rose-400">{t("reports.common.error_title")}</p><p className="text-xs text-rose-600 mt-0.5">{t(err)}</p></div>
         </div>
       ) : (
         <div className="bg-card dark:bg-slate-900/40 border border-border/60 rounded-3xl shadow-sm overflow-hidden">
           {pageItems.length === 0 ? (
             <div className="flex flex-col items-center justify-center gap-4 py-20">
               <div className="w-16 h-16 rounded-3xl bg-muted/50 flex items-center justify-center"><User size={28} className="text-muted-foreground/40" /></div>
-              <p className="font-bold text-sm">Sin datos</p>
+              <p className="font-bold text-sm">{t("reports.reservasEmpleado.empty_title")}</p>
             </div>
           ) : isMobile ? (
             <div className="divide-y divide-border/50">
@@ -161,7 +162,7 @@ export default function ReservasPorEmpleado() {
                     </div>
                     <div className="shrink-0 text-right">
                       <p className="text-sm font-black text-sky-600 dark:text-sky-400">{Number(r.total_reservas ?? 0)}</p>
-                      <p className="text-[10px] text-muted-foreground">reservas</p>
+                      <p className="text-[10px] text-muted-foreground">{t("reports.reservasEmpleado.mobile_reservations")}</p>
                     </div>
                   </div>
                 );
@@ -172,7 +173,16 @@ export default function ReservasPorEmpleado() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-border/60 bg-muted/20">
-                    {["#", "Empleado", "Puesto", "Total", "Finaliz.", "Cancelad.", "En Uso", "Pendientes"].map((h, idx) => (
+                    {[
+                      ["#", 0],
+                      [t("reports.reservasEmpleado.col_employee"), 1],
+                      [t("reports.reservasEmpleado.col_position"), 2],
+                      [t("reports.reservasEmpleado.col_total"), 3],
+                      [t("reports.reservasEmpleado.col_finished"), 4],
+                      [t("reports.reservasEmpleado.col_cancelled"), 5],
+                      [t("reports.reservasEmpleado.col_in_use"), 6],
+                      [t("reports.reservasEmpleado.col_pending"), 7],
+                    ].map(([h, idx]) => (
                       <th key={h} className={`px-4 py-3.5 ${idx === 0 ? "text-center w-16" : "text-left"}`}>
                         <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70">{h}</span>
                       </th>
@@ -203,13 +213,13 @@ export default function ReservasPorEmpleado() {
           )}
           {pageItems.length > 0 && (
             <div className="px-5 py-3.5 border-t border-border/40 flex items-center justify-between gap-4 bg-muted/10">
-              <p className="text-xs text-muted-foreground font-medium">Página {pageSafe} de {totalPages} · {filtered.length} empleado{filtered.length !== 1 ? "s" : ""}</p>
+              <p className="text-xs text-muted-foreground font-medium">{t("reports.common.page_of", { page: pageSafe, total: totalPages })} · {t("reports.reservasEmpleado.count", { count: filtered.length })}</p>
               <PaginationLite page={pageSafe} count={totalPages} onChange={setPage} size="sm" />
             </div>
           )}
         </div>
       )}
-      <ExportDialog open={openExport} onClose={() => setOpenExport(false)} rows={filtered} columns={columnsExport} defaultTitle="Reservas por Empleado" defaultFilenameBase="reservas_empleado" />
+      <ExportDialog open={openExport} onClose={() => setOpenExport(false)} rows={filtered} columns={columnsExport} defaultTitle={t("reports.reservasEmpleado.export_title")} defaultFilenameBase="reservas_empleado" />
     </div>
   );
 }
