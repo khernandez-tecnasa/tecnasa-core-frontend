@@ -15,6 +15,7 @@ export default function Login() {
     setStep,
     loading,
     availableMethods,
+    hasPasskey,
     checkPasskeyAvailability,
     handlePasswordless,
     onForgotPassword,
@@ -25,15 +26,11 @@ export default function Login() {
       <LoginForm
         credentials={credentials}
         setCredentials={setCredentials}
-        onSubmit={() => {
-          if (credentials.username && !credentials.password) {
-            handlePasskey();
-          } else {
-            handleLogin();
-          }
-        }}
+        onSubmit={handleLogin}
         onPasskeyClick={handlePasskey}
         loading={loading}
+        hasPasskey={hasPasskey}
+        checkPasskey={checkPasskeyAvailability}
         onPasswordlessClick={handlePasswordless}
         onForgotPassword={onForgotPassword}
       />

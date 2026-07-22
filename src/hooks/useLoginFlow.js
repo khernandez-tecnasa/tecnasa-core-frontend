@@ -1,6 +1,5 @@
 // src/hooks/useLoginFlow.js
-import { useState } from "react";
-import Swal from "sweetalert2";
+import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { login } from "@/services/AuthServices";
 import {
@@ -47,7 +46,7 @@ export const useLoginFlow = () => {
       const data = await verifyLoginPasskey(assertion);
 
       if (data?.ok) {
-        await handleLoginSuccess(data.rol);
+        await handleLoginSuccess(data.rol, data.username);
       }
     } catch (error) {
       console.error("Passwordless error:", error);
@@ -62,9 +61,7 @@ export const useLoginFlow = () => {
   const checkPasskeyAvailability = async (username) => {
     if (username.length > 3) {
       try {
-        // Llamamos a tu servicio de opciones
         const options = await getLoginOptions(username);
-        // Si el server devuelve opciones, es que el usuario existe y tiene passkey
         setHasPasskey(
           !!(
             options.data?.allowCredentials?.length > 0 ||
@@ -79,24 +76,27 @@ export const useLoginFlow = () => {
     }
   };
 
+  useEffect(() => {
+    const saved = localStorage.getItem("autolog_last_user");
+    if (saved) {
+      setCredentials((prev) => ({ ...prev, username: saved }));
+      checkPasskeyAvailability(saved);
+    }
+  }, []);
+
   // ✅ SUCCESS
-  const handleLoginSuccess = async (role) => {
+  const handleLoginSuccess = async (role, resolvedUsername) => {
+    const userToSave = resolvedUsername || credentials.username;
+    if (userToSave) localStorage.setItem("autolog_last_user", userToSave);
     try {
       const user = await refreshUser();
       if (!user) throw new Error();
 
-      Swal.fire({
-        title: "¡Bienvenido!",
-        text: "Inicio de sesión exitoso",
-        icon: "success",
-        timer: 1200,
-        showConfirmButton: false,
-      }).then(() => {
-        if (redirectTo) return navigate(redirectTo, { replace: true });
-        redirectByRole(user.rol || role);
-      });
+      showToast("¡Bienvenido! Inicio de sesión exitoso", "success");
+      if (redirectTo) return navigate(redirectTo, { replace: true });
+      redirectByRole(user.rol || role);
     } catch {
-      Swal.fire("Error", "No se pudo establecer sesión", "error");
+      showToast("No se pudo establecer sesión", "danger");
     }
   };
 
@@ -125,7 +125,7 @@ export const useLoginFlow = () => {
         error.message ||
         "Ocurrió un error";
 
-      Swal.fire("Error", message, "error");
+      showToast(message, "danger");
     } finally {
       setLoading(false);
     }
@@ -172,14 +172,7 @@ export const useLoginFlow = () => {
       setStep("credentials");
       await handleLoginSuccess(data.rol);
     } catch {
-      Swal.fire({
-        title: "Error",
-        text: "Código incorrecto",
-        icon: "error",
-        toast: true,
-        timer: 2500,
-        showConfirmButton: false,
-      });
+      showToast("Código incorrecto", "danger");
     } finally {
       setLoading(false);
     }
@@ -209,6 +202,7 @@ export const useLoginFlow = () => {
     setStep,
     loading,
     availableMethods,
+    hasPasskey,
     checkPasskeyAvailability,
     handlePasswordless,
     onForgotPassword,

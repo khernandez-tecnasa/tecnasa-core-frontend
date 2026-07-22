@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Box,
@@ -11,11 +11,7 @@ import {
   Link,
   IconButton,
 } from "@mui/joy";
-import Visibility from "@mui/icons-material/Visibility";
-import VisibilityOff from "@mui/icons-material/VisibilityOff";
-import EmailRoundedIcon from "@mui/icons-material/EmailRounded";
-import LockRoundedIcon from "@mui/icons-material/LockRounded";
-import FingerprintRoundedIcon from "@mui/icons-material/FingerprintRounded"; // Icono de Material UI
+import { Eye, EyeOff, Mail, Lock, Fingerprint } from "lucide-react";
 import loginBg from "../../assets/tecnasa_core.png";
 
 export default function LoginForm({
@@ -32,6 +28,15 @@ export default function LoginForm({
 }) {
   const { t } = useTranslation();
   const [showPassword, setShowPassword] = useState(false);
+  const [mode, setMode] = useState("credentials");
+  const autoSwitched = useRef(false);
+
+  useEffect(() => {
+    if (hasPasskey && credentials.username && !autoSwitched.current) {
+      setMode("passkey");
+      autoSwitched.current = true;
+    }
+  }, [hasPasskey, credentials.username]);
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
@@ -78,43 +83,70 @@ export default function LoginForm({
           alignItems: "center",
           flex: 1,
           p: 4,
-          backgroundColor: "background.level1",
+          background: "linear-gradient(145deg, var(--joy-palette-primary-900, #0a2540) 0%, var(--joy-palette-primary-700, #0b6bcb) 100%)",
           position: "relative",
-          borderRadius: { xs: 0, md: "lg" },
+          overflow: "hidden",
+          borderRadius: { xs: 0, md: "xl" },
           m: { xs: 0, md: 2 },
           boxShadow: "xl",
+          "&::before": {
+            content: '""',
+            position: "absolute",
+            width: "350px",
+            height: "350px",
+            borderRadius: "50%",
+            background: "radial-gradient(circle, rgba(255,255,255,0.06) 0%, transparent 70%)",
+            top: "-80px",
+            right: "-80px",
+          },
+          "&::after": {
+            content: '""',
+            position: "absolute",
+            width: "250px",
+            height: "250px",
+            borderRadius: "50%",
+            background: "radial-gradient(circle, rgba(255,255,255,0.04) 0%, transparent 70%)",
+            bottom: "-60px",
+            left: "-60px",
+          },
         }}>
         <Box
           component="img"
           src={loginBg}
           alt="Login illustration"
           sx={{
-            width: "80%",
+            width: "75%",
             height: "auto",
             mb: 4,
+            filter: "drop-shadow(0 20px 40px rgba(0,0,0,0.3))",
             animation: "float 3s ease-in-out infinite",
             "@keyframes float": {
               "0%, 100%": { transform: "translateY(0px)" },
-              "50%": { transform: "translateY(-10px)" },
+              "50%": { transform: "translateY(-12px)" },
             },
-            maxWidth: "400px",
+            maxWidth: "380px",
+            position: "relative",
+            zIndex: 1,
           }}
         />
-        <Typography level="h3" textAlign="center" sx={{ fontWeight: "lg" }}>
+        <Typography
+          level="h3"
+          textAlign="center"
+          sx={{ fontWeight: "xl", color: "#fff", position: "relative", zIndex: 1 }}>
           {t("login.title_bienvenida")}
         </Typography>
         <Typography
           level="body-lg"
           textAlign="center"
           mt={1}
-          sx={{ color: "text.secondary", maxWidth: "400px" }}>
+          sx={{ color: "rgba(255,255,255,0.65)", maxWidth: "380px", position: "relative", zIndex: 1 }}>
           {t("login.description_bienvenida")}
         </Typography>
       </Box>
 
       {/* SECCIÓN DERECHA: FORMULARIO */}
       <Sheet
-        variant="outlined"
+        variant="plain"
         sx={{
           p: { xs: 3, md: 6 },
           flex: 1,
@@ -124,117 +156,234 @@ export default function LoginForm({
           alignItems: "center",
           gap: 2,
           borderRadius: "xl",
-          boxShadow: "lg",
           m: 2,
-          maxWidth: { xs: "90%", md: "500px" },
+          maxWidth: { xs: "95%", md: "460px" },
           mx: "auto",
+          bgcolor: "background.surface",
+          boxShadow: "0 2px 24px rgba(0,0,0,0.08)",
+          border: "1px solid",
+          borderColor: "divider",
         }}>
         <Typography
           level="h2"
-          sx={{ mb: 1, fontWeight: "xl", color: "primary.plainColor" }}>
+          sx={{
+            mb: 0.5,
+            fontWeight: "xl",
+            background: "linear-gradient(135deg, var(--joy-palette-primary-600, #0b6bcb), var(--joy-palette-primary-400, #4393e4))",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            backgroundClip: "text",
+          }}>
           {t("login.title")}
         </Typography>
 
-        <Stack spacing={2.5} width="100%">
-          {/* INPUT DE USUARIO CON DETECCIÓN DE PASSKEY */}
-          <Input
-            name="username"
-            placeholder={t("login.usuario")}
-            value={credentials.username}
-            onChange={handleInputChange}
-            onKeyDown={handleKeyDown}
-            size="lg"
-            startDecorator={<EmailRoundedIcon />}
-            endDecorator={
-              hasPasskey && (
-                <IconButton
-                  variant="soft"
-                  color="success"
-                  onClick={onPasskeyClick}
-                  loading={loadingPasskey}
-                  sx={{ borderRadius: "md" }}>
-                  <FingerprintRoundedIcon />
-                </IconButton>
-              )
-            }
-            sx={{ borderRadius: "md" }}
-          />
+        {mode === "passkey" ? (
+          /* ── MODO BIOMÉTRICO ─────────────────────────────────── */
+          <Stack spacing={2} width="100%">
+            {/* Usuario bloqueado */}
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 1.5,
+                p: 1.5,
+                borderRadius: "lg",
+                bgcolor: "background.level1",
+                border: "1px solid",
+                borderColor: "neutral.outlinedBorder",
+                transition: "border-color 0.2s",
+                "&:hover": { borderColor: "primary.outlinedBorder" },
+              }}>
+              <Box
+                sx={{
+                  width: 42,
+                  height: 42,
+                  borderRadius: "50%",
+                  background: "linear-gradient(135deg, var(--joy-palette-primary-500, #0b6bcb), var(--joy-palette-primary-300, #97c3f0))",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontWeight: "bold",
+                  color: "#fff",
+                  fontSize: "1rem",
+                  flexShrink: 0,
+                  textTransform: "uppercase",
+                  boxShadow: "0 2px 8px rgba(11,107,203,0.35)",
+                }}>
+                {credentials.username?.[0]}
+              </Box>
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Typography level="body-sm" fontWeight="xl" noWrap>
+                  {credentials.username}
+                </Typography>
+                <Typography level="body-xs" sx={{ color: "text.tertiary" }}>
+                  AutoLog
+                </Typography>
+              </Box>
+              <Link
+                level="body-xs"
+                component="button"
+                onClick={() => setMode("credentials")}
+                sx={{ flexShrink: 0, fontWeight: "md" }}>
+                Cambiar
+              </Link>
+            </Box>
 
-          {/* INPUT DE CONTRASEÑA */}
-          <Input
-            name="password"
-            type={showPassword ? "text" : "password"}
-            placeholder={t("login.contraseña")}
-            value={credentials.password}
-            onChange={handleInputChange}
-            onKeyDown={handleKeyDown}
-            size="lg"
-            startDecorator={<LockRoundedIcon />}
-            endDecorator={
-              <IconButton
-                onClick={togglePasswordVisibility}
-                variant="plain"
-                color="neutral">
-                {showPassword ? <VisibilityOff /> : <Visibility />}
-              </IconButton>
-            }
-            sx={{ borderRadius: "md" }}
-          />
+            {/* Botón principal biométrico */}
+            <Button
+              size="lg"
+              variant="solid"
+              color="primary"
+              onClick={onPasskeyClick}
+              loading={loading || loadingPasskey}
+              startDecorator={<Fingerprint size={22} />}
+              sx={{
+                borderRadius: "lg",
+                fontWeight: "xl",
+                py: 1.5,
+                background: "linear-gradient(135deg, var(--joy-palette-primary-600, #0b6bcb), var(--joy-palette-primary-500, #185ea5))",
+                boxShadow: "0 4px 14px rgba(11,107,203,0.4)",
+                transition: "all 0.2s",
+                "&:hover": {
+                  boxShadow: "0 6px 20px rgba(11,107,203,0.5)",
+                  transform: "translateY(-1px)",
+                },
+              }}>
+              Iniciar con biometría
+            </Button>
 
-          <Link
-            component="button"
-            onClick={onForgotPassword}
-            level="body-sm"
-            sx={{ alignSelf: "flex-end", mt: -1, color: "text.secondary" }}>
-            {t("login.olvidaste_contraseña")}
-          </Link>
+            <Divider sx={{ color: "text.tertiary", fontSize: "xs" }}>o</Divider>
 
-          {/* BOTÓN ENTRAR TRADICIONAL */}
-          <Button
-            size="lg"
-            variant="solid"
-            color="primary"
-            onClick={onSubmit}
-            loading={loading && !loadingPasskey} // Evita doble loading
-            sx={{
-              mt: 1,
-              borderRadius: "xl",
-              fontWeight: "lg",
-            }}>
-            {t("login.entrar")}
-          </Button>
+            {/* Fallback credenciales */}
+            <Button
+              size="md"
+              variant="outlined"
+              color="neutral"
+              onClick={() => setMode("credentials")}
+              sx={{
+                borderRadius: "lg",
+                fontWeight: "md",
+                transition: "all 0.2s",
+                "&:hover": { bgcolor: "background.level1" },
+              }}>
+              Usar credenciales
+            </Button>
 
-          <Button
-            variant="plain"
-            color="primary"
-            onClick={onPasswordlessClick} // Nueva prop
-            startDecorator={<FingerprintRoundedIcon sx={{ fontSize: 32 }} />}
-            sx={{
-              flexDirection: "column",
-              gap: 1,
-              py: 2,
-              "&:hover": { bgcolor: "transparent", transform: "scale(1.05)" },
-              transition: "0.2s",
-            }}>
             <Typography
-              level="body-sm"
-              sx={{ fontWeight: "lg", color: "primary.500" }}>
-              Iniciar con biometria
+              level="body-xs"
+              textAlign="center"
+              sx={{ color: "text.tertiary", mt: 0.5 }}>
+              {t("login.no_cuentas")}{" "}
+              <Link href="mailto:micros.teh@tecnasadesk.com" sx={{ fontWeight: "md" }}>
+                {t("login.registrarte")}
+              </Link>
             </Typography>
-          </Button>
+          </Stack>
+        ) : (
+          /* ── MODO CREDENCIALES ───────────────────────────────── */
+          <Stack spacing={2} width="100%">
+            {hasPasskey && (
+              <Link
+                level="body-sm"
+                component="button"
+                onClick={() => setMode("passkey")}
+                sx={{ alignSelf: "flex-start", mb: -0.5, fontWeight: "md" }}>
+                ← Volver a biometría
+              </Link>
+            )}
 
-          <Divider sx={{ my: 1 }}>O</Divider>
+            <Input
+              name="username"
+              placeholder={t("login.usuario")}
+              value={credentials.username}
+              onChange={handleInputChange}
+              onKeyDown={handleKeyDown}
+              size="lg"
+              startDecorator={<Mail size={18} />}
+              endDecorator={
+                hasPasskey && (
+                  <IconButton
+                    variant="soft"
+                    color="success"
+                    onClick={onPasskeyClick}
+                    loading={loadingPasskey}
+                    sx={{ borderRadius: "md" }}>
+                    <Fingerprint size={18} />
+                  </IconButton>
+                )
+              }
+              sx={{
+                borderRadius: "lg",
+                "--Input-focusedThickness": "2px",
+                "&:focus-within": { borderColor: "primary.400" },
+              }}
+            />
 
-          <Typography
-            level="body-sm"
-            textAlign="center"
-            sx={{ color: "text.secondary" }}>
-            {t("login.no_cuentas")}{" "}
-            <Link href="mailto:support@herndevs.com" sx={{ fontWeight: "md" }}>
-              {t("login.registrarte")}
+            <Input
+              name="password"
+              type={showPassword ? "text" : "password"}
+              placeholder={t("login.contraseña")}
+              value={credentials.password}
+              onChange={handleInputChange}
+              onKeyDown={handleKeyDown}
+              size="lg"
+              startDecorator={<Lock size={18} />}
+              endDecorator={
+                <IconButton
+                  onClick={togglePasswordVisibility}
+                  variant="plain"
+                  color="neutral">
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </IconButton>
+              }
+              sx={{
+                borderRadius: "lg",
+                "--Input-focusedThickness": "2px",
+                "&:focus-within": { borderColor: "primary.400" },
+              }}
+            />
+
+            <Link
+              component="button"
+              onClick={onForgotPassword}
+              level="body-sm"
+              sx={{ alignSelf: "flex-end", mt: -0.5, color: "text.tertiary", fontWeight: "md" }}>
+              {t("login.olvidaste_contraseña")}
             </Link>
-          </Typography>
-        </Stack>
+
+            <Button
+              size="lg"
+              variant="solid"
+              color="primary"
+              onClick={onSubmit}
+              loading={loading && !loadingPasskey}
+              sx={{
+                mt: 0.5,
+                borderRadius: "lg",
+                fontWeight: "xl",
+                py: 1.5,
+                background: "linear-gradient(135deg, var(--joy-palette-primary-600, #0b6bcb), var(--joy-palette-primary-500, #185ea5))",
+                boxShadow: "0 4px 14px rgba(11,107,203,0.4)",
+                transition: "all 0.2s",
+                "&:hover": {
+                  boxShadow: "0 6px 20px rgba(11,107,203,0.5)",
+                  transform: "translateY(-1px)",
+                },
+              }}>
+              {t("login.entrar")}
+            </Button>
+
+            <Typography
+              level="body-xs"
+              textAlign="center"
+              sx={{ color: "text.tertiary" }}>
+              {t("login.no_cuentas")}{" "}
+              <Link href="mailto:micros.teh@tecnasadesk.com" sx={{ fontWeight: "md" }}>
+                {t("login.registrarte")}
+              </Link>
+            </Typography>
+          </Stack>
+        )}
       </Sheet>
     </Box>
   );

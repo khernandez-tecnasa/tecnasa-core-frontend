@@ -20,15 +20,7 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
 // Iconos
-import LockResetRoundedIcon from "@mui/icons-material/LockResetRounded";
-import VisibilityRoundedIcon from "@mui/icons-material/VisibilityRounded";
-import VisibilityOffRoundedIcon from "@mui/icons-material/VisibilityOffRounded";
-import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
-import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
-import ErrorOutlineRoundedIcon from "@mui/icons-material/ErrorOutlineRounded";
-import KeyRoundedIcon from "@mui/icons-material/KeyRounded";
-import CancelRoundedIcon from "@mui/icons-material/CancelRounded";
-import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
+import { KeyRound, Eye, EyeOff, ArrowLeft, CheckCircle2, AlertCircle, Key, XCircle, Check } from "lucide-react";
 
 // Servicio
 import { resetPassword } from "../../services/AuthServices";
@@ -145,7 +137,7 @@ export default function ResetPassword() {
     return (
       <ListItem sx={{ minHeight: 24, p: 0 }}>
         <ListItemDecorator sx={{ minWidth: 24 }}>
-          <CancelRoundedIcon sx={{ fontSize: 16, color: "neutral.300" }} />
+          <XCircle size={16} color="var(--joy-palette-neutral-300, #CDD7E1)" />
         </ListItemDecorator>
         <Typography level="body-xs" textColor="neutral.500">
           {label}
@@ -177,18 +169,31 @@ export default function ResetPassword() {
           zIndex: 10,
           borderRadius: "50%",
         }}>
-        <ArrowBackRoundedIcon />
+        <ArrowLeft size={20} />
       </IconButton>
 
       <Sheet
-        variant="outlined"
+        variant="plain"
         sx={{
           width: "100%",
           maxWidth: 450,
           borderRadius: "xl",
-          boxShadow: "lg",
+          boxShadow: "0 2px 24px rgba(0,0,0,0.08)",
+          border: "1px solid",
+          borderColor: "divider",
           p: { xs: 3, sm: 4 },
           bgcolor: "background.surface",
+          overflow: "hidden",
+          position: "relative",
+          "&::before": {
+            content: '""',
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            height: "3px",
+            background: "linear-gradient(90deg, var(--joy-palette-primary-600, #0b6bcb), var(--joy-palette-primary-400, #4393e4))",
+          },
         }}>
         {/* Encabezado */}
         <Box sx={{ textAlign: "center", mb: 3 }}>
@@ -196,21 +201,21 @@ export default function ResetPassword() {
             sx={{
               width: 56,
               height: 56,
-              borderRadius: "50%",
-              bgcolor: "primary.softBg",
-              color: "primary.600",
+              borderRadius: "lg",
+              background: "linear-gradient(135deg, var(--joy-palette-primary-600, #0b6bcb), var(--joy-palette-primary-400, #4393e4))",
+              boxShadow: "0 4px 14px rgba(11,107,203,0.4)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               mx: "auto",
               mb: 2,
             }}>
-            <LockResetRoundedIcon sx={{ fontSize: 32 }} />
+            <KeyRound size={28} color="#fff" />
           </Box>
-          <Typography level="h3" sx={{ mb: 1 }}>
+          <Typography level="h3" sx={{ mb: 0.5, fontWeight: "xl" }}>
             {t("reset.title", "Restablecer Contraseña")}
           </Typography>
-          <Typography level="body-sm" color="neutral">
+          <Typography level="body-sm" sx={{ color: "text.tertiary" }}>
             {t(
               "reset.subtitle",
               "Crea una contraseña nueva y segura para tu cuenta.",
@@ -222,7 +227,7 @@ export default function ResetPassword() {
           <Alert
             variant="soft"
             color="success"
-            startDecorator={<CheckCircleRoundedIcon />}
+            startDecorator={<CheckCircle2 size={20} />}
             sx={{
               borderRadius: "md",
               flexDirection: "column",
@@ -246,7 +251,7 @@ export default function ResetPassword() {
                 <Alert
                   color="danger"
                   variant="soft"
-                  startDecorator={<ErrorOutlineRoundedIcon />}>
+                  startDecorator={<AlertCircle size={20} />}>
                   {generalError}
                 </Alert>
               )}
@@ -264,7 +269,7 @@ export default function ResetPassword() {
                   )}
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  startDecorator={<KeyRoundedIcon />}
+                  startDecorator={<Key size={18} />}
                   endDecorator={
                     <IconButton
                       onClick={() => setShowPassword(!showPassword)}
@@ -272,12 +277,17 @@ export default function ResetPassword() {
                       color="neutral"
                       size="sm">
                       {showPassword ? (
-                        <VisibilityOffRoundedIcon />
+                        <EyeOff size={18} />
                       ) : (
-                        <VisibilityRoundedIcon />
+                        <Eye size={18} />
                       )}
                     </IconButton>
                   }
+                  sx={{
+                    borderRadius: "lg",
+                    "--Input-focusedThickness": "2px",
+                    "&:focus-within": { borderColor: "primary.400" },
+                  }}
                 />
               </FormControl>
 
@@ -355,11 +365,16 @@ export default function ResetPassword() {
                   )}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  startDecorator={<KeyRoundedIcon />}
+                  startDecorator={<Key size={18} />}
+                  sx={{
+                    borderRadius: "lg",
+                    "--Input-focusedThickness": "2px",
+                    "&:focus-within": { borderColor: "primary.400" },
+                  }}
                   endDecorator={
                     // Muestra check verde si coincide y es válida, ojo si no coincide, etc.
                     passwordsMatch ? (
-                      <CheckRoundedIcon color="success" />
+                      <Check size={18} color="var(--joy-palette-success-500, #1F7A4A)" />
                     ) : (
                       <IconButton
                         onClick={() =>
@@ -369,9 +384,9 @@ export default function ResetPassword() {
                         color="neutral"
                         size="sm">
                         {showConfirmPassword ? (
-                          <VisibilityOffRoundedIcon />
+                          <EyeOff size={18} />
                         ) : (
-                          <VisibilityRoundedIcon />
+                          <Eye size={18} />
                         )}
                       </IconButton>
                     )
@@ -397,9 +412,17 @@ export default function ResetPassword() {
                 loading={loading}
                 variant="solid"
                 color="primary"
-                // Deshabilitado si: No hay token OR No es válida la pass OR No coinciden
                 disabled={!token || !isPasswordValid || !passwordsMatch}
-                sx={{ mt: 1 }}>
+                sx={{
+                  mt: 1,
+                  borderRadius: "lg",
+                  fontWeight: "xl",
+                  py: 1.5,
+                  background: "linear-gradient(135deg, var(--joy-palette-primary-600, #0b6bcb), var(--joy-palette-primary-500, #185ea5))",
+                  boxShadow: "0 4px 14px rgba(11,107,203,0.4)",
+                  transition: "all 0.2s",
+                  "&:hover:not(:disabled)": { boxShadow: "0 6px 20px rgba(11,107,203,0.5)", transform: "translateY(-1px)" },
+                }}>
                 {t("reset.submit_button", "Cambiar contraseña")}
               </Button>
             </Stack>
