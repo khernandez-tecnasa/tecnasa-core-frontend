@@ -183,29 +183,44 @@ export default function TwoFactorVerifyModal({
         aria-labelledby="twofa-title"
         aria-describedby="twofa-desc"
         sx={{
-          maxWidth: 520,
+          maxWidth: 460,
           width: "100%",
-          p: 3,
-          borderRadius: 12,
+          p: 3.5,
+          borderRadius: "xl",
+          border: "1px solid",
+          borderColor: "divider",
+          boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
+          overflow: "hidden",
+          "&::before": {
+            content: '""',
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            height: "3px",
+            background: "linear-gradient(90deg, var(--joy-palette-primary-600, #0b6bcb), var(--joy-palette-primary-400, #4393e4))",
+          },
         }}>
         {/* Header */}
-        <Stack direction="row" gap={2} alignItems="center" sx={{ mb: 1 }}>
+        <Stack direction="row" gap={2} alignItems="center" sx={{ mb: 1.5 }}>
           <Box
             sx={{
-              width: 44,
-              height: 44,
-              borderRadius: 10,
+              width: 46,
+              height: 46,
+              borderRadius: "lg",
               display: "grid",
               placeItems: "center",
-              bgcolor: "primary.softBg",
+              flexShrink: 0,
+              background: "linear-gradient(135deg, var(--joy-palette-primary-600, #0b6bcb), var(--joy-palette-primary-400, #4393e4))",
+              boxShadow: "0 2px 8px rgba(11,107,203,0.35)",
             }}>
-            <ShieldCheck size={20} color="var(--joy-palette-primary-600)" />
+            <ShieldCheck size={20} color="#fff" />
           </Box>
           <Box>
-            <Typography id="twofa-title" level="h4">
+            <Typography id="twofa-title" level="h4" sx={{ fontWeight: "xl" }}>
               {t("login.title_2fa")}
             </Typography>
-            <Typography id="twofa-desc" level="body-sm" textColor="neutral.500">
+            <Typography id="twofa-desc" level="body-sm" sx={{ color: "text.tertiary" }}>
               {t("login.description_2fa")}
             </Typography>
           </Box>
@@ -217,18 +232,18 @@ export default function TwoFactorVerifyModal({
             startDecorator={<AlertCircle />}
             color="danger"
             variant="soft"
-            sx={{ mb: 2 }}>
+            sx={{ mb: 2, borderRadius: "lg" }}>
             {localError}
           </Alert>
         )}
 
         <form onSubmit={handleSubmit}>
-          <Stack spacing={2}>
+          <Stack spacing={2.5}>
             {/* OTP inputs */}
             <Box
               sx={{
                 display: "flex",
-                gap: 1,
+                gap: 1.5,
                 justifyContent: "center",
                 alignItems: "center",
                 mb: 0.5,
@@ -245,7 +260,6 @@ export default function TwoFactorVerifyModal({
                   onChange={(e) => {
                     const v = e.target.value.replace(/\D/g, "").slice(0, 1);
                     if (!v) {
-                      // allow clearing by user
                       setValues((prev) => {
                         const next = [...prev];
                         next[i] = "";
@@ -261,15 +275,21 @@ export default function TwoFactorVerifyModal({
                     `Digit ${i + 1}`
                   }
                   style={{
-                    width: 48,
-                    height: 56,
-                    borderRadius: 10,
-                    border: "1px solid var(--joy-palette-neutral-300)",
+                    width: 52,
+                    height: 60,
+                    borderRadius: 12,
+                    border: val
+                      ? "2px solid var(--joy-palette-primary-400, #4393e4)"
+                      : "1px solid var(--joy-palette-neutral-outlinedBorder, #CDD7E1)",
                     textAlign: "center",
-                    fontSize: 20,
+                    fontSize: 22,
+                    fontWeight: "bold",
                     fontFamily: "monospace",
                     outline: "none",
                     background: "transparent",
+                    color: "inherit",
+                    transition: "border-color 0.15s",
+                    boxShadow: val ? "0 0 0 3px rgba(11,107,203,0.12)" : "none",
                   }}
                 />
               ))}
@@ -287,7 +307,19 @@ export default function TwoFactorVerifyModal({
                 disabled={code.length !== length || loading}
                 variant="solid"
                 color="primary"
-                sx={{ minWidth: 160 }}>
+                sx={{
+                  minWidth: 180,
+                  borderRadius: "lg",
+                  fontWeight: "xl",
+                  py: 1.25,
+                  background: "linear-gradient(135deg, var(--joy-palette-primary-600, #0b6bcb), var(--joy-palette-primary-500, #185ea5))",
+                  boxShadow: "0 4px 14px rgba(11,107,203,0.4)",
+                  transition: "all 0.2s",
+                  "&:hover:not(:disabled)": {
+                    boxShadow: "0 6px 20px rgba(11,107,203,0.5)",
+                    transform: "translateY(-1px)",
+                  },
+                }}>
                 {t("login.button_2fa")}
               </Button>
 

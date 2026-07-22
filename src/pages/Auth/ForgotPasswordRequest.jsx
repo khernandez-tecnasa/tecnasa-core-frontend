@@ -11,9 +11,7 @@ import {
   Alert,
   IconButton,
 } from "@mui/joy";
-import EmailRoundedIcon from "@mui/icons-material/EmailRounded";
-import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
-import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
+import { Mail, ArrowLeft, Check } from "lucide-react";
 import { forgotPassword } from "@/services/AuthServices";
 import { useNavigate } from "react-router-dom";
 
@@ -131,36 +129,52 @@ export default function ForgotPasswordRequest() {
           borderRadius: "lg",
           zIndex: 10,
         }}>
-        <ArrowBackRoundedIcon />
+        <ArrowLeft size={20} />
       </IconButton>
 
       <Sheet
-        variant="outlined"
+        variant="plain"
         sx={{
           width: "100%",
-          maxWidth: 480,
+          maxWidth: 460,
           borderRadius: "xl",
-          boxShadow: "xl",
+          boxShadow: "0 2px 24px rgba(0,0,0,0.08)",
+          border: "1px solid",
+          borderColor: "divider",
           p: { xs: 3, sm: 4 },
+          bgcolor: "background.surface",
+          overflow: "hidden",
+          position: "relative",
+          "&::before": {
+            content: '""',
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            height: "3px",
+            background: "linear-gradient(90deg, var(--joy-palette-primary-600, #0b6bcb), var(--joy-palette-primary-400, #4393e4))",
+          },
         }}>
         {/* Header */}
-        <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 1 }}>
+        <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 2 }}>
           <Box
             sx={{
-              width: 52,
-              height: 52,
-              borderRadius: 12,
+              width: 50,
+              height: 50,
+              borderRadius: "lg",
               display: "grid",
               placeItems: "center",
-              bgcolor: "primary.softBg",
+              flexShrink: 0,
+              background: "linear-gradient(135deg, var(--joy-palette-primary-600, #0b6bcb), var(--joy-palette-primary-400, #4393e4))",
+              boxShadow: "0 2px 8px rgba(11,107,203,0.35)",
             }}>
-            <EmailRoundedIcon sx={{ color: "primary.600" }} />
+            <Mail size={22} color="#fff" />
           </Box>
           <Box>
-            <Typography level="h2" sx={{ fontSize: 20 }}>
+            <Typography level="h2" sx={{ fontSize: 20, fontWeight: "xl" }}>
               {t("forgot.title", "¿Olvidaste tu contraseña?")}
             </Typography>
-            <Typography level="body-sm" textColor="neutral.500">
+            <Typography level="body-sm" sx={{ color: "text.tertiary" }}>
               {t(
                 "forgot.subtitle",
                 "Introduce tu correo y te enviaremos un enlace para restablecer tu contraseña.",
@@ -170,7 +184,7 @@ export default function ForgotPasswordRequest() {
         </Stack>
 
         {/* Form */}
-        <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
+        <Box component="form" onSubmit={handleSubmit} sx={{ mt: 0.5 }}>
           <Stack spacing={2}>
             <Input
               name="email"
@@ -183,11 +197,14 @@ export default function ForgotPasswordRequest() {
               onChange={handleEmailChange}
               required
               size="lg"
-              startDecorator={<EmailRoundedIcon />}
+              startDecorator={<Mail size={18} />}
               aria-label={t("forgot.input_email_aria", "Correo electrónico")}
-              sx={{ borderRadius: "md" }}
+              sx={{
+                borderRadius: "lg",
+                "--Input-focusedThickness": "2px",
+                "&:focus-within": { borderColor: "primary.400" },
+              }}
               disabled={loading}
-              // mostrar borde rojo si hay error de validación local
               error={!!localError}
             />
 
@@ -208,7 +225,15 @@ export default function ForgotPasswordRequest() {
               variant="solid"
               color="primary"
               loading={loading}
-              sx={{ borderRadius: "xl", fontWeight: "lg" }}
+              sx={{
+                borderRadius: "lg",
+                fontWeight: "xl",
+                py: 1.5,
+                background: "linear-gradient(135deg, var(--joy-palette-primary-600, #0b6bcb), var(--joy-palette-primary-500, #185ea5))",
+                boxShadow: "0 4px 14px rgba(11,107,203,0.4)",
+                transition: "all 0.2s",
+                "&:hover": { boxShadow: "0 6px 20px rgba(11,107,203,0.5)", transform: "translateY(-1px)" },
+              }}
               aria-disabled={loading}>
               {loading
                 ? t("forgot.sending", "Enviando...")
@@ -226,7 +251,7 @@ export default function ForgotPasswordRequest() {
               sx={{ display: "flex", gap: 1, alignItems: "center" }}
               role="status"
               aria-live="polite">
-              <CheckRoundedIcon />
+              <Check size={18} />
               <Typography level="body-md">{message}</Typography>
             </Alert>
           )}
