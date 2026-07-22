@@ -1,6 +1,7 @@
 // src/pages/Clientes/ClienteInfo.jsx
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import {
   Edit3,
   Save,
@@ -65,6 +66,7 @@ function FieldView({ label, value }) {
 
 // ── Componente principal ──────────────────────────────────────────────────────
 export default function ClienteInfo() {
+  const { t }          = useTranslation();
   const { id }         = useParams();
   const { showToast }  = useToast();
   const { userData, checkingSession, hasPermiso } = useAuth();
@@ -111,7 +113,7 @@ export default function ClienteInfo() {
         setLogoFile(null);
       }
     } catch (err) {
-      setError(err?.message || "Error al cargar el cliente");
+      setError(err?.message || t("clients.errors.load_failed"));
     } finally {
       setLoading(false);
     }
@@ -146,8 +148,8 @@ export default function ClienteInfo() {
   function onLogoChange(e) {
     const f = e.target.files?.[0];
     if (!f) return;
-    if (!/^image\//.test(f.type)) return showToast("Solo se aceptan imágenes", "warning");
-    if (f.size > 2 * 1024 * 1024) return showToast("La imagen supera 2 MB", "warning");
+    if (!/^image\//.test(f.type)) return showToast(t("clients.errors.image_only"), "warning");
+    if (f.size > 2 * 1024 * 1024) return showToast(t("clients.errors.image_size"), "warning");
     if (prevBlobUrlRef.current) { URL.revokeObjectURL(prevBlobUrlRef.current); prevBlobUrlRef.current = null; }
     const blobUrl = URL.createObjectURL(f);
     prevBlobUrlRef.current = blobUrl;
@@ -156,18 +158,18 @@ export default function ClienteInfo() {
   }
 
   async function onSave() {
-    if (!canEdit) return showToast("Sin permisos", "warning");
-    if (!form.codigo.trim()) return showToast("El código es obligatorio", "warning");
-    if (!form.nombre.trim())  return showToast("El nombre es obligatorio", "warning");
+    if (!canEdit) return showToast(t("common.no_permission"), "warning");
+    if (!form.codigo.trim()) return showToast(t("clients.errors.code_required"), "warning");
+    if (!form.nombre.trim())  return showToast(t("clients.errors.name_required"), "warning");
     setSaving(true);
     try {
       await updateCliente(id, form, logoFile);
-      showToast("Cliente actualizado", "success");
+      showToast(t("clients.success.updated"), "success");
       setEditMode(false);
       await load();
       await loadSummary();
     } catch (err) {
-      showToast(err?.message || "Error al actualizar", "danger");
+      showToast(err?.message || t("clients.errors.update_failed"), "danger");
     } finally {
       setSaving(false);
     }
@@ -195,7 +197,7 @@ export default function ClienteInfo() {
         <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
           <Loader2 className="animate-spin text-primary" size={22} />
         </div>
-        <p className="text-sm text-muted-foreground font-medium">Cargando información...</p>
+        <p className="text-sm text-muted-foreground font-medium">{t("clients.loading_info")}</p>
       </div>
     );
   }
@@ -207,10 +209,10 @@ export default function ClienteInfo() {
           <AlertTriangle size={28} className="text-rose-500/60" />
         </div>
         <div className="text-center">
-          <p className="font-bold text-sm">Error al cargar</p>
+          <p className="font-bold text-sm">{t("clients.sites.error_loading")}</p>
           <p className="text-xs text-muted-foreground mt-1">{error}</p>
         </div>
-        <Button onClick={load} variant="outline" size="sm" className="rounded-xl">Reintentar</Button>
+        <Button onClick={load} variant="outline" size="sm" className="rounded-xl">{t("common.retry")}</Button>
       </div>
     );
   }
@@ -219,7 +221,7 @@ export default function ClienteInfo() {
     return (
       <div className="flex flex-col items-center justify-center gap-4 py-24">
         <Building2 size={40} className="text-muted-foreground/30" />
-        <p className="text-sm font-semibold">Cliente no encontrado</p>
+        <p className="text-sm font-semibold">{t("clients.not_found")}</p>
       </div>
     );
   }
@@ -247,7 +249,7 @@ export default function ClienteInfo() {
                 onClick={() => setEditMode(true)}
                 variant="outline"
                 className="rounded-2xl h-9 px-4 gap-2 font-bold">
-                <Edit3 size={14} /> Editar
+                <Edit3 size={14} /> {t("common.actions.edit")}
               </Button>
             )
           ) : (
@@ -257,14 +259,14 @@ export default function ClienteInfo() {
                 disabled={saving}
                 variant="outline"
                 className="rounded-2xl h-9 px-4 gap-2 font-bold">
-                <X size={14} /> Cancelar
+                <X size={14} /> {t("common.actions.cancel")}
               </Button>
               <Button
                 onClick={onSave}
                 disabled={saving}
                 className="rounded-2xl h-9 px-4 gap-2 font-bold shadow-md shadow-primary/15">
                 {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-                {saving ? "Guardando..." : "Guardar"}
+                {saving ? t("clients.form.saving") : t("common.actions.save")}
               </Button>
             </>
           )}
@@ -281,7 +283,7 @@ export default function ClienteInfo() {
             {/* Sección info */}
             <div className="flex items-center gap-2">
               <div className="h-px flex-1 bg-border/50" />
-              <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 px-1">Información básica</span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 px-1">{t("clients.form.section_basic")}</span>
               <div className="h-px flex-1 bg-border/50" />
             </div>
 
@@ -289,7 +291,7 @@ export default function ClienteInfo() {
               {/* Código */}
               <div className="space-y-1.5">
                 <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">
-                  Código {editMode && <span className="text-primary">*</span>}
+                  {t("clients.columns.code")} {editMode && <span className="text-primary">*</span>}
                 </label>
                 {editMode ? (
                   <input
@@ -306,7 +308,7 @@ export default function ClienteInfo() {
               {/* Nombre */}
               <div className="space-y-1.5">
                 <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">
-                  Nombre {editMode && <span className="text-primary">*</span>}
+                  {t("clients.columns.name")} {editMode && <span className="text-primary">*</span>}
                 </label>
                 {editMode ? (
                   <input
@@ -322,7 +324,7 @@ export default function ClienteInfo() {
 
               {/* Descripción */}
               <div className="sm:col-span-2 space-y-1.5">
-                <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">Descripción</label>
+                <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">{t("clients.columns.description")}</label>
                 {editMode ? (
                   <textarea
                     rows={2}
@@ -338,7 +340,7 @@ export default function ClienteInfo() {
 
               {/* Estatus */}
               <div className="space-y-1.5">
-                <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">Estatus</label>
+                <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">{t("clients.columns.status")}</label>
                 {editMode ? (
                   <div className="flex gap-2">
                     {ESTATUS.map((s) => (
@@ -367,7 +369,7 @@ export default function ClienteInfo() {
               {/* Fecha creación */}
               <div className="space-y-1.5">
                 <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1">
-                  <Calendar size={9} /> Registrado
+                  <Calendar size={9} /> {t("clients.form.registered_at")}
                 </label>
                 <p className="text-xs text-muted-foreground">{createdAtText}</p>
               </div>
@@ -378,7 +380,7 @@ export default function ClienteInfo() {
               <>
                 <div className="flex items-center gap-2">
                   <div className="h-px flex-1 bg-border/50" />
-                  <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 px-1">Logo</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 px-1">{t("clients.form.logo_section")}</span>
                   <div className="h-px flex-1 bg-border/50" />
                 </div>
                 <div className="flex items-center gap-4 p-4 border border-dashed border-border/60 rounded-2xl bg-muted/20 dark:bg-slate-800/20">
@@ -390,7 +392,7 @@ export default function ClienteInfo() {
                   <div className="space-y-2">
                     <label className="inline-flex items-center gap-1.5 cursor-pointer px-3 py-1.5 rounded-xl border border-border/60 text-xs font-semibold text-muted-foreground hover:text-foreground hover:border-primary/40 transition-all">
                       <ImagePlus size={13} />
-                      {logoPreview ? "Cambiar imagen" : "Subir logo"}
+                      {logoPreview ? t("clients.form.image_change") : t("clients.form.image_upload")}
                       <input type="file" hidden accept="image/*" onChange={onLogoChange} disabled={saving} />
                     </label>
                     {logoPreview && (
@@ -398,10 +400,10 @@ export default function ClienteInfo() {
                         type="button"
                         onClick={() => { setLogoFile(null); setLogoPreview(null); }}
                         className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-rose-500 hover:bg-rose-500/10 transition-all">
-                        <Trash2 size={12} /> Quitar
+                        <Trash2 size={12} /> {t("common.actions.remove")}
                       </button>
                     )}
-                    <p className="text-[10px] text-muted-foreground/60">PNG, JPG. Máx 2 MB</p>
+                    <p className="text-[10px] text-muted-foreground/60">{t("clients.form.image_hint")}</p>
                   </div>
                 </div>
               </>
@@ -416,7 +418,7 @@ export default function ClienteInfo() {
           <div className="bg-primary/5 dark:bg-primary/10 border border-primary/20 dark:border-primary/25 rounded-3xl p-5 space-y-3">
             <div className="flex items-center gap-2">
               <Monitor size={16} className="text-primary" />
-              <p className="text-xs font-black uppercase tracking-widest text-primary/70">Activos</p>
+              <p className="text-xs font-black uppercase tracking-widest text-primary/70">{t("clients.tabs.assets")}</p>
             </div>
             <div>
               <p className="text-3xl font-black text-primary">{summary.totalActivos}</p>
@@ -438,7 +440,7 @@ export default function ClienteInfo() {
           <div className="bg-card dark:bg-slate-900/40 border border-border/60 rounded-3xl p-5 space-y-3">
             <div className="flex items-center gap-2">
               <MapPin size={16} className="text-muted-foreground" />
-              <p className="text-xs font-black uppercase tracking-widest text-muted-foreground/70">Sites</p>
+              <p className="text-xs font-black uppercase tracking-widest text-muted-foreground/70">{t("clients.tabs.sites")}</p>
             </div>
             <div>
               <p className="text-3xl font-black">{summary.totalSites}</p>
@@ -446,10 +448,10 @@ export default function ClienteInfo() {
             </div>
             <div className="flex gap-2 pt-1 border-t border-border/50">
               <span className="px-2.5 py-1 text-[10px] font-bold rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                Activos: {summary.activeSites}
+                {t("clients.filter.active")}: {summary.activeSites}
               </span>
               <span className="px-2.5 py-1 text-[10px] font-bold rounded-full bg-muted text-muted-foreground border border-border/60">
-                Inactivos: {summary.inactiveSites}
+                {t("clients.filter.inactive")}: {summary.inactiveSites}
               </span>
             </div>
             {summaryLoading && <Loader2 size={14} className="animate-spin text-muted-foreground/50" />}

@@ -1,6 +1,7 @@
 // src/pages/Clientes/ClienteActivos.jsx
 import { useEffect, useState, useMemo, useRef, useCallback } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import {
   Search,
   X,
@@ -154,6 +155,7 @@ function SearchableSelect({ value, onChange, onBlur, options, placeholder, disab
 // ── Componente principal ──────────────────────────────────────────────────────
 
 export default function ClienteActivos({ onCountChange }) {
+  const { t }                                     = useTranslation();
   const { id }                                    = useParams();
   const [searchParams, setSearchParams]           = useSearchParams();
   const isMobile                                  = useIsMobile(768);
@@ -216,7 +218,7 @@ export default function ClienteActivos({ onCountChange }) {
       setSelectedIds([]);
       onCountChange?.(arr.length);
     } catch (err) {
-      setError(err?.message || "Error al cargar los activos");
+      setError(err?.message || t("clients.assets.errors.load_failed"));
     } finally {
       setLoading(false);
     }
@@ -274,19 +276,19 @@ export default function ClienteActivos({ onCountChange }) {
 
   // ── Acciones ─────────────────────────────────────────────────────────────────
   function editActivo(row) {
-    if (!canEdit) return showToast("Sin permisos", "warning");
+    if (!canEdit) return showToast(t("common.no_permission"), "warning");
     setEditing(row); setOpenEdit(true);
   }
   function abrirMover(row) {
-    if (!canMove) return showToast("Sin permisos", "warning");
+    if (!canMove) return showToast(t("common.no_permission"), "warning");
     setActivoSeleccionado(row); setOpenMover(true);
   }
   function abrirHistorial(row) {
-    if (!canViewHistory) return showToast("Sin permisos", "warning");
+    if (!canViewHistory) return showToast(t("common.no_permission"), "warning");
     setActivoSeleccionado(row); setOpenHistorial(true);
   }
   async function abrirQR(row) {
-    if (!canQR) return showToast("Sin permisos", "warning");
+    if (!canQR) return showToast(t("common.no_permission"), "warning");
     setActivoQR(row); setPublicLink("");
     try {
       const { url } = await getPublicLinkForActivo(row.id);
@@ -308,14 +310,14 @@ export default function ClienteActivos({ onCountChange }) {
     setLoadingBodegas(true);
     getBodegas()
       .then((rows) => setBodegas(Array.isArray(rows) ? rows : []))
-      .catch(() => { setBodegas([]); showToast("Error al cargar bodegas", "danger"); })
+      .catch(() => { setBodegas([]); showToast(t("clients.assets.errors.load_warehouses"), "danger"); })
       .finally(() => setLoadingBodegas(false));
   }, [openBulkMover]);
 
   async function bulkMoveToBodega() {
-    if (!bulkBodega) return showToast("Selecciona una bodega de destino", "warning");
-    if (!selectedIds.length) return showToast("No hay activos seleccionados", "warning");
-    if (!canMove) return showToast("Sin permisos", "warning");
+    if (!bulkBodega) return showToast(t("clients.assets.errors.select_warehouse"), "warning");
+    if (!selectedIds.length) return showToast(t("clients.assets.errors.no_selection"), "warning");
+    if (!canMove) return showToast(t("common.no_permission"), "warning");
     setBulkSaving(true);
     try {
       const usuario = userData?.id_usuario ?? userData?.id ?? null;
@@ -325,11 +327,11 @@ export default function ClienteActivos({ onCountChange }) {
           await moverABodega({ id_activo, id_bodega: bulkBodega, motivo: bulkMotivo || "Movimiento masivo desde cliente", usuario_responsable: usuario });
         } catch (e) { failed.push({ id_activo, error: e?.message }); }
       }
-      if (failed.length === 0) showToast("Activos movidos correctamente", "success");
-      else showToast(`${failed.length} activo(s) no pudieron moverse`, "warning");
+      if (failed.length === 0) showToast(t("clients.assets.success.bulk_moved"), "success");
+      else showToast(t("clients.assets.errors.bulk_partial", { count: failed.length }), "warning");
       setOpenBulkMover(false); setBulkBodega(""); setBulkMotivo(""); setSelectedIds([]); load();
     } catch (err) {
-      showToast(err?.message || "Error al mover activos", "danger");
+      showToast(err?.message || t("clients.assets.errors.bulk_failed"), "danger");
     } finally {
       setBulkSaving(false);
     }
@@ -359,13 +361,13 @@ export default function ClienteActivos({ onCountChange }) {
 
           {canEdit && (
             <DropdownMenuItem onClick={() => editActivo(row)} className="rounded-xl cursor-pointer gap-2 text-sm">
-              <Edit3 size={13} /> Editar
+              <Edit3 size={13} /> {t("common.actions.edit")}
             </DropdownMenuItem>
           )}
 
           {canMove && (
             <DropdownMenuItem onClick={() => abrirMover(row)} className="rounded-xl cursor-pointer gap-2 text-sm">
-              <ArrowLeftRight size={13} /> Mover activo
+              <ArrowLeftRight size={13} /> {t("common.actions.move")}
             </DropdownMenuItem>
           )}
 
@@ -373,13 +375,13 @@ export default function ClienteActivos({ onCountChange }) {
 
           {canViewHistory && (
             <DropdownMenuItem onClick={() => abrirHistorial(row)} className="rounded-xl cursor-pointer gap-2 text-sm">
-              <History size={13} /> Ver historial
+              <History size={13} /> {t("common.actions.history")}
             </DropdownMenuItem>
           )}
 
           {canQR && (
             <DropdownMenuItem onClick={() => abrirQR(row)} className="rounded-xl cursor-pointer gap-2 text-sm">
-              <QrCode size={13} /> Código QR
+              <QrCode size={13} /> {t("common.actions.qr")}
             </DropdownMenuItem>
           )}
         </DropdownMenuContent>
@@ -415,7 +417,7 @@ export default function ClienteActivos({ onCountChange }) {
             onClick={() => setOpenBulkMover(true)}
             className="rounded-xl gap-2 text-xs font-bold h-9 disabled:opacity-50 shrink-0">
             <ArrowLeftRight size={13} />
-            Mover a bodega
+            {t("clients.assets.actions.move_to_warehouse")}
             {hasSelection && (
               <span className="px-1.5 py-0.5 rounded-full bg-primary text-primary-foreground text-[9px] font-bold">
                 {selectedIds.length}
@@ -432,7 +434,7 @@ export default function ClienteActivos({ onCountChange }) {
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/50 group-focus-within:text-primary transition-colors pointer-events-none" />
           <input
             type="text"
-            placeholder="Buscar activo, serial, site..."
+            placeholder={t("clients.assets.search_placeholder")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full bg-card border border-border/60 rounded-xl pl-9 pr-8 py-2 text-sm outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/15 transition-all placeholder:text-muted-foreground/50 shadow-sm"
@@ -469,7 +471,7 @@ export default function ClienteActivos({ onCountChange }) {
           <button
             onClick={() => { setStatusFilter(""); setTypeFilter(""); }}
             className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border border-border/60 text-muted-foreground hover:text-foreground hover:border-border transition-all">
-            <X size={12} /> Limpiar
+            <X size={12} /> {t("common.actions.clear")}
           </button>
         )}
 
@@ -488,16 +490,16 @@ export default function ClienteActivos({ onCountChange }) {
             <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center">
               <Loader2 className="animate-spin text-primary" size={18} />
             </div>
-            <p className="text-sm text-muted-foreground font-medium">Cargando activos...</p>
+            <p className="text-sm text-muted-foreground font-medium">{t("clients.assets.loading")}</p>
           </div>
         ) : error ? (
           <div className="flex flex-col items-center justify-center gap-4 py-16">
             <AlertTriangle size={28} className="text-rose-500/50" />
             <div className="text-center">
-              <p className="font-bold text-sm">Error al cargar</p>
+              <p className="font-bold text-sm">{t("clients.assets.error_loading")}</p>
               <p className="text-xs text-muted-foreground mt-1">{error}</p>
             </div>
-            <Button onClick={load} variant="outline" size="sm" className="rounded-xl">Reintentar</Button>
+            <Button onClick={load} variant="outline" size="sm" className="rounded-xl">{t("common.retry")}</Button>
           </div>
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-3 py-16">
@@ -505,9 +507,9 @@ export default function ClienteActivos({ onCountChange }) {
               <Monitor size={24} className="text-muted-foreground/40" />
             </div>
             <div className="text-center">
-              <p className="font-bold text-sm">{search ? "Sin resultados" : "Sin activos"}</p>
+              <p className="font-bold text-sm">{search ? t("clients.assets.empty.no_results") : t("clients.assets.empty.title")}</p>
               <p className="text-xs text-muted-foreground mt-1">
-                {search ? `No hay coincidencias para "${search}"` : "No hay activos registrados para este cliente"}
+                {search ? t("clients.assets.empty.no_match", { search }) : t("clients.assets.empty.no_assets")}
               </p>
             </div>
           </div>
@@ -577,7 +579,7 @@ export default function ClienteActivos({ onCountChange }) {
                       />
                     )}
                   </th>
-                  {["Código", "Nombre", "Tipo", "Modelo", "Serial", "Site", "Estado", ""].map((h, i) => (
+                  {[t("clients.assets.columns.code"), t("clients.assets.columns.name"), t("clients.assets.columns.type"), t("clients.assets.columns.model"), t("clients.assets.columns.serial"), t("clients.assets.columns.site"), t("clients.assets.columns.status"), ""].map((h, i) => (
                     <th key={i} className={`px-4 py-3.5 ${i === 7 ? "text-right" : "text-left"}`}>
                       <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70">{h}</span>
                     </th>
@@ -682,7 +684,7 @@ export default function ClienteActivos({ onCountChange }) {
                 <QrCode size={18} className="text-primary" />
               </div>
               <div className="flex-1">
-                <h3 className="font-black text-base tracking-tight">Código QR</h3>
+                <h3 className="font-black text-base tracking-tight">{t("clients.assets.qr_title")}</h3>
                 {activoQR && (
                   <p className="text-[11px] text-muted-foreground mt-0.5">
                     {activoQR.nombre} · <span className="font-mono">{activoQR.codigo}</span>
@@ -708,7 +710,7 @@ export default function ClienteActivos({ onCountChange }) {
                   />
                   {publicLink && (
                     <a href={publicLink} target="_blank" rel="noreferrer" className="text-xs text-primary hover:underline">
-                      Ver página pública
+                      {t("clients.assets.view_public_page")}
                     </a>
                   )}
                 </div>
@@ -716,10 +718,10 @@ export default function ClienteActivos({ onCountChange }) {
 
               <div className="flex gap-2.5">
                 <Button onClick={descargarQR} className="flex-1 rounded-2xl h-10 font-bold gap-2">
-                  <Download size={14} /> Descargar PNG
+                  <Download size={14} /> {t("common.actions.download_png")}
                 </Button>
                 <Button variant="outline" onClick={() => { setOpenQR(false); setPublicLink(""); }} className="flex-1 rounded-2xl h-10 font-bold">
-                  Cerrar
+                  {t("common.actions.close")}
                 </Button>
               </div>
             </div>
@@ -749,7 +751,7 @@ export default function ClienteActivos({ onCountChange }) {
                 <ArrowLeftRight size={18} className="text-primary" />
               </div>
               <div className="flex-1 min-w-0">
-                <h2 className="text-base font-black tracking-tight">Mover a Bodega</h2>
+                <h2 className="text-base font-black tracking-tight">{t("clients.assets.actions.move_to_warehouse")}</h2>
                 <p className="text-[11px] text-muted-foreground mt-0.5">
                   {selectedIds.length} activo{selectedIds.length !== 1 ? "s" : ""} seleccionado{selectedIds.length !== 1 ? "s" : ""}
                 </p>
@@ -772,7 +774,7 @@ export default function ClienteActivos({ onCountChange }) {
                     <ArrowLeftRight size={13} className="text-muted-foreground" />
                   </div>
                   <h3 className="text-xs font-black uppercase tracking-widest text-muted-foreground">
-                    Bodega de destino
+                    {t("clients.assets.form.destination_warehouse")}
                   </h3>
                 </div>
 
@@ -784,16 +786,16 @@ export default function ClienteActivos({ onCountChange }) {
                   {loadingBodegas ? (
                     <div className="flex items-center gap-2 py-3 text-muted-foreground">
                       <Loader2 size={14} className="animate-spin" />
-                      <span className="text-sm">Cargando bodegas...</span>
+                      <span className="text-sm">{t("common.loading")}</span>
                     </div>
                   ) : (
                     <SearchableSelect
                       value={bulkBodega}
                       onChange={(v) => setBulkBodega(v)}
                       options={bodegaOptions}
-                      placeholder="Selecciona una bodega..."
+                      placeholder={t("clients.sites.form.city_placeholder")}
                       disabled={bulkSaving}
-                      emptyLabel="Sin bodegas disponibles"
+                      emptyLabel={t("common.no_data")}
                     />
                   )}
                 </div>
@@ -806,12 +808,12 @@ export default function ClienteActivos({ onCountChange }) {
                     <SlidersHorizontal size={13} className="text-muted-foreground" />
                   </div>
                   <h3 className="text-xs font-black uppercase tracking-widest text-muted-foreground">
-                    Detalles del movimiento
+                    {t("clients.assets.bulk_move_title")}
                   </h3>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">Motivo</label>
+                  <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">{t("clients.assets.form.reason")}</label>
                   <textarea
                     rows={3}
                     value={bulkMotivo}
@@ -842,10 +844,10 @@ export default function ClienteActivos({ onCountChange }) {
                   onClick={bulkMoveToBodega}
                   className="flex-1 rounded-2xl h-10 font-bold shadow-md shadow-primary/15 gap-2 disabled:opacity-60">
                   {bulkSaving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
-                  {bulkSaving ? "Moviendo..." : "Mover Activos"}
+                  {bulkSaving ? t("clients.form.saving") : t("clients.assets.actions.move_selected")}
                 </Button>
                 <Button type="button" variant="outline" onClick={() => setOpenBulkMover(false)} disabled={bulkSaving} className="flex-1 rounded-2xl h-10 font-bold">
-                  Cancelar
+                  {t("common.actions.cancel")}
                 </Button>
               </div>
             </div>

@@ -9,6 +9,7 @@ import {
   Navigate,
 } from "react-router-dom";
 import { ChevronLeft } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import ClienteInfo      from "./ClienteInfo.jsx";
 import ClienteSites     from "./ClienteSites.jsx";
@@ -21,6 +22,7 @@ import { Badge } from "@/components/ui/badge";
 export default function ClienteDetail() {
   const { id } = useParams();
   const location = useLocation();
+  const { t } = useTranslation();
 
   const [siteCount, setSiteCount]     = useState(0);
   const [activosCount, setActivosCount] = useState(null);
@@ -28,12 +30,12 @@ export default function ClienteDetail() {
 
   const tabs = useMemo(
     () => [
-      { key: "informacion", label: "Información" },
-      { key: "sites",       label: "Sites",   count: siteCount },
-      { key: "activos",     label: "Activos", count: activosCount },
-      { key: "contratos",   label: "Contratos", count: contratosCount },
+      { key: "informacion", label: t("clients.tabs.info") },
+      { key: "sites",       label: t("clients.tabs.sites"),     count: siteCount },
+      { key: "activos",     label: t("clients.tabs.assets"),    count: activosCount },
+      { key: "contratos",   label: t("clients.tabs.contracts"), count: contratosCount },
     ],
-    [siteCount, activosCount, contratosCount]
+    [siteCount, activosCount, contratosCount, t]
   );
 
   const activeTab = useMemo(() => {
@@ -55,7 +57,7 @@ export default function ClienteDetail() {
             to="/admin/clientes"
             className="inline-flex items-center gap-1.5 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors">
             <ChevronLeft size={16} />
-            Volver al listado
+            {t("common.actions.back_to_list")}
           </Link>
         </div>
 
