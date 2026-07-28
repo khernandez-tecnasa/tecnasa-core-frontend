@@ -99,8 +99,8 @@ export default function OperacionForm({
       if (data) {
         setForm((prev) => ({
           ...prev,
-          km: data.km || "",
-          combustible: data.combustible || "",
+          km: data.km ?? "",
+          combustible: data.combustible ?? "",
           ubicacion: data.ubicacion || "",
         }));
       }
