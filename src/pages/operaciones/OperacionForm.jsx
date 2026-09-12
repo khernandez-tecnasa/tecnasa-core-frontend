@@ -189,7 +189,7 @@ export default function OperacionForm({
 
       const diferencia = kmRegreso - kmSalida;
 
-      if (diferencia > 1000) {
+      if (diferencia > 2500) {
         return showToast(
           t("operaciones.toast.km_excessive"),
           "warning",
