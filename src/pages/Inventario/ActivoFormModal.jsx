@@ -13,6 +13,7 @@ import {
   ChevronDown,
   Package,
   Tag,
+  Warehouse,
 } from "lucide-react";
 
 import { useAuth }    from "../../context/AuthContext";
@@ -25,7 +26,8 @@ import {
   getNextActivoCode,
 } from "../../services/ActivosBodegaServices";
 import { updateActivo }   from "../../services/ActivosServices";
-import { ESTATUS_ACTIVO, TIPOS_ACTIVO, ESTATUS_COLOR } from "../../constants/inventario";
+import { getBodegas } from "../../services/BodegasServices";
+import { ESTATUS_ACTIVO, TIPOS_ACTIVO } from "../../constants/inventario";
 
 // ── SearchableSelect ──────────────────────────────────────────────────────────
 
@@ -156,11 +158,23 @@ export default function ActivoFormModal({ open, onClose, onSaved, idBodega, edit
   const isMobile      = useIsMobile(768);
 
   const isEditing  = !!editing;
-  const isCreating = !isEditing && !!idBodega;
+  const isCreating = !isEditing;
 
   const [nextCode, setNextCode]     = useState("");
   const [loadingNext, setLoadingNext] = useState(false);
-  const [nextErr, setNextErr]       = useState("");
+  const [bodegas, setBodegas]       = useState([]);
+  const [loadingBodegas, setLoadingBodegas] = useState(false);
+  const [bodegasErr, setBodegasErr] = useState("");
+
+  const bodegaOptions = useMemo(
+    () => bodegas.map((bodega) => ({
+      value: bodega.id,
+      label: bodega.ciudad
+        ? `${bodega.nombre} · ${bodega.ciudad}`
+        : bodega.nombre,
+    })),
+    [bodegas]
+  );
 
   const formik = useFormik({
     initialValues: {
@@ -169,9 +183,18 @@ export default function ActivoFormModal({ open, onClose, onSaved, idBodega, edit
       serial_number: "",
       tipo:          "Otro",
       estatus:       "Activo",
+      id_bodega:     idBodega || "",
     },
     validationSchema,
     onSubmit: async (values, helpers) => {
+      const selectedBodegaId = idBodega || values.id_bodega;
+      if (!isEditing && !selectedBodegaId) {
+        helpers.setFieldTouched("id_bodega", true);
+        helpers.setFieldError("id_bodega", "Debes seleccionar una bodega");
+        helpers.setSubmitting(false);
+        return;
+      }
+
       try {
         const payload = {
           nombre:              values.nombre.trim(),
@@ -186,7 +209,7 @@ export default function ActivoFormModal({ open, onClose, onSaved, idBodega, edit
           await updateActivo(editing.id, payload);
           showToast("Activo actualizado", "success");
         } else if (isCreating) {
-          await createActivoEnBodega({ ...payload, id_bodega: idBodega });
+          await createActivoEnBodega({ ...payload, id_bodega: selectedBodegaId });
           showToast("Activo creado", "success");
         }
 
@@ -210,26 +233,54 @@ export default function ActivoFormModal({ open, onClose, onSaved, idBodega, edit
         serial_number: editing.serial_number || "",
         tipo:          editing.tipo          || "Otro",
         estatus:       editing.estatus       || "Activo",
+        id_bodega:     "",
       });
       setNextCode(editing.codigo || "");
     } else if (isCreating) {
-      formik.resetForm();
-      setNextCode(""); setLoadingNext(true); setNextErr("");
+      formik.resetForm({
+        values: {
+          nombre: "",
+          modelo: "",
+          serial_number: "",
+          tipo: "Otro",
+          estatus: "Activo",
+          id_bodega: idBodega || "",
+        },
+      });
+      setNextCode(""); setLoadingNext(true);
       getNextActivoCode()
         .then((r) => setNextCode(typeof r === "string" ? r : r?.next ?? ""))
-        .catch(() => setNextErr("Error al obtener el código"))
+        .catch(() => setNextCode(""))
         .finally(() => setLoadingNext(false));
     }
   }, [open, editing, idBodega]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  useEffect(() => {
+    if (!open || isEditing || idBodega) return;
+
+    let active = true;
+    setLoadingBodegas(true);
+    setBodegasErr("");
+    getBodegas()
+      .then((data) => {
+        if (active) setBodegas(Array.isArray(data) ? data : []);
+      })
+      .catch((err) => {
+        if (active) {
+          setBodegas([]);
+          setBodegasErr(err?.message || "No se pudieron cargar las bodegas");
+        }
+      })
+      .finally(() => {
+        if (active) setLoadingBodegas(false);
+      });
+
+    return () => { active = false; };
+  }, [open, isEditing, idBodega]);
+
   if (!open) return null;
 
   const isSubmitting = formik.isSubmitting;
-
-  // Color del badge de código
-  const badgeColor = isCreating
-    ? nextErr ? "bg-muted text-muted-foreground" : "bg-primary/10 text-primary border-primary/20"
-    : `bg-${ESTATUS_COLOR[formik.values.estatus] === "success" ? "emerald" : ESTATUS_COLOR[formik.values.estatus] === "danger" ? "rose" : "primary"}/10 text-primary border-primary/20`;
 
   return (
     <div className="fixed inset-0 z-50">
@@ -288,6 +339,55 @@ export default function ActivoFormModal({ open, onClose, onSaved, idBodega, edit
               {isEditing ? "Fijo" : "Auto"}
             </span>
           </div>
+
+          {!isEditing && !idBodega && (
+            <div className="bg-blue-50/70 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/50 rounded-3xl p-5 space-y-3">
+              <div className="flex items-center gap-2.5 pb-1">
+                <div className="p-1.5 bg-blue-100 dark:bg-blue-900/40 rounded-xl">
+                  <Warehouse size={13} className="text-blue-600 dark:text-blue-400" />
+                </div>
+                <div>
+                  <h3 className="text-xs font-black uppercase tracking-widest text-blue-800 dark:text-blue-300">
+                    Ubicación inicial
+                  </h3>
+                  <p className="text-[11px] text-blue-700/70 dark:text-blue-300/70 mt-0.5">
+                    Selecciona la bodega donde quedará registrado el activo.
+                  </p>
+                </div>
+              </div>
+              <Field
+                label="Bodega"
+                required
+                error={formik.touched.id_bodega && formik.errors.id_bodega}>
+                <SearchableSelect
+                  value={formik.values.id_bodega}
+                  onChange={(value) => {
+                    formik.setFieldValue("id_bodega", value);
+                    formik.setFieldTouched("id_bodega", true, false);
+                  }}
+                  options={bodegaOptions}
+                  placeholder={loadingBodegas ? "Cargando bodegas..." : "Selecciona una bodega..."}
+                  disabled={isSubmitting || loadingBodegas || !!bodegasErr}
+                  emptyLabel={bodegasErr || "No hay bodegas disponibles"}
+                />
+              </Field>
+              {bodegasErr && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setBodegasErr("");
+                    setLoadingBodegas(true);
+                    getBodegas()
+                      .then((data) => setBodegas(Array.isArray(data) ? data : []))
+                      .catch((err) => setBodegasErr(err?.message || "No se pudieron cargar las bodegas"))
+                      .finally(() => setLoadingBodegas(false));
+                  }}
+                  className="text-xs font-semibold text-blue-700 dark:text-blue-300 hover:underline">
+                  Reintentar cargar bodegas
+                </button>
+              )}
+            </div>
+          )}
 
           {/* Sección: Información básica */}
           <div className="bg-muted/30 dark:bg-slate-800/30 border border-border/40 rounded-3xl p-5 space-y-4">
@@ -378,7 +478,7 @@ export default function ActivoFormModal({ open, onClose, onSaved, idBodega, edit
           <div className="flex gap-2.5">
             <Button
               type="button"
-              disabled={isSubmitting}
+              disabled={isSubmitting || (!isEditing && !idBodega && !formik.values.id_bodega)}
               onClick={formik.handleSubmit}
               className="flex-1 rounded-2xl h-10 font-bold shadow-md shadow-primary/15 gap-2 disabled:opacity-60">
               {isSubmitting ? <Loader2 size={15} className="animate-spin" /> : isEditing ? <Save size={15} /> : <Plus size={15} />}
