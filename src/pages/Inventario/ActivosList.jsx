@@ -19,6 +19,7 @@ import {
   RotateCcw,
   MonitorSmartphone,
   MoreVertical,
+  Plus,
 } from "lucide-react";
 
 // Services & Context
@@ -96,6 +97,7 @@ export default function ActivosList() {
 
   const canView = can("ver_activos");
   const canCreate = can("crear_activos");
+  const canViewBodegas = can("ver_bodegas");
   const canEdit = can("editar_activos");
   const canMove = can("mover_activos");
   const canViewHistory = can("ver_historial_activos");
@@ -281,11 +283,17 @@ export default function ActivosList() {
   }, [searchParams, setSearchParams, focusByToken]);
 
   // --- Acciones ---
-  const onNew = () => {
+  const onNew = useCallback(() => {
     if (!canCreate) return showToast("Sin permiso", "warning");
+    if (!canViewBodegas) {
+      return showToast(
+        "Necesitas permiso para ver bodegas y seleccionar la ubicación inicial.",
+        "warning"
+      );
+    }
     setEditing(null);
     setOpenForm(true);
-  };
+  }, [canCreate, canViewBodegas, showToast]);
 
   const onEdit = (r) => {
     if (!canEdit) return showToast("Sin permiso", "warning");
@@ -345,7 +353,7 @@ export default function ActivosList() {
       if (isTyping) return;
       if (ctrlOrMeta && e.shiftKey && e.key.toLowerCase() === "n") {
         e.preventDefault();
-        if (canCreate) onNew();
+        if (canCreate && canViewBodegas) onNew();
         return;
       }
       if (ctrlOrMeta && e.shiftKey && e.key.toLowerCase() === "e") {
@@ -369,7 +377,14 @@ export default function ActivosList() {
     };
     window.addEventListener("keydown", handleGlobalKeyDown);
     return () => window.removeEventListener("keydown", handleGlobalKeyDown);
-  }, [canCreate]);
+  }, [
+    canCreate,
+    canViewBodegas,
+    onNew,
+    statusFilter,
+    typeFilter,
+    ubicacionFilter,
+  ]);
 
   // View State
   const viewState = getViewState({
@@ -517,6 +532,14 @@ export default function ActivosList() {
               </>
             )}
           </div>
+          {canCreate && canViewBodegas && (
+            <button
+              onClick={onNew}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white transition shadow-sm">
+              <Plus className="w-4 h-4" />
+              Nuevo activo
+            </button>
+          )}
         </div>
       </div>
 
@@ -574,6 +597,14 @@ export default function ActivosList() {
             <p className="text-sm text-neutral-500">
               Aún no hay activos en el sistema.
             </p>
+            {canCreate && canViewBodegas && (
+              <button
+                onClick={onNew}
+                className="mt-2 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition">
+                <Plus className="w-4 h-4" />
+                Crear primer activo
+              </button>
+            )}
           </div>
         </div>
       )}
