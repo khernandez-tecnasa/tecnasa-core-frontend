@@ -1,8 +1,16 @@
 const DEV = import.meta.env.DEV === true;
+const configuredApiBaseUrl = (import.meta.env.VITE_API_BASE_URL || "").replace(
+  /\/+$/,
+  ""
+);
 
+// En desarrollo Vite redirige /api al backend local. En producción la API
+// puede configurarse con o sin el sufijo /api (por ejemplo en Vercel).
 export const API_BASE_URL = DEV
   ? "/api"
-  : import.meta.env.VITE_API_BASE_URL || "";
+  : configuredApiBaseUrl.endsWith("/api")
+    ? configuredApiBaseUrl
+    : `${configuredApiBaseUrl}/api`;
 
 export const endpoints = {
   searchGlobal: `${API_BASE_URL}/search`,
@@ -145,6 +153,7 @@ export const endpoints = {
   getActivoById: `${API_BASE_URL}/inventario/activos/`,
   addActivo: `${API_BASE_URL}/inventario/activos/`,
   updateActivo: `${API_BASE_URL}/inventario/activos/`,
+  nextActivoCode: `${API_BASE_URL}/inventario/activos/next-code`,
   getActivosByCliente: `${API_BASE_URL}/inventario/activos/cliente/`,
 
   // Activos por bodega

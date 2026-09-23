@@ -1,5 +1,6 @@
 // src/utils/apiClient.js
 // Wrapper de fetch con refresh automático de token JWT.
+import { API_BASE_URL } from "../config/variables";
 
 let isRefreshing = false;
 let refreshSubscribers = [];
@@ -16,7 +17,7 @@ const subscribeRefresh = (callback) => {
 async function doRefresh() {
   try {
     // Usamos fetch nativo para evitar recursión con apiFetch
-    const res = await fetch("/api/auth/refresh", {
+    const res = await fetch(`${API_BASE_URL}/auth/refresh`, {
       method: "POST",
       credentials: "include",
       headers: { Accept: "application/json" },

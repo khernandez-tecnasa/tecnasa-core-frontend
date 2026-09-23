@@ -1,8 +1,6 @@
-import { endpoints } from "../config/variables";
+import { API_BASE_URL, endpoints } from "../config/variables";
 import { fetchConToken } from "../utils/ApiHelper";
 import { apiFetch } from "../utils/apiClient";
-const API_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api";
 
 export async function login(username, password, code = null) {
   try {
@@ -35,7 +33,7 @@ export async function login(username, password, code = null) {
 
 export async function me() {
   try {
-    const res = await apiFetch(`${API_URL}/auth/me`, {
+    const res = await apiFetch(`${API_BASE_URL}/auth/me`, {
       method: "GET",
       headers: { Accept: "application/json" },
     });
@@ -52,7 +50,7 @@ export async function me() {
 
 export async function refreshToken() {
   try {
-    const res = await apiFetch(`${API_URL}/auth/refresh`, {
+    const res = await apiFetch(`${API_BASE_URL}/auth/refresh`, {
       method: "POST",
       headers: { Accept: "application/json" },
     });
@@ -69,7 +67,7 @@ export async function refreshToken() {
 
 export async function logout() {
   try {
-    const res = await fetch(`${API_URL}/auth/logout`, {
+    const res = await fetch(`${API_BASE_URL}/auth/logout`, {
       method: "POST",
       credentials: "include",
       headers: { Accept: "application/json" },
