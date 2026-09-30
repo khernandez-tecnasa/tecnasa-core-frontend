@@ -286,6 +286,9 @@ export default function ResetPassword() {
                   sx={{
                     borderRadius: "lg",
                     "--Input-focusedThickness": "2px",
+                    "--Input-focusedHighlight": passwordsMatch
+                      ? "var(--joy-palette-success-500)"
+                      : undefined,
                     "&:focus-within": { borderColor: "primary.400" },
                   }}
                 />
@@ -391,12 +394,6 @@ export default function ResetPassword() {
                       </IconButton>
                     )
                   }
-                  sx={{
-                    // Borde verde sutil si coinciden
-                    "--Input-focusedHighlight": passwordsMatch
-                      ? "var(--joy-palette-success-500)"
-                      : undefined,
-                  }}
                 />
                 {confirmPassword.length > 0 && !passwordsMatch && (
                   <Typography level="body-xs" color="danger" sx={{ mt: 0.5 }}>

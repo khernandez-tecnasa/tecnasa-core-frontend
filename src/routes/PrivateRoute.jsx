@@ -6,9 +6,17 @@ export default function PrivateRoute({ children }) {
   const { userData, checkingSession } = useAuth();
   const location = useLocation();
 
-  // Mientras valida sesión, puedes mostrar null o un loader global
+  // Nunca devolver null: así un problema transitorio no se percibe como una
+  // pantalla en blanco.
   if (checkingSession) {
-    return null;
+    return (
+      <main
+        className="min-h-screen flex items-center justify-center bg-gray-50"
+        aria-busy="true"
+        aria-live="polite">
+        <p className="text-sm text-gray-600">Verificando sesión…</p>
+      </main>
+    );
   }
 
   // Si no hay usuario -> mandar a login con redirect

@@ -1,17 +1,81 @@
 import { endpoints } from "../config/variables";
 import { fetchConToken } from "../utils/ApiHelper";
 
-export async function generarBackupManual() {
-  const res = await fetchConToken(endpoints.backupManual, { method: "POST" });
+export async function generarBackupManual({ backupType = "full" } = {}) {
+  const res = await fetchConToken(endpoints.backupManual, {
+    method: "POST",
+    body: JSON.stringify({ backupType }),
+    headers: { "Content-Type": "application/json" },
+  });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || "Error al generar backup");
   return data;
 }
 
-export async function descargarBackup() {
-  const res = await fetchConToken(endpoints.backupDownload);
+export async function descargarBackup(id) {
+  const res = await fetchConToken(endpoints.backupDownload(id));
   if (!res.ok) throw new Error("Error al descargar backup");
   return res.blob();
+}
+
+export async function eliminarBackup(id) {
+  const res = await fetchConToken(endpoints.backupById(id), { method: "DELETE" });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Error al eliminar backup");
+  return data;
+}
+
+export async function verificarBackup(id) {
+  const res = await fetchConToken(endpoints.backupVerify(id), { method: "POST" });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Error al verificar backup");
+  return data;
+}
+
+export async function cancelarBackup(id) {
+  const res = await fetchConToken(endpoints.backupCancel(id), { method: "POST" });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Error al cancelar backup");
+  return data;
+}
+
+export async function iniciarAutorizacionRestauracion(backupId) {
+  const res = await fetchConToken(endpoints.backupRestoreAuthorize(backupId), {
+    method: "POST",
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "No se pudo iniciar la verificación");
+  return data;
+}
+
+export async function verificarAutorizacionRestauracion(backupId, proof) {
+  const res = await fetchConToken(endpoints.backupRestoreAuthorizeVerify(backupId), {
+    method: "POST",
+    skipAuthRefresh: true,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(proof),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "No se pudo verificar tu identidad");
+  return data;
+}
+
+export async function iniciarRestauracion(backupId, confirmationText, authorizationToken) {
+  const res = await fetchConToken(endpoints.backupRestoreStart(backupId), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ confirmationText, authorizationToken }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "No se pudo iniciar la restauración");
+  return data;
+}
+
+export async function obtenerEstadoRestauracion(id) {
+  const res = await fetchConToken(endpoints.backupRestoreStatus(id));
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "No se pudo consultar la restauración");
+  return data;
 }
 
 export async function obtenerListaBackups() {

@@ -273,8 +273,16 @@ export const endpoints = {
 
   // BACKUP
   backupManual: `${API_BASE_URL}/backup/manual`,
-  backupDownload: `${API_BASE_URL}/backup/download`,
+  backupDownload: (id) => `${API_BASE_URL}/backup/${id}/download`,
   backupList: `${API_BASE_URL}/backup/list`,
+  backupById: (id) => `${API_BASE_URL}/backup/${id}`,
+  backupVerify: (id) => `${API_BASE_URL}/backup/${id}/verify`,
+  backupCancel: (id) => `${API_BASE_URL}/backup/${id}/cancel`,
+  backupRestoreStart: (id) => `${API_BASE_URL}/backup/restore/${id}/start`,
+  backupRestoreAuthorize: (id) => `${API_BASE_URL}/backup/restore/${id}/authorize`,
+  backupRestoreAuthorizeVerify: (id) => `${API_BASE_URL}/backup/restore/${id}/authorize/verify`,
+  backupRestoreStatus: (id) => `${API_BASE_URL}/backup/restore/jobs/${id}`,
+  backupRestoreActive: `${API_BASE_URL}/backup/restore/active`,
   backupRestoreInit: `${API_BASE_URL}/backup/restore/init`,
   backupRestoreExecute: `${API_BASE_URL}/backup/restore/execute`,
 
