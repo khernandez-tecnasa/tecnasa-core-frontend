@@ -2,17 +2,9 @@
 // Wrapper de fetch con refresh automático de token JWT.
 import { API_BASE_URL } from "../config/variables";
 
-let isRefreshing = false;
-let refreshSubscribers = [];
-
-const onRefreshed = () => {
-  refreshSubscribers.forEach((cb) => cb());
-  refreshSubscribers = [];
-};
-
-const subscribeRefresh = (callback) => {
-  refreshSubscribers.push(callback);
-};
+// Una única promesa compartida evita que solicitudes simultáneas queden
+// esperando indefinidamente si la renovación falla.
+let refreshPromise = null;
 
 async function doRefresh() {
   try {
@@ -46,38 +38,44 @@ function isPublicAuthUrl(url) {
  * - Si el refresh falla, dispara evento 'auth:sessionExpired' y lanza error.
  */
 export async function apiFetch(url, options = {}) {
+  // La verificación reforzada está ligada al token con el que se inició el
+  // intento. Renovarlo y repetir la solicitud puede invalidar ese intento y
+  // convertir un error de identidad en un falso problema de sesión.
+  const skipAuthRefresh = options.skipAuthRefresh === true;
+  const { skipAuthRefresh: _skipAuthRefresh, ...fetchOptions } = options;
   const init = {
-    ...options,
+    ...fetchOptions,
     credentials: "include",
   };
 
   const res = await fetch(url, init);
 
   // Si no es 401, o es una ruta pública de auth, devolver tal cual
-  if (res.status !== 401 || isPublicAuthUrl(url)) {
+  if (res.status !== 401 || isPublicAuthUrl(url) || skipAuthRefresh) {
     return res;
   }
 
-  // Hay un 401 → intentar refresh
-  if (!isRefreshing) {
-    isRefreshing = true;
-    const ok = await doRefresh();
-    isRefreshing = false;
-
-    if (ok) {
-      onRefreshed();
-      // Reintentar la petición original con fetch nativo
-      return fetch(url, init);
-    } else {
-      window.dispatchEvent(new CustomEvent("auth:sessionExpired"));
-      throw new Error("Sesión expirada. Por favor inicia sesión nuevamente.");
-    }
+  // Hay un 401 → todas las solicitudes concurrentes esperan la misma
+  // renovación. Antes, las suscritas nunca se resolvían si el refresh fallaba.
+  if (!refreshPromise) {
+    refreshPromise = doRefresh()
+      .then((ok) => {
+        if (ok) return true;
+        // Esta única promesa compartida emite el evento una sola vez para
+        // todas las solicitudes que recibieron el mismo 401.
+        window.dispatchEvent(new CustomEvent("auth:sessionExpired"));
+        return false;
+      })
+      .finally(() => {
+        refreshPromise = null;
+      });
   }
 
-  // Ya hay un refresh en curso → esperar y reintentar
-  return new Promise((resolve, reject) => {
-    subscribeRefresh(() => {
-      fetch(url, init).then(resolve).catch(reject);
-    });
-  });
+  const refreshed = await refreshPromise;
+  if (!refreshed) {
+    throw new Error("Sesión expirada. Por favor inicia sesión nuevamente.");
+  }
+
+  // Reintentar la petición original con fetch nativo.
+  return fetch(url, init);
 }

@@ -13,6 +13,18 @@ import * as AuthServices from "../services/AuthServices";
 import { getPermisosEfectivos } from "../services/PermissionsServices";
 
 const AuthContext = createContext();
+const SESSION_CHECK_TIMEOUT_MS = 10000;
+
+function withTimeout(promise, timeoutMs, message) {
+  let timeoutId;
+  const timeout = new Promise((_, reject) => {
+    timeoutId = window.setTimeout(() => reject(new Error(message)), timeoutMs);
+  });
+
+  return Promise.race([promise, timeout]).finally(() => {
+    window.clearTimeout(timeoutId);
+  });
+}
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -32,9 +44,15 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const init = async () => {
       try {
-        const serverUser = await AuthServices.me();
+        const serverUser = await withTimeout(
+          AuthServices.me(),
+          SESSION_CHECK_TIMEOUT_MS,
+          "La validación de sesión tardó demasiado.",
+        );
         setUser(serverUser);
-        if (serverUser?.id) await loadPermisos(serverUser.id);
+        // Los permisos no deben bloquear el acceso a una ruta pública. Se
+        // cargan en segundo plano una vez que la sesión ya fue resuelta.
+        if (serverUser?.id) void loadPermisos(serverUser.id);
       } catch {
         setUser(null);
         setPermisos([]);
